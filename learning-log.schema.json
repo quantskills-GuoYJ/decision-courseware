@@ -1,0 +1,314 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://quantskills-guoyj.github.io/decision-courseware/learning-log.schema.json",
+  "title": "DecisionCourse LearningLog dm-learnlog-v1",
+  "description": "第0课最小充分学习日志（已锁定）：费曼复述、预测-揭晓、概念题、平仓契约草稿、本节评论、提交终态快照（含门槛初→终+改动次数）。不记拖动轨迹、视图切换流水、滚动。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "v",
+    "course",
+    "submittedAt",
+    "sections",
+    "items",
+    "snapshot"
+  ],
+  "properties": {
+    "v": {
+      "type": "string",
+      "const": "dm-learnlog-v1",
+      "description": "Schema 版本锁定值"
+    },
+    "course": {
+      "type": "string",
+      "const": "第0课",
+      "description": "课程代号"
+    },
+    "lessonId": {
+      "type": "string",
+      "const": "lesson-0",
+      "description": "机器可读课号"
+    },
+    "submittedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "提交时刻 ISO8601（UTC）"
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/section"
+      },
+      "description": "各节：费曼复述 + 自由评论"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/predictReveal"
+          },
+          {
+            "$ref": "#/$defs/quiz"
+          },
+          {
+            "$ref": "#/$defs/contractDraft"
+          }
+        ]
+      },
+      "description": "诊断题：quiz | predict_reveal | contract_draft（仅终选/对错/草稿，无中间态）"
+    },
+    "snapshot": {
+      "$ref": "#/$defs/snapshot",
+      "description": "提交瞬间课件终态，只记一次"
+    }
+  },
+  "$defs": {
+    "sectionId": {
+      "type": "string",
+      "enum": [
+        "contrast",
+        "flow",
+        "demo",
+        "calib",
+        "agent",
+        "products"
+      ]
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "feynman",
+        "comments"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/sectionId"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "feynman": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "text",
+            "restated",
+            "status"
+          ],
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "1–2 句用自己的话；可空"
+            },
+            "restated": {
+              "type": "boolean",
+              "description": "trim(text) 非空则为 true"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "已复述",
+                "未复述"
+              ],
+              "description": "restated=false → 未复述；允许空提交"
+            }
+          }
+        },
+        "comments": {
+          "type": "string",
+          "description": "本节主动疑问原文；无则空串"
+        }
+      }
+    },
+    "predictReveal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "item_id",
+        "type",
+        "sectionId",
+        "prompt",
+        "prediction",
+        "reveal",
+        "correct"
+      ],
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "pattern": "^pr-",
+          "description": "如 pr-gate-fuzzy"
+        },
+        "type": {
+          "const": "predict_reveal"
+        },
+        "sectionId": {
+          "$ref": "#/$defs/sectionId"
+        },
+        "prompt": {
+          "type": "string"
+        },
+        "prediction": {
+          "type": "string",
+          "description": "用户事先选择的预期结果标签"
+        },
+        "reveal": {
+          "type": "string",
+          "description": "实际揭晓结果标签（终态一次）"
+        },
+        "correct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "quiz": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "item_id",
+        "type",
+        "sectionId",
+        "prompt",
+        "choice",
+        "correct"
+      ],
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "pattern": "^qz-",
+          "description": "如 qz-prob-vs-dm"
+        },
+        "type": {
+          "const": "quiz"
+        },
+        "sectionId": {
+          "$ref": "#/$defs/sectionId"
+        },
+        "prompt": {
+          "type": "string"
+        },
+        "choice": {
+          "type": "string"
+        },
+        "correct": {
+          "type": "boolean"
+        },
+        "answerKey": {
+          "type": "string",
+          "description": "可选：标准答案标签"
+        }
+      }
+    },
+    "contractDraft": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "item_id",
+        "type",
+        "sectionId",
+        "state",
+        "questions"
+      ],
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "pattern": "^cd-",
+          "description": "如 cd-flat-contract"
+        },
+        "type": {
+          "const": "contract_draft"
+        },
+        "sectionId": {
+          "$ref": "#/$defs/sectionId"
+        },
+        "state": {
+          "type": "string",
+          "description": "平仓契约 state 草稿；可空"
+        },
+        "questions": {
+          "type": "string",
+          "description": "平仓契约 questions/选项问题草稿；可空"
+        }
+      }
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "threshold",
+        "threshold_from",
+        "threshold_to",
+        "threshold_edits",
+        "compareView",
+        "triState",
+        "scenario",
+        "gate"
+      ],
+      "properties": {
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "执行门槛终值（与 threshold_to 同值，canonical）"
+        },
+        "threshold_from": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "进入课件时门槛初值"
+        },
+        "threshold_to": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "提交瞬间门槛终值"
+        },
+        "threshold_edits": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "门槛改动次数（去抖后的提交次数，非拖动帧）"
+        },
+        "compareView": {
+          "type": "string",
+          "enum": [
+            "both",
+            "llm",
+            "dm"
+          ]
+        },
+        "triState": {
+          "type": "string",
+          "enum": [
+            "high",
+            "mid",
+            "low"
+          ]
+        },
+        "scenario": {
+          "type": "string",
+          "enum": [
+            "fuzzy",
+            "calib"
+          ]
+        },
+        "pFlat": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "gate": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "block"
+          ]
+        }
+      }
+    }
+  }
+}

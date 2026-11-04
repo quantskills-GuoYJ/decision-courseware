@@ -901,6 +901,54 @@ footer {
 }
 .sec-comment .sc-hint.saved { color: var(--ok); }
 
+
+/* —— Learn instrumentation (dm-learnlog-v1) —— */
+.sec-comment .sc-lab.feynman { color: var(--ok); margin-top: 0.55rem; }
+.sec-comment .sc-lab.feynman:first-child { margin-top: 0; }
+.sec-comment textarea.feynman-ta { min-height: 72px; border-color: rgba(163,230,53,0.35); }
+.sec-comment .fy-status { margin-top: 0.25rem; font-size: 0.68rem; color: var(--muted); }
+.sec-comment .fy-status.ok { color: var(--ok); }
+.sec-comment .fy-status.miss { color: var(--warn); }
+.learn-quiz, .predict-box, .contract-draft {
+  margin-top: 1rem; background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 0.85rem 1rem;
+}
+.learn-quiz { border-left: 3px solid var(--warn); }
+.predict-box { border-left: 3px solid #c084fc; }
+.contract-draft { border-left: 3px solid var(--ok); }
+.learn-quiz .lq-title, .predict-box .pb-title, .contract-draft .cd-title {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; margin-bottom: 0.45rem;
+}
+.learn-quiz .lq-title { color: var(--warn); }
+.predict-box .pb-title { color: #c084fc; }
+.contract-draft .cd-title { color: var(--ok); }
+.learn-quiz .lq-prompt, .predict-box .pb-prompt { font-size: 0.92rem; margin-bottom: 0.65rem; color: var(--text); }
+.learn-quiz .lq-opts, .predict-box .pb-opts { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.learn-quiz button.lq-opt, .predict-box button.pb-opt {
+  font: inherit; font-size: 0.82rem; padding: 0.45rem 0.75rem; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer;
+}
+.learn-quiz button.lq-opt:hover, .predict-box button.pb-opt:hover { border-color: var(--cyan); }
+.learn-quiz button.lq-opt.picked, .predict-box button.pb-opt.picked {
+  border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(34,211,238,0.18);
+}
+.learn-quiz button.lq-opt.correct, .predict-box button.pb-opt.correct {
+  border-color: var(--ok); background: rgba(163,230,53,0.12);
+}
+.learn-quiz button.lq-opt.wrong { border-color: #f87171; background: rgba(248,113,113,0.1); }
+.learn-quiz .lq-fb, .predict-box .pb-fb { margin-top: 0.55rem; font-size: 0.8rem; color: var(--muted); min-height: 1.2em; }
+.learn-quiz .lq-fb.ok, .predict-box .pb-fb.ok { color: var(--ok); }
+.learn-quiz .lq-fb.bad, .predict-box .pb-fb.bad { color: #f87171; }
+.contract-draft label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); margin: 0.45rem 0 0.25rem; }
+.contract-draft textarea {
+  width: 100%; min-height: 56px; resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.78rem; line-height: 1.4;
+  color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.65rem;
+}
+.contract-draft textarea:focus { outline: none; border-color: var(--ok); box-shadow: 0 0 0 2px rgba(163,230,53,0.18); }
+.demo.locked-until-predict .threshold-panel { opacity: 0.45; pointer-events: none; }
+.predict-box.done { opacity: 0.92; }
+
 /* —— Floating export bar —— */
 .export-float {
   position: fixed;
@@ -1110,9 +1158,22 @@ footer {
         </div>
       </article>
     </div>
+
+    <div class="learn-quiz" id="quiz-prob-vs-dm" data-item-id="qz-prob-vs-dm" data-section="contrast">
+      <div class="lq-title">概念题 · 像概率 ≠ 决策模型</div>
+      <div class="lq-prompt">口头「大概一半」算决策模型吗？</div>
+      <div class="lq-opts" role="group" aria-label="概念题选项">
+        <button type="button" class="lq-opt" data-choice="算——有数字就是决策模型" data-correct="false">算——有数字就是决策模型</button>
+        <button type="button" class="lq-opt" data-choice="不算——像概率 ≠ 可校准、可设门槛的决策模型" data-correct="true">不算——像概率 ≠ 可校准、可设门槛的决策模型</button>
+      </div>
+      <div class="lq-fb" id="quizFb-prob-vs-dm"></div>
+    </div>
   
     </div>
-    <aside class="sec-comment" aria-label="本节评论：生成式 LLM vs 决策模型">
+    <aside class="sec-comment" aria-label="本节学习记录：生成式 LLM vs 决策模型">
+      <label class="sc-lab feynman" for="secFeynman-contrast">费曼复述（1–2 句，可空）</label>
+      <textarea class="feynman-ta" id="secFeynman-contrast" data-section="contrast" placeholder="用自己的话：本节核心是什么？" rows="3"></textarea>
+      <div class="fy-status miss" id="secFyStatus-contrast">未复述</div>
       <label class="sc-lab" for="secNote-contrast">本节评论</label>
       <textarea id="secNote-contrast" data-section="contrast" placeholder="对本节的疑问 / 盲点 / 想法…" rows="4"></textarea>
       <div class="sc-hint" id="secHint-contrast"></div>
@@ -1187,7 +1248,10 @@ footer {
     </div>
   
     </div>
-    <aside class="sec-comment" aria-label="本节评论：一次前向：状态 → 校准概率">
+    <aside class="sec-comment" aria-label="本节学习记录：一次前向：状态 → 校准概率">
+      <label class="sc-lab feynman" for="secFeynman-flow">费曼复述（1–2 句，可空）</label>
+      <textarea class="feynman-ta" id="secFeynman-flow" data-section="flow" placeholder="用自己的话：本节核心是什么？" rows="3"></textarea>
+      <div class="fy-status miss" id="secFyStatus-flow">未复述</div>
       <label class="sc-lab" for="secNote-flow">本节评论</label>
       <textarea id="secNote-flow" data-section="flow" placeholder="对本节的疑问 / 盲点 / 想法…" rows="4"></textarea>
       <div class="sc-hint" id="secHint-flow"></div>
@@ -1203,7 +1267,7 @@ footer {
     <h2>互动示例：要不要平仓？</h2>
     <p class="lead">选项钉死为 [平仓, 持有, 加仓]。拖动门槛，看「像概率」的 0.55 与校准后的 0.92 行为差在哪。</p>
 
-    <div class="demo">
+    <div class="demo locked-until-predict" id="demoPanel">
       <div class="demo-head">
         <h3>仓位决策闸门</h3>
         <div class="scenario-btns" role="group" aria-label="场景切换">
@@ -1240,6 +1304,25 @@ footer {
           </div>
         </div>
 
+
+        <div class="contract-draft" id="contractDraft">
+          <div class="cd-title">平仓契约草稿 · contract_draft（可空）</div>
+          <label for="contractState">state（非结构化状态）</label>
+          <textarea id="contractState" placeholder="例：BTC 永续 · 多仓 2.4× · 浮盈 +3.1% · …" rows="2"></textarea>
+          <label for="contractQuestions">questions（钉死的选项问题）</label>
+          <textarea id="contractQuestions" placeholder="例：[平仓, 持有, 加仓] · 是否自动平仓？" rows="2"></textarea>
+        </div>
+
+        <div class="predict-box" id="predictBox" data-item-prefix="pr-gate">
+          <div class="pb-title">预测再揭晓 · 先猜闸门，再拖门槛</div>
+          <div class="pb-prompt" id="predictPrompt">阈值 θ≈0.70、当前场景下，闸门会怎样？</div>
+          <div class="pb-opts" role="group" aria-label="预测选项">
+            <button type="button" class="pb-opt" data-pred="通过·可自动">通过·可自动</button>
+            <button type="button" class="pb-opt" data-pred="拒答/转人工">拒答/转人工</button>
+          </div>
+          <div class="pb-fb" id="predictFb">先选一项预测，再操作门槛 / 场景。</div>
+        </div>
+
         <div class="threshold-panel">
           <label>
             <span>执行门槛 · 若 p<sub>平仓</sub> &lt; threshold → 拒答 / 转人工</span>
@@ -1259,7 +1342,10 @@ footer {
     </div>
   
     </div>
-    <aside class="sec-comment" aria-label="本节评论：互动示例：要不要平仓？">
+    <aside class="sec-comment" aria-label="本节学习记录：互动示例：要不要平仓？">
+      <label class="sc-lab feynman" for="secFeynman-demo">费曼复述（1–2 句，可空）</label>
+      <textarea class="feynman-ta" id="secFeynman-demo" data-section="demo" placeholder="用自己的话：本节核心是什么？" rows="3"></textarea>
+      <div class="fy-status miss" id="secFyStatus-demo">未复述</div>
       <label class="sc-lab" for="secNote-demo">本节评论</label>
       <textarea id="secNote-demo" data-section="demo" placeholder="对本节的疑问 / 盲点 / 想法…" rows="4"></textarea>
       <div class="sc-hint" id="secHint-demo"></div>
@@ -1348,7 +1434,10 @@ footer {
     </div>
   
     </div>
-    <aside class="sec-comment" aria-label="本节评论：校准长什么样">
+    <aside class="sec-comment" aria-label="本节学习记录：校准长什么样">
+      <label class="sc-lab feynman" for="secFeynman-calib">费曼复述（1–2 句，可空）</label>
+      <textarea class="feynman-ta" id="secFeynman-calib" data-section="calib" placeholder="用自己的话：本节核心是什么？" rows="3"></textarea>
+      <div class="fy-status miss" id="secFyStatus-calib">未复述</div>
       <label class="sc-lab" for="secNote-calib">本节评论</label>
       <textarea id="secNote-calib" data-section="calib" placeholder="对本节的疑问 / 盲点 / 想法…" rows="4"></textarea>
       <div class="sc-hint" id="secHint-calib"></div>
@@ -1382,6 +1471,17 @@ footer {
       </div>
     </div>
 
+
+    <div class="learn-quiz" id="quiz-two-gates" data-item-id="qz-two-gates" data-section="agent">
+      <div class="lq-title">概念题 · 双层闸门</div>
+      <div class="lq-prompt">AutoThink 内部门 与 App 执行门 是否同一层？</div>
+      <div class="lq-opts" role="group" aria-label="双层闸门概念题">
+        <button type="button" class="lq-opt" data-choice="是，同一层" data-correct="false">是，同一层</button>
+        <button type="button" class="lq-opt" data-choice="否，应分开" data-correct="true">否，应分开</button>
+      </div>
+      <div class="lq-fb" id="quizFb-two-gates"></div>
+    </div>
+
     <div class="layers">
       <h3>两层闸门，别混为一谈</h3>
       <div class="layer">
@@ -1401,7 +1501,10 @@ footer {
     </div>
   
     </div>
-    <aside class="sec-comment" aria-label="本节评论：Agent 闸门：三态 + 双层">
+    <aside class="sec-comment" aria-label="本节学习记录：Agent 闸门：三态 + 双层">
+      <label class="sc-lab feynman" for="secFeynman-agent">费曼复述（1–2 句，可空）</label>
+      <textarea class="feynman-ta" id="secFeynman-agent" data-section="agent" placeholder="用自己的话：本节核心是什么？" rows="3"></textarea>
+      <div class="fy-status miss" id="secFyStatus-agent">未复述</div>
       <label class="sc-lab" for="secNote-agent">本节评论</label>
       <textarea id="secNote-agent" data-section="agent" placeholder="对本节的疑问 / 盲点 / 想法…" rows="4"></textarea>
       <div class="sc-hint" id="secHint-agent"></div>
@@ -1449,7 +1552,10 @@ footer {
     </div>
   
     </div>
-    <aside class="sec-comment" aria-label="本节评论：快速选型：Jev / Laya / StartLux">
+    <aside class="sec-comment" aria-label="本节学习记录：快速选型：Jev / Laya / StartLux">
+      <label class="sc-lab feynman" for="secFeynman-products">费曼复述（1–2 句，可空）</label>
+      <textarea class="feynman-ta" id="secFeynman-products" data-section="products" placeholder="用自己的话：本节核心是什么？" rows="3"></textarea>
+      <div class="fy-status miss" id="secFyStatus-products">未复述</div>
       <label class="sc-lab" for="secNote-products">本节评论</label>
       <textarea id="secNote-products" data-section="products" placeholder="对本节的疑问 / 盲点 / 想法…" rows="4"></textarea>
       <div class="sc-hint" id="secHint-products"></div>
@@ -1472,7 +1578,7 @@ footer {
           <div class="notes-hint" id="notesSavedHint">尚未保存本地笔记</div>
         </div>
         <div class="export-block">
-          <p class="blurb">各节评论 + 交互会自动记入本机。优先<strong>一键提交给学习</strong>（云端 webhook → @决策模型学习）；未配置时点提交会弹出填写框。也可复制到剪贴板（顶部含 <code>@决策模型学习</code>）或另存 Markdown。</p>
+          <p class="blurb">提交 JSON 遵循锁定 schema <code>dm-learnlog-v1</code>：费曼、概念题、预测揭晓、平仓契约、评论、终态快照（门槛初→终+改次数）。不记拖动轨迹。优先<strong>一键提交给学习</strong>；复制 Markdown 为摘要（顶部含 <code>@决策模型学习</code>）。</p>
           <div class="btn-row">
             <button type="button" class="btn-learn primary" id="btnCloudSubmit">一键提交给学习</button>
             <button type="button" class="btn-learn secondary" id="btnCopyMd">一键复制学习日志</button>
@@ -1547,12 +1653,15 @@ footer {
 (function () {
   "use strict";
 
-  var LOG_KEY = "dm_lesson0_log";
+  var SCHEMA_V = "dm-learnlog-v1";
   var NOTES_KEY = "dm_lesson0_notes";
   var SECTION_NOTES_KEY = "dm_lesson0_section_notes";
+  var FEYNMAN_KEY = "dm_lesson0_feynman";
+  var ITEMS_KEY = "dm_lesson0_items";
+  var CONTRACT_KEY = "dm_lesson0_contract";
+  var THRESH_META_KEY = "dm_lesson0_thresh_meta";
   var WEBHOOK_URL_KEY = "dm_webhook_url";
   var WEBHOOK_KEY_KEY = "dm_webhook_key";
-  var MAX_LOG = 100;
   var LESSON_TITLE = "第0课 · 决策模型是什么";
   var COURSE_ID = "第0课";
   var COURSE_SOURCE = "decision-courseware";
@@ -1566,160 +1675,33 @@ footer {
     { id: "products", title: "快速选型：Jev / Laya / StartLux" }
   ];
 
-  /* —— Interaction log —— */
-  var logEvents = [];
-  try {
-    var raw = localStorage.getItem(LOG_KEY);
-    if (raw) {
-      var parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) logEvents = parsed.slice(-MAX_LOG);
-    }
-  } catch (e) { logEvents = []; }
-
   function nowISO() {
     try { return new Date().toISOString(); } catch (e) { return String(Date.now()); }
   }
   function fmtLocal(iso) {
     try {
-      var d = new Date(iso);
-      return d.toLocaleString("zh-CN", { hour12: false, timeZone: "Asia/Taipei" });
+      return new Date(iso).toLocaleString("zh-CN", { hour12: false, timeZone: "Asia/Shanghai" });
     } catch (e) { return iso; }
   }
-  function persistLog() {
-    try { localStorage.setItem(LOG_KEY, JSON.stringify(logEvents)); } catch (e) {}
-    refreshLogUI();
-  }
-  function pushLog(type, detail, extra) {
-    var ev = { t: nowISO(), type: type, detail: detail || "" };
-    if (extra && typeof extra === "object") {
-      for (var k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) ev[k] = extra[k];
-    }
-    logEvents.push(ev);
-    if (logEvents.length > MAX_LOG) logEvents = logEvents.slice(-MAX_LOG);
-    persistLog();
-  }
-  function humanLine(ev) {
-    var when = fmtLocal(ev.t);
-    var map = {
-      contrast: "对比视图",
-      scenario: "场景模式",
-      threshold: "门槛调整",
-      gate: "闸门结果",
-      section: "访问章节",
-      agent_state: "Agent 态",
-      notes_save: "笔记保存",
-      section_note: "本节评论",
-      export: "导出",
-      import: "导入",
-      clear: "清空记录"
-    };
-    var label = map[ev.type] || ev.type;
-    return when + " · " + label + " · " + (ev.detail || "");
-  }
-  function refreshLogUI() {
-    var n = logEvents.length;
-    var countEl = document.getElementById("logCountLabel");
-    var stickyEl = document.getElementById("stickyLogCount");
-    if (countEl) countEl.textContent = "事件 " + n + " / " + MAX_LOG;
-    if (stickyEl) stickyEl.textContent = n + " 条交互";
-    var prev = document.getElementById("logPreview");
-    if (!prev) return;
-    if (!n) {
-      prev.innerHTML = '<span class="empty">尚无交互记录 —— 试试切换「并排对比」或拖动门槛。</span>';
-      return;
-    }
-    var recent = logEvents.slice(-12);
-    prev.textContent = recent.map(humanLine).join("\n");
-  }
-
-  /* —— Global notes —— */
-  var notesEl = document.getElementById("learnerNotes");
-  var notesHint = document.getElementById("notesSavedHint");
-  var notesTimer = null;
-  function loadNotes() {
+  function readJSON(key, fallback) {
     try {
-      var saved = localStorage.getItem(NOTES_KEY);
-      if (saved != null && notesEl) {
-        notesEl.value = saved;
-        if (notesHint) {
-          notesHint.textContent = saved ? "已从本机恢复全局笔记" : "尚未保存全局笔记";
-          notesHint.className = "notes-hint" + (saved ? " saved" : "");
-        }
-      }
+      var raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      return JSON.parse(raw);
+    } catch (e) { return fallback; }
+  }
+  function writeJSON(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+  }
+  function readStored(key) {
+    try { return localStorage.getItem(key) || ""; } catch (e) { return ""; }
+  }
+  function writeStored(key, val) {
+    try {
+      if (val == null || val === "") localStorage.removeItem(key);
+      else localStorage.setItem(key, val);
     } catch (e) {}
   }
-  function saveNotes(silent) {
-    if (!notesEl) return;
-    try {
-      localStorage.setItem(NOTES_KEY, notesEl.value);
-      if (notesHint) {
-        notesHint.textContent = "已保存 · " + fmtLocal(nowISO()) + "（Asia/Taipei）";
-        notesHint.className = "notes-hint saved";
-      }
-      if (!silent) pushLog("notes_save", "全局笔记已保存", { chars: notesEl.value.length });
-    } catch (e) {
-      if (notesHint) {
-        notesHint.textContent = "保存失败（本机存储不可用）";
-        notesHint.className = "notes-hint";
-      }
-    }
-  }
-  if (notesEl) {
-    notesEl.addEventListener("input", function () {
-      if (notesHint) {
-        notesHint.textContent = "输入中…";
-        notesHint.className = "notes-hint";
-      }
-      clearTimeout(notesTimer);
-      notesTimer = setTimeout(function () { saveNotes(true); }, 400);
-    });
-  }
-  loadNotes();
-
-  /* —— Per-section notes —— */
-  var sectionNotes = {};
-  try {
-    var snRaw = localStorage.getItem(SECTION_NOTES_KEY);
-    if (snRaw) {
-      var snParsed = JSON.parse(snRaw);
-      if (snParsed && typeof snParsed === "object" && !Array.isArray(snParsed)) sectionNotes = snParsed;
-    }
-  } catch (e) { sectionNotes = {}; }
-
-  var sectionTimers = {};
-  function persistSectionNotes() {
-    try { localStorage.setItem(SECTION_NOTES_KEY, JSON.stringify(sectionNotes)); } catch (e) {}
-  }
-  function loadSectionNotesUI() {
-    SECTION_META.forEach(function (meta) {
-      var ta = document.getElementById("secNote-" + meta.id);
-      var hint = document.getElementById("secHint-" + meta.id);
-      if (!ta) return;
-      var val = sectionNotes[meta.id] || "";
-      ta.value = val;
-      if (hint) {
-        hint.textContent = val ? "已从本机恢复" : "";
-        hint.className = "sc-hint" + (val ? " saved" : "");
-      }
-      ta.addEventListener("input", function () {
-        var sid = meta.id;
-        if (hint) {
-          hint.textContent = "输入中…";
-          hint.className = "sc-hint";
-        }
-        clearTimeout(sectionTimers[sid]);
-        sectionTimers[sid] = setTimeout(function () {
-          sectionNotes[sid] = ta.value;
-          persistSectionNotes();
-          if (hint) {
-            hint.textContent = "已保存";
-            hint.className = "sc-hint saved";
-          }
-        }, 400);
-      });
-    });
-  }
-  loadSectionNotesUI();
 
   function showToast(msg) {
     var t = document.getElementById("learnToast");
@@ -1730,14 +1712,12 @@ footer {
     showToast._tid = setTimeout(function () { t.classList.remove("show"); }, 2200);
   }
 
-  /* —— Live UI state (for export snapshot) —— */
+  /* —— Live UI state —— */
   var viewLabels = { both: "并排对比", llm: "只看 LLM", dm: "只看决策模型" };
   var currentView = "both";
   var current = "fuzzy";
-  var lastGateOutcome = null;
   var currentAgent = "high";
   var agentLabels = { high: "高·自动", mid: "中·复核", low: "低·人工" };
-
   var scenarios = {
     fuzzy: {
       flat: 0.55, hold: 0.30, add: 0.15,
@@ -1753,169 +1733,477 @@ footer {
     var el = document.getElementById("threshold");
     return el ? parseInt(el.value, 10) / 100 : 0.7;
   }
-  function captureUiState() {
+  function gateLabelFor(th, scenarioId) {
+    var p = (scenarios[scenarioId] || scenarios.fuzzy).flat;
+    return p >= th ? "通过·可自动" : "拒答/转人工";
+  }
+  function gateEnumFor(th, scenarioId) {
+    var p = (scenarios[scenarioId] || scenarios.fuzzy).flat;
+    return p >= th ? "pass" : "block";
+  }
+
+  /* —— Threshold from/to/edits (no drag frames in submit) —— */
+  var threshMeta = readJSON(THRESH_META_KEY, null);
+  if (!threshMeta || typeof threshMeta !== "object") {
+    threshMeta = { from: getThreshold(), edits: 0, last: getThreshold() };
+  }
+  function persistThreshMeta() { writeJSON(THRESH_META_KEY, threshMeta); }
+  function noteThresholdEdit(th) {
+    if (Math.abs(th - (threshMeta.last || 0)) < 0.0005) return;
+    threshMeta.edits = (threshMeta.edits || 0) + 1;
+    threshMeta.last = th;
+    persistThreshMeta();
+  }
+
+  /* —— Section notes + feynman —— */
+  var sectionNotes = readJSON(SECTION_NOTES_KEY, {}) || {};
+  if (typeof sectionNotes !== "object" || Array.isArray(sectionNotes)) sectionNotes = {};
+  var feynmanMap = readJSON(FEYNMAN_KEY, {}) || {};
+  if (typeof feynmanMap !== "object" || Array.isArray(feynmanMap)) feynmanMap = {};
+  var sectionTimers = {};
+  var feynmanTimers = {};
+
+  function persistSectionNotes() { writeJSON(SECTION_NOTES_KEY, sectionNotes); }
+  function persistFeynman() { writeJSON(FEYNMAN_KEY, feynmanMap); }
+  function updateFyStatus(sid, text) {
+    var st = document.getElementById("secFyStatus-" + sid);
+    if (!st) return;
+    var ok = !!(text && String(text).trim());
+    st.textContent = ok ? "已复述" : "未复述";
+    st.className = "fy-status " + (ok ? "ok" : "miss");
+  }
+  function loadSectionUI() {
+    SECTION_META.forEach(function (meta) {
+      var ta = document.getElementById("secNote-" + meta.id);
+      var hint = document.getElementById("secHint-" + meta.id);
+      var fy = document.getElementById("secFeynman-" + meta.id);
+      if (ta) {
+        var val = sectionNotes[meta.id] || "";
+        ta.value = val;
+        if (hint) {
+          hint.textContent = val ? "已从本机恢复" : "";
+          hint.className = "sc-hint" + (val ? " saved" : "");
+        }
+        ta.addEventListener("input", function () {
+          var sid = meta.id;
+          if (hint) { hint.textContent = "输入中…"; hint.className = "sc-hint"; }
+          clearTimeout(sectionTimers[sid]);
+          sectionTimers[sid] = setTimeout(function () {
+            sectionNotes[sid] = ta.value;
+            persistSectionNotes();
+            if (hint) { hint.textContent = "已保存"; hint.className = "sc-hint saved"; }
+          }, 400);
+        });
+      }
+      if (fy) {
+        var fv = feynmanMap[meta.id] || "";
+        fy.value = fv;
+        updateFyStatus(meta.id, fv);
+        fy.addEventListener("input", function () {
+          var sid = meta.id;
+          updateFyStatus(sid, fy.value);
+          clearTimeout(feynmanTimers[sid]);
+          feynmanTimers[sid] = setTimeout(function () {
+            feynmanMap[sid] = fy.value;
+            persistFeynman();
+          }, 400);
+        });
+      }
+    });
+  }
+  loadSectionUI();
+
+  /* —— Global notes (kept locally; not in schema whitelist) —— */
+  var notesEl = document.getElementById("learnerNotes");
+  var notesHint = document.getElementById("notesSavedHint");
+  var notesTimer = null;
+  function loadNotes() {
+    try {
+      var saved = localStorage.getItem(NOTES_KEY);
+      if (saved != null && notesEl) {
+        notesEl.value = saved;
+        if (notesHint) {
+          notesHint.textContent = saved ? "已从本机恢复全局笔记（不进提交 schema）" : "尚未保存全局笔记";
+          notesHint.className = "notes-hint" + (saved ? " saved" : "");
+        }
+      }
+    } catch (e) {}
+  }
+  function saveNotes() {
+    if (!notesEl) return;
+    try {
+      localStorage.setItem(NOTES_KEY, notesEl.value);
+      if (notesHint) {
+        notesHint.textContent = "已保存 · " + fmtLocal(nowISO()) + "（Asia/Shanghai）· 不进提交 schema";
+        notesHint.className = "notes-hint saved";
+      }
+    } catch (e) {
+      if (notesHint) { notesHint.textContent = "保存失败"; notesHint.className = "notes-hint"; }
+    }
+  }
+  if (notesEl) {
+    notesEl.addEventListener("input", function () {
+      if (notesHint) { notesHint.textContent = "输入中…"; notesHint.className = "notes-hint"; }
+      clearTimeout(notesTimer);
+      notesTimer = setTimeout(saveNotes, 400);
+    });
+  }
+  loadNotes();
+
+  /* —— Semantic items store —— */
+  var itemStore = readJSON(ITEMS_KEY, {}) || {};
+  if (typeof itemStore !== "object" || Array.isArray(itemStore)) itemStore = {};
+  function persistItems() { writeJSON(ITEMS_KEY, itemStore); }
+
+  var ANSWER_KEYS = {
+    "qz-prob-vs-dm": "不算——像概率 ≠ 可校准、可设门槛的决策模型",
+    "qz-two-gates": "否，应分开"
+  };
+
+  function wireQuizzes() {
+    document.querySelectorAll(".learn-quiz").forEach(function (box) {
+      var itemId = box.getAttribute("data-item-id");
+      var sectionId = box.getAttribute("data-section");
+      var promptEl = box.querySelector(".lq-prompt");
+      var prompt = promptEl ? promptEl.textContent.trim() : "";
+      var fb = box.querySelector(".lq-fb");
+      var saved = itemStore[itemId];
+      if (saved && saved.choice) {
+        box.querySelectorAll(".lq-opt").forEach(function (btn) {
+          var ch = btn.getAttribute("data-choice");
+          if (ch === saved.choice) {
+            btn.classList.add("picked");
+            btn.classList.add(saved.correct ? "correct" : "wrong");
+          }
+        });
+        if (fb) {
+          fb.className = "lq-fb " + (saved.correct ? "ok" : "bad");
+          fb.textContent = saved.correct ? "回答正确" : ("未命中。参考：" + (ANSWER_KEYS[itemId] || ""));
+        }
+      }
+      box.querySelectorAll(".lq-opt").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var choice = btn.getAttribute("data-choice") || btn.textContent.trim();
+          var correct = btn.getAttribute("data-correct") === "true";
+          box.querySelectorAll(".lq-opt").forEach(function (b) {
+            b.classList.remove("picked", "correct", "wrong");
+          });
+          btn.classList.add("picked");
+          btn.classList.add(correct ? "correct" : "wrong");
+          itemStore[itemId] = {
+            item_id: itemId,
+            type: "quiz",
+            sectionId: sectionId,
+            prompt: prompt,
+            choice: choice,
+            correct: correct,
+            answerKey: ANSWER_KEYS[itemId] || ""
+          };
+          persistItems();
+          if (fb) {
+            fb.className = "lq-fb " + (correct ? "ok" : "bad");
+            fb.textContent = correct ? "回答正确" : ("未命中。参考：" + (ANSWER_KEYS[itemId] || ""));
+          }
+          refreshLogUI();
+        });
+      });
+    });
+  }
+  wireQuizzes();
+
+  /* —— Contract draft —— */
+  var contract = readJSON(CONTRACT_KEY, { state: "", questions: "" }) || { state: "", questions: "" };
+  var contractStateEl = document.getElementById("contractState");
+  var contractQEl = document.getElementById("contractQuestions");
+  var contractTimer = null;
+  function persistContract() { writeJSON(CONTRACT_KEY, contract); }
+  if (contractStateEl) {
+    contractStateEl.value = contract.state || "";
+    contractStateEl.addEventListener("input", function () {
+      clearTimeout(contractTimer);
+      contractTimer = setTimeout(function () {
+        contract.state = contractStateEl.value;
+        persistContract();
+      }, 400);
+    });
+  }
+  if (contractQEl) {
+    contractQEl.value = contract.questions || "";
+    contractQEl.addEventListener("input", function () {
+      clearTimeout(contractTimer);
+      contractTimer = setTimeout(function () {
+        contract.questions = contractQEl.value;
+        persistContract();
+      }, 400);
+    });
+  }
+
+  /* —— Predict then reveal —— */
+  var predictedScenarios = {}; // scenarioId -> {prediction, reveal, correct}
+  Object.keys(itemStore).forEach(function (k) {
+    var it = itemStore[k];
+    if (it && it.type === "predict_reveal") {
+      var sc = k.indexOf("calib") >= 0 ? "calib" : (k.indexOf("fuzzy") >= 0 ? "fuzzy" : null);
+      if (sc) predictedScenarios[sc] = it;
+    }
+  });
+  var demoPanel = document.getElementById("demoPanel");
+  var predictFb = document.getElementById("predictFb");
+  var predictPrompt = document.getElementById("predictPrompt");
+
+  function updatePredictPrompt() {
+    if (!predictPrompt) return;
+    var lab = current === "fuzzy" ? "模糊 0.55" : "校准 0.92";
+    var th = getThreshold().toFixed(2);
+    predictPrompt.textContent = "阈值 θ=" + th + "、场景「" + lab + "」时，闸门会怎样？";
+  }
+  function unlockDemoIfReady() {
+    if (!demoPanel) return;
+    if (predictedScenarios[current]) demoPanel.classList.remove("locked-until-predict");
+    else demoPanel.classList.add("locked-until-predict");
+  }
+  function restorePredictUI() {
+    updatePredictPrompt();
+    var box = document.getElementById("predictBox");
+    var saved = predictedScenarios[current];
+    if (!box) return;
+    box.querySelectorAll(".pb-opt").forEach(function (b) {
+      b.classList.remove("picked", "correct");
+      if (saved && b.getAttribute("data-pred") === saved.prediction) {
+        b.classList.add("picked");
+        if (saved.correct) b.classList.add("correct");
+      }
+    });
+    if (predictFb) {
+      if (saved) {
+        predictFb.className = "pb-fb " + (saved.correct ? "ok" : "bad");
+        predictFb.textContent = "已预测：" + saved.prediction + " · 实际：" + saved.reveal + (saved.correct ? " · 猜对" : " · 未猜中");
+        box.classList.add("done");
+      } else {
+        predictFb.className = "pb-fb";
+        predictFb.textContent = "先选一项预测，再操作门槛 / 场景。";
+        box.classList.remove("done");
+      }
+    }
+    unlockDemoIfReady();
+  }
+  document.querySelectorAll("#predictBox .pb-opt").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var prediction = btn.getAttribute("data-pred");
+      var th = getThreshold();
+      var reveal = gateLabelFor(th, current);
+      var correct = prediction === reveal;
+      var itemId = current === "calib" ? "pr-gate-calib" : "pr-gate-fuzzy";
+      var lab = current === "fuzzy" ? "模糊 0.55" : "校准 0.92";
+      var item = {
+        item_id: itemId,
+        type: "predict_reveal",
+        sectionId: "demo",
+        prompt: "阈值 θ=" + th.toFixed(2) + "、场景「" + lab + "」时，闸门会怎样？",
+        prediction: prediction,
+        reveal: reveal,
+        correct: correct
+      };
+      itemStore[itemId] = item;
+      predictedScenarios[current] = item;
+      persistItems();
+      restorePredictUI();
+      refreshLogUI();
+    });
+  });
+  restorePredictUI();
+
+  /* —— Build locked schema payload —— */
+  function buildLearningLog() {
+    // sync live fields
+    SECTION_META.forEach(function (meta) {
+      var ta = document.getElementById("secNote-" + meta.id);
+      var fy = document.getElementById("secFeynman-" + meta.id);
+      if (ta) sectionNotes[meta.id] = ta.value;
+      if (fy) feynmanMap[meta.id] = fy.value;
+    });
+    if (contractStateEl) contract.state = contractStateEl.value;
+    if (contractQEl) contract.questions = contractQEl.value;
+    persistSectionNotes();
+    persistFeynman();
+    persistContract();
+
+    var sections = SECTION_META.map(function (meta) {
+      var text = (feynmanMap[meta.id] || "");
+      var restated = !!String(text).trim();
+      return {
+        id: meta.id,
+        title: meta.title,
+        feynman: {
+          text: text,
+          restated: restated,
+          status: restated ? "已复述" : "未复述"
+        },
+        comments: sectionNotes[meta.id] || ""
+      };
+    });
+
+    var items = [];
+    ["qz-prob-vs-dm", "qz-two-gates", "pr-gate-fuzzy", "pr-gate-calib"].forEach(function (id) {
+      if (itemStore[id]) items.push(itemStore[id]);
+    });
+    items.push({
+      item_id: "cd-flat-contract",
+      type: "contract_draft",
+      sectionId: "demo",
+      state: contract.state || "",
+      questions: contract.questions || ""
+    });
+
+    var thTo = getThreshold();
     var sc = scenarios[current] || scenarios.fuzzy;
-    var th = getThreshold();
-    var p = sc.flat;
-    var gate = p >= th ? "通过·可自动" : "拒答/转人工";
-    return {
-      contrastView: currentView,
-      contrastLabel: viewLabels[currentView] || currentView,
+    var snapshot = {
+      threshold: thTo,
+      threshold_from: typeof threshMeta.from === "number" ? threshMeta.from : thTo,
+      threshold_to: thTo,
+      threshold_edits: threshMeta.edits || 0,
+      compareView: currentView,
+      triState: currentAgent,
       scenario: current,
-      scenarioLabel: current === "fuzzy" ? "模糊 0.55" : "校准 0.92",
-      p_flat: sc.flat,
-      p_hold: sc.hold,
-      p_add: sc.add,
-      threshold: th,
-      gate: gate,
-      agentState: currentAgent,
-      agentLabel: agentLabels[currentAgent] || currentAgent
+      pFlat: sc.flat,
+      gate: gateEnumFor(thTo, current)
+    };
+
+    return {
+      v: SCHEMA_V,
+      course: COURSE_ID,
+      lessonId: "lesson-0",
+      submittedAt: nowISO(),
+      sections: sections,
+      items: items,
+      snapshot: snapshot
     };
   }
 
-  /* —— Export markdown / json —— */
-  function buildPayload() {
-    var sn = {};
-    SECTION_META.forEach(function (meta) {
-      var ta = document.getElementById("secNote-" + meta.id);
-      var v = ta ? ta.value : (sectionNotes[meta.id] || "");
-      sectionNotes[meta.id] = v;
-      sn[meta.id] = v;
-    });
-    persistSectionNotes();
-    return {
-      lesson: LESSON_TITLE,
-      exportedAt: nowISO(),
-      notes: notesEl ? notesEl.value : "",
-      sectionNotes: sn,
-      uiState: captureUiState(),
-      events: logEvents.slice()
-    };
-  }
-  function buildMarkdown(payload) {
+  function buildMarkdown(log) {
     var lines = [];
     lines.push("@决策模型学习");
     lines.push("");
     lines.push("# 决策模型 · 第0课 · 学习日志");
     lines.push("");
-    lines.push("- **课程**：" + payload.lesson);
-    lines.push("- **导出时间（UTC）**：" + payload.exportedAt);
-    lines.push("- **导出时间（Asia/Taipei）**：" + fmtLocal(payload.exportedAt));
-    lines.push("- **交互条数**：" + payload.events.length);
+    lines.push("- **schema**：`" + log.v + "`");
+    lines.push("- **课程**：" + log.course + " / " + (log.lessonId || ""));
+    lines.push("- **提交时间（UTC）**：" + log.submittedAt);
+    lines.push("- **提交时间（Asia/Shanghai）**：" + fmtLocal(log.submittedAt));
     lines.push("");
-
-    var ui = payload.uiState || captureUiState();
-    lines.push("## 当前课件状态");
+    var snap = log.snapshot || {};
+    lines.push("## 快照 snapshot");
     lines.push("");
-    lines.push("- **对比视图**：" + (ui.contrastLabel || ui.contrastView));
-    lines.push("- **互动场景**：" + (ui.scenarioLabel || ui.scenario));
-    lines.push("- **选项概率**：p_flat=" + Number(ui.p_flat).toFixed(2)
-      + " · p_hold=" + Number(ui.p_hold).toFixed(2)
-      + " · p_add=" + Number(ui.p_add).toFixed(2));
-    lines.push("- **执行门槛 threshold**：" + Number(ui.threshold).toFixed(2));
-    lines.push("- **闸门结果**：" + (ui.gate || ""));
-    lines.push("- **Agent 态**：" + (ui.agentLabel || ui.agentState || ""));
+    lines.push("- **threshold**：from " + Number(snap.threshold_from).toFixed(2)
+      + " → to " + Number(snap.threshold_to).toFixed(2)
+      + "（edits=" + snap.threshold_edits + "）");
+    lines.push("- **compareView**：" + snap.compareView);
+    lines.push("- **triState**：" + snap.triState);
+    lines.push("- **scenario**：" + snap.scenario + " · pFlat=" + Number(snap.pFlat).toFixed(2));
+    lines.push("- **gate**：" + snap.gate);
     lines.push("");
-
-    lines.push("## 各节评论");
+    lines.push("## 各节 · 费曼 + 评论");
     lines.push("");
-    var sn = payload.sectionNotes || {};
-    var anySec = false;
-    SECTION_META.forEach(function (meta) {
-      var note = (sn[meta.id] || "").trim();
-      if (!note) return;
-      anySec = true;
-      lines.push("### " + meta.title);
+    (log.sections || []).forEach(function (sec) {
+      lines.push("### " + sec.title + " (`" + sec.id + "`)");
       lines.push("");
-      lines.push(note);
+      lines.push("- **费曼**：" + (sec.feynman && sec.feynman.status ? sec.feynman.status : "未复述"));
+      var ft = sec.feynman && sec.feynman.text ? String(sec.feynman.text).trim() : "";
+      lines.push(ft ? ft : "（空）");
+      lines.push("");
+      var c = (sec.comments || "").trim();
+      lines.push("- **评论**：" + (c ? "" : "（空）"));
+      if (c) lines.push(c);
       lines.push("");
     });
-    if (!anySec) {
-      lines.push("（各节评论均为空）");
-      lines.push("");
-    }
-
-    lines.push("## 全局自由笔记 / 练习答案");
+    lines.push("## items");
     lines.push("");
-    var notes = (payload.notes || "").trim();
-    lines.push(notes ? notes : "（空）");
-    lines.push("");
-
-    lines.push("## 交互摘要（时间序）");
-    lines.push("");
-    if (!payload.events.length) {
-      lines.push("（无记录）");
+    if (!(log.items || []).length) {
+      lines.push("（无）");
     } else {
-      payload.events.forEach(function (ev, i) {
-        lines.push((i + 1) + ". " + humanLine(ev));
+      log.items.forEach(function (it, i) {
+        if (it.type === "quiz") {
+          lines.push((i + 1) + ". **quiz** `" + it.item_id + "` · " + (it.correct ? "对" : "错")
+            + " · 选「" + it.choice + "」");
+          lines.push("   - " + it.prompt);
+        } else if (it.type === "predict_reveal") {
+          lines.push((i + 1) + ". **predict_reveal** `" + it.item_id + "` · " + (it.correct ? "猜对" : "未猜中"));
+          lines.push("   - " + it.prompt);
+          lines.push("   - 预测=" + it.prediction + " · 揭晓=" + it.reveal);
+        } else if (it.type === "contract_draft") {
+          lines.push((i + 1) + ". **contract_draft** `" + it.item_id + "`");
+          lines.push("   - state：" + ((it.state || "").trim() || "（空）"));
+          lines.push("   - questions：" + ((it.questions || "").trim() || "（空）"));
+        }
       });
     }
     lines.push("");
     lines.push("---");
-    lines.push("*由课件「第0课-决策模型是什么」学习日志版自动生成*");
+    lines.push("*dm-learnlog-v1 · 由第0课课件自动生成；JSON 为学习侧真源*");
     lines.push("");
     return lines.join("\n");
   }
+
+  function refreshLogUI() {
+    var log = null;
+    try { log = buildLearningLog(); } catch (e) { log = null; }
+    var nItems = log && log.items ? log.items.length : 0;
+    var nFy = 0;
+    if (log && log.sections) {
+      log.sections.forEach(function (s) { if (s.feynman && s.feynman.restated) nFy++; });
+    }
+    var countEl = document.getElementById("logCountLabel");
+    var stickyEl = document.getElementById("stickyLogCount");
+    var label = "语义 " + nItems + " 项 · 费曼 " + nFy + "/6";
+    if (countEl) countEl.textContent = label;
+    if (stickyEl) stickyEl.textContent = label;
+    var prev = document.getElementById("logPreview");
+    if (!prev || !log) return;
+    var lines = [];
+    (log.items || []).forEach(function (it) {
+      if (it.type === "quiz") lines.push("quiz " + it.item_id + " · " + (it.correct ? "对" : "错") + " · " + it.choice);
+      else if (it.type === "predict_reveal") lines.push("predict " + it.item_id + " · " + it.prediction + " → " + it.reveal + (it.correct ? " ✓" : " ✗"));
+      else if (it.type === "contract_draft") lines.push("contract · state " + ((it.state || "").trim() ? "有" : "空") + " / q " + ((it.questions || "").trim() ? "有" : "空"));
+    });
+    var snap = log.snapshot || {};
+    lines.push("snapshot θ " + Number(snap.threshold_from).toFixed(2) + "→" + Number(snap.threshold_to).toFixed(2)
+      + " edits=" + snap.threshold_edits + " · " + snap.scenario + " · " + snap.gate);
+    prev.textContent = lines.join("\n") || "尚无语义事件 —— 做概念题 / 预测揭晓 / 写费曼。";
+  }
+
   function downloadBlob(filename, text, mime) {
     var blob = new Blob([text], { type: mime || "text/plain;charset=utf-8" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function () {
-      URL.revokeObjectURL(url);
-      a.remove();
-    }, 0);
-  }
-  function doExportMd() {
-    var payload = buildPayload();
-    var md = buildMarkdown(payload);
-    downloadBlob("决策模型-第0课-学习日志.md", md, "text/markdown;charset=utf-8");
-    pushLog("export", "导出 Markdown（含各节评论+课件状态）");
-    showToast("已下载 决策模型-第0课-学习日志.md");
-  }
-  function doCopyMd() {
-    var md = buildMarkdown(buildPayload());
-    function ok() {
-      pushLog("export", "复制 Markdown 到剪贴板");
-      showToast("已复制 · 可粘贴到群（含 @决策模型学习）");
-    }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(md).then(ok).catch(function () {
-        fallbackCopy(md); ok();
-      });
-    } else {
-      fallbackCopy(md); ok();
-    }
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 0);
   }
   function fallbackCopy(text) {
     var ta = document.createElement("textarea");
     ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.left = "-9999px";
-    document.body.appendChild(ta);
-    ta.select();
+    ta.style.position = "fixed"; ta.style.left = "-9999px";
+    document.body.appendChild(ta); ta.select();
     try { document.execCommand("copy"); } catch (e) {}
     ta.remove();
   }
-
-
-  /* —— Cloud webhook submit —— */
-  function readStored(key) {
-    try { return localStorage.getItem(key) || ""; } catch (e) { return ""; }
+  function doExportMd() {
+    var log = buildLearningLog();
+    downloadBlob("决策模型-第0课-学习日志.md", buildMarkdown(log), "text/markdown;charset=utf-8");
+    showToast("已下载 Markdown 摘要");
   }
-  function writeStored(key, val) {
-    try {
-      if (val == null || val === "") localStorage.removeItem(key);
-      else localStorage.setItem(key, val);
-    } catch (e) {}
+  function doCopyMd() {
+    var md = buildMarkdown(buildLearningLog());
+    function ok() { showToast("已复制 · 可粘贴到群（含 @决策模型学习）"); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(md).then(ok).catch(function () { fallbackCopy(md); ok(); });
+    } else { fallbackCopy(md); ok(); }
   }
+
+  /* —— Webhook —— */
   function getWebhookConfig() {
     var cfg = (typeof window !== "undefined" && window.COURSE_WEBHOOK) ? window.COURSE_WEBHOOK : null;
-    var url = "";
-    var key = "";
+    var url = "", key = "";
     if (cfg && typeof cfg === "object") {
       if (typeof cfg.url === "string") url = cfg.url.trim();
       if (typeof cfg.key === "string") key = cfg.key.trim();
@@ -1936,9 +2224,7 @@ footer {
     if (!st) return;
     if (cfg.url && cfg.key) {
       st.className = "ws-status ok";
-      st.textContent = cfg.fromFile
-        ? "已配置（webhook-config.js）· 可一键提交"
-        : "已配置（本机 localStorage）· 可一键提交";
+      st.textContent = cfg.fromFile ? "已配置（webhook-config.js）· 可一键提交" : "已配置（本机 localStorage）· 可一键提交";
     } else if (cfg.url || cfg.key) {
       st.className = "ws-status warn";
       st.textContent = "配置不完整 · 需要 URL 与 sender key";
@@ -1970,12 +2256,7 @@ footer {
     writeStored(WEBHOOK_URL_KEY, url);
     writeStored(WEBHOOK_KEY_KEY, key);
     refreshWebhookStatus();
-    if (url && key) {
-      showToast("Webhook 已保存到本机");
-      pushLog("export", "保存 webhook 配置（本机）");
-    } else {
-      showToast("请同时填写 URL 与 key");
-    }
+    showToast(url && key ? "Webhook 已保存到本机" : "请同时填写 URL 与 key");
   }
   function clearWebhookLocal() {
     writeStored(WEBHOOK_URL_KEY, "");
@@ -2004,17 +2285,11 @@ footer {
     });
   }
   function copyMarkdownFallback(reason) {
-    var md = buildMarkdown(buildPayload());
-    function ok() {
-      showToast((reason || "提交失败") + " · 已改复制到剪贴板");
-    }
+    var md = buildMarkdown(buildLearningLog());
+    function ok() { showToast((reason || "提交失败") + " · 已改复制到剪贴板"); }
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(md).then(ok).catch(function () {
-        fallbackCopy(md); ok();
-      });
-    } else {
-      fallbackCopy(md); ok();
-    }
+      navigator.clipboard.writeText(md).then(ok).catch(function () { fallbackCopy(md); ok(); });
+    } else { fallbackCopy(md); ok(); }
   }
   function doCloudSubmit() {
     var cfg = getWebhookConfig();
@@ -2023,44 +2298,35 @@ footer {
       showToast("请先填写 webhook URL 与 key");
       return;
     }
-    var payload = buildPayload();
-    var md = buildMarkdown(payload);
+    var log = buildLearningLog();
+    var md = buildMarkdown(log);
     var body = {
       markdown: md,
-      json: payload,
+      json: log,
       course: COURSE_ID,
       source: COURSE_SOURCE,
       lesson: LESSON_TITLE,
-      submittedAt: nowISO()
+      schema: SCHEMA_V,
+      submittedAt: log.submittedAt
     };
     setSubmitBusy(true);
-    var headers = {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + cfg.key
-    };
     fetch(cfg.url, {
       method: "POST",
-      headers: headers,
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + cfg.key },
       body: JSON.stringify(body),
       mode: "cors",
       credentials: "omit"
     }).then(function (res) {
       if (!res.ok) {
         return res.text().then(function (t) {
-          var err = new Error("HTTP " + res.status + (t ? (": " + t.slice(0, 120)) : ""));
-          err.status = res.status;
-          throw err;
+          throw new Error("HTTP " + res.status + (t ? (": " + t.slice(0, 120)) : ""));
         });
       }
-      pushLog("export", "云端提交学习日志成功");
       showToast("已提交给学习 · 等待批改");
     }).catch(function (err) {
       var msg = (err && err.message) ? err.message : "网络/CORS 错误";
-      pushLog("export", "云端提交失败：" + msg);
       copyMarkdownFallback("提交失败（" + msg + "）");
-    }).then(function () {
-      setSubmitBusy(false);
-    });
+    }).then(function () { setSubmitBusy(false); });
   }
 
   var btnWhSave = document.getElementById("btnWebhookSave");
@@ -2080,7 +2346,6 @@ footer {
     if (el) el.addEventListener("click", doCloudSubmit);
   });
   refreshWebhookStatus();
-
   ["btnExportMd", "btnExportMdFloat"].forEach(function (id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener("click", doExportMd);
@@ -2089,28 +2354,36 @@ footer {
     var el = document.getElementById(id);
     if (el) el.addEventListener("click", doCopyMd);
   });
-
   var btnExportJson = document.getElementById("btnExportJson");
   if (btnExportJson) {
     btnExportJson.addEventListener("click", function () {
-      var payload = buildPayload();
-      downloadBlob("决策模型-第0课-学习日志.json", JSON.stringify(payload, null, 2), "application/json;charset=utf-8");
-      pushLog("export", "导出 JSON");
-      showToast("已下载 JSON 备份");
+      var log = buildLearningLog();
+      downloadBlob("决策模型-第0课-学习日志.json", JSON.stringify(log, null, 2), "application/json;charset=utf-8");
+      showToast("已下载 dm-learnlog-v1 JSON");
     });
   }
   var btnClear = document.getElementById("btnClearLog");
   if (btnClear) {
     btnClear.addEventListener("click", function () {
-      if (!confirm("清空本课交互记录？（各节评论与全局笔记不会删）")) return;
-      logEvents = [];
-      persistLog();
-      pushLog("clear", "已清空并重新开始记录");
-      showToast("交互记录已清空");
+      if (!confirm("清空本课语义答题记录？（各节评论/费曼/契约默认保留）")) return;
+      itemStore = {};
+      predictedScenarios = {};
+      persistItems();
+      threshMeta = { from: getThreshold(), edits: 0, last: getThreshold() };
+      persistThreshMeta();
+      restorePredictUI();
+      document.querySelectorAll(".learn-quiz .lq-opt").forEach(function (b) {
+        b.classList.remove("picked", "correct", "wrong");
+      });
+      document.querySelectorAll(".learn-quiz .lq-fb").forEach(function (fb) {
+        fb.className = "lq-fb"; fb.textContent = "";
+      });
+      refreshLogUI();
+      showToast("语义答题记录已清空");
     });
   }
 
-  /* —— Import JSON —— */
+  /* —— Import JSON (schema or legacy) —— */
   var importInput = document.getElementById("importJson");
   if (importInput) {
     importInput.addEventListener("change", function () {
@@ -2120,11 +2393,26 @@ footer {
       reader.onload = function () {
         try {
           var data = JSON.parse(String(reader.result || ""));
-          if (typeof data.notes === "string" && notesEl) {
-            notesEl.value = data.notes;
-            saveNotes(true);
-          }
-          if (data.sectionNotes && typeof data.sectionNotes === "object") {
+          if (Array.isArray(data.sections)) {
+            data.sections.forEach(function (sec) {
+              if (!sec || !sec.id) return;
+              if (typeof sec.comments === "string") sectionNotes[sec.id] = sec.comments;
+              if (sec.feynman && typeof sec.feynman.text === "string") feynmanMap[sec.id] = sec.feynman.text;
+            });
+            persistSectionNotes(); persistFeynman();
+            SECTION_META.forEach(function (meta) {
+              var ta = document.getElementById("secNote-" + meta.id);
+              var hint = document.getElementById("secHint-" + meta.id);
+              var fy = document.getElementById("secFeynman-" + meta.id);
+              if (ta) ta.value = sectionNotes[meta.id] || "";
+              if (hint) {
+                var v = sectionNotes[meta.id] || "";
+                hint.textContent = v ? "已从导入恢复" : "";
+                hint.className = "sc-hint" + (v ? " saved" : "");
+              }
+              if (fy) { fy.value = feynmanMap[meta.id] || ""; updateFyStatus(meta.id, fy.value); }
+            });
+          } else if (data.sectionNotes && typeof data.sectionNotes === "object") {
             sectionNotes = data.sectionNotes;
             persistSectionNotes();
             SECTION_META.forEach(function (meta) {
@@ -2138,11 +2426,52 @@ footer {
               }
             });
           }
-          if (Array.isArray(data.events)) {
-            logEvents = data.events.slice(-MAX_LOG);
-            persistLog();
+          if (Array.isArray(data.items)) {
+            itemStore = {};
+            predictedScenarios = {};
+            data.items.forEach(function (it) {
+              if (!it || !it.item_id) return;
+              itemStore[it.item_id] = it;
+              if (it.type === "predict_reveal") {
+                var sc = it.item_id.indexOf("calib") >= 0 ? "calib" : "fuzzy";
+                predictedScenarios[sc] = it;
+              }
+              if (it.type === "contract_draft") {
+                contract = { state: it.state || "", questions: it.questions || "" };
+                persistContract();
+                if (contractStateEl) contractStateEl.value = contract.state;
+                if (contractQEl) contractQEl.value = contract.questions;
+              }
+            });
+            persistItems();
+            // refresh quiz UI without rebinding
+            document.querySelectorAll(".learn-quiz").forEach(function (box) {
+              var itemId = box.getAttribute("data-item-id");
+              var fb = box.querySelector(".lq-fb");
+              var saved = itemStore[itemId];
+              box.querySelectorAll(".lq-opt").forEach(function (btn) {
+                btn.classList.remove("picked", "correct", "wrong");
+                if (saved && btn.getAttribute("data-choice") === saved.choice) {
+                  btn.classList.add("picked");
+                  btn.classList.add(saved.correct ? "correct" : "wrong");
+                }
+              });
+              if (fb) {
+                if (saved) {
+                  fb.className = "lq-fb " + (saved.correct ? "ok" : "bad");
+                  fb.textContent = saved.correct ? "回答正确" : ("未命中。参考：" + (ANSWER_KEYS[itemId] || ""));
+                } else { fb.className = "lq-fb"; fb.textContent = ""; }
+              }
+            });
+            restorePredictUI();
           }
-          pushLog("import", "从文件恢复：" + (file.name || "json"));
+          if (data.snapshot && typeof data.snapshot.threshold_from === "number") {
+            threshMeta.from = data.snapshot.threshold_from;
+            threshMeta.edits = data.snapshot.threshold_edits || 0;
+            threshMeta.last = data.snapshot.threshold_to || data.snapshot.threshold || getThreshold();
+            persistThreshMeta();
+          }
+          refreshLogUI();
           showToast("已导入学习日志");
         } catch (err) {
           showToast("导入失败：JSON 无效");
@@ -2153,7 +2482,7 @@ footer {
     });
   }
 
-  /* —— Contrast toggle —— */
+  /* —— Contrast toggle (UI only; no clickstream in submit) —— */
   var grid = document.getElementById("contrastGrid");
   var toggles = document.querySelectorAll(".toggle-bar button");
   toggles.forEach(function (btn) {
@@ -2169,11 +2498,11 @@ footer {
       grid.classList.remove("hide-llm", "hide-dm");
       if (v === "llm") grid.classList.add("hide-dm");
       if (v === "dm") grid.classList.add("hide-llm");
-      pushLog("contrast", viewLabels[v] || v, { view: v });
+      refreshLogUI();
     });
   });
 
-  function setBars(sc, silent) {
+  function setBars(sc) {
     var s = scenarios[sc];
     document.getElementById("barFlat").style.width = (s.flat * 100) + "%";
     document.getElementById("barHold").style.width = (s.hold * 100) + "%";
@@ -2182,10 +2511,9 @@ footer {
     document.getElementById("valHold").textContent = s.hold.toFixed(2);
     document.getElementById("valAdd").textContent = s.add.toFixed(2);
     document.getElementById("stateText").innerHTML = s.state;
-    updateGate(silent);
+    updateGate();
   }
-
-  function updateGate(silent) {
+  function updateGate() {
     var th = getThreshold();
     var p = scenarios[current].flat;
     document.getElementById("thVal").textContent = th.toFixed(2);
@@ -2193,42 +2521,27 @@ footer {
     var el = document.getElementById("gateResult");
     var title = document.getElementById("gateTitle");
     var detail = document.getElementById("gateDetail");
-    var outcome, outcomeLabel;
     if (p >= th) {
       el.className = "gate-result pass";
       el.querySelector(".icon").textContent = "✅";
       title.textContent = "通过 · 可自动执行平仓";
       detail.textContent = "p_flat=" + p.toFixed(2) + " ≥ threshold=" + th.toFixed(2) + " —— 校准概率过闸。";
-      outcome = "auto";
-      outcomeLabel = "自动";
     } else {
       el.className = "gate-result reject";
       el.querySelector(".icon").textContent = "⛔";
       title.textContent = "拒答 / 转人工复核";
       detail.textContent = "p_flat=" + p.toFixed(2) + " < threshold=" + th.toFixed(2) + " —— 置信不足，不自动下单。";
-      outcome = "reject";
-      outcomeLabel = "拒答/人工";
-    }
-    if (!silent && lastGateOutcome !== outcome) {
-      lastGateOutcome = outcome;
-      pushLog("gate", outcomeLabel + "（p_flat=" + p.toFixed(2) + ", θ=" + th.toFixed(2) + "）", {
-        outcome: outcome, p_flat: p, threshold: th, scenario: current
-      });
-    } else if (silent) {
-      lastGateOutcome = outcome;
     }
   }
 
   var thTimer = null;
   document.getElementById("threshold").addEventListener("input", function () {
-    updateGate(true);
+    updateGate();
+    updatePredictPrompt();
     clearTimeout(thTimer);
     thTimer = setTimeout(function () {
-      var th = getThreshold();
-      pushLog("threshold", "threshold=" + th.toFixed(2) + "（场景 " + (current === "fuzzy" ? "0.55" : "0.92") + "）", {
-        threshold: th, scenario: current
-      });
-      updateGate(false);
+      noteThresholdEdit(getThreshold());
+      refreshLogUI();
     }, 350);
   });
 
@@ -2237,14 +2550,12 @@ footer {
       document.querySelectorAll(".scenario-btns button").forEach(function (b) { b.classList.remove("active"); });
       btn.classList.add("active");
       current = btn.getAttribute("data-sc");
-      var label = current === "fuzzy" ? "模糊 0.55" : "校准 0.92";
-      pushLog("scenario", label, { scenario: current, p_flat: scenarios[current].flat });
-      lastGateOutcome = null;
-      setBars(current, false);
+      setBars(current);
+      restorePredictUI();
+      refreshLogUI();
     });
   });
 
-  /* —— Agent state cards —— */
   var cards = document.querySelectorAll(".state-card");
   cards.forEach(function (card) {
     function activate() {
@@ -2254,9 +2565,8 @@ footer {
       });
       card.classList.add("active");
       card.setAttribute("aria-pressed", "true");
-      var st = card.getAttribute("data-state");
-      currentAgent = st || "high";
-      pushLog("agent_state", agentLabels[st] || st, { state: st });
+      currentAgent = card.getAttribute("data-state") || "high";
+      refreshLogUI();
     }
     card.addEventListener("click", activate);
     card.addEventListener("keydown", function (e) {
@@ -2264,38 +2574,9 @@ footer {
     });
   });
 
-  /* —— Section visits —— */
-  var sectionNames = {
-    contrast: "生成式 LLM vs 决策模型",
-    flow: "一次前向：状态 → 校准概率",
-    demo: "互动示例：要不要平仓？",
-    calib: "校准长什么样",
-    agent: "Agent 闸门",
-    products: "快速选型",
-    "learn-log": "学习日志"
-  };
-  var seenSections = {};
-  if ("IntersectionObserver" in window) {
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (!entry.isIntersecting) return;
-        var id = entry.target.id;
-        if (!id || seenSections[id]) return;
-        if (entry.intersectionRatio < 0.35) return;
-        seenSections[id] = true;
-        pushLog("section", sectionNames[id] || id, { section: id });
-      });
-    }, { threshold: [0.35, 0.5] });
-    Object.keys(sectionNames).forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) io.observe(el);
-    });
-  }
-
-  /* init */
-  setBars("fuzzy", true);
+  setBars("fuzzy");
+  persistThreshMeta();
   refreshLogUI();
-  pushLog("section", "进入课件", { section: "hero" });
 })();
 </script>
 </body>

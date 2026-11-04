@@ -33,3 +33,7 @@ CORS / 网络失败时会 toast 并回退「复制到剪贴板」。
 ## 本地文件
 
 源文件同步维护于工作区 `/workspace/slides/decision-course/`。
+
+## Learning log schema
+
+Submit payload uses locked schema **`dm-learnlog-v1`** (`learning-log.schema.json`). Webhook secrets stay in browser localStorage / private `webhook-config.local.js` — never commit keys.

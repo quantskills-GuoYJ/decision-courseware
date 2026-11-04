@@ -1,0 +1,124 @@
+{
+  "v": "dm-learnlog-v1",
+  "course": "第0课",
+  "lessonId": "lesson-0",
+  "submittedAt": "2026-11-04T03:20:00.000Z",
+  "sections": [
+    {
+      "id": "contrast",
+      "title": "生成式 LLM vs 决策模型",
+      "feynman": {
+        "text": "LLM 擅长说，决策模型要给出可设门槛的校准概率，才能当闸门。",
+        "restated": true,
+        "status": "已复述"
+      },
+      "comments": "「像概率」和真正校准概率差在哪？还想再看一例。"
+    },
+    {
+      "id": "flow",
+      "title": "一次前向：状态 → 校准概率",
+      "feynman": {
+        "text": "输入状态，一次前向出动作分布，概率要对得上长期频率。",
+        "restated": true,
+        "status": "已复述"
+      },
+      "comments": ""
+    },
+    {
+      "id": "demo",
+      "title": "互动示例：要不要平仓？",
+      "feynman": {
+        "text": "",
+        "restated": false,
+        "status": "未复述"
+      },
+      "comments": "模糊 0.55 被拦感觉对，但门槛怎么定还没底。"
+    },
+    {
+      "id": "calib",
+      "title": "校准长什么样",
+      "feynman": {
+        "text": "校准好了，说 90% 的时候大约真有九成对。",
+        "restated": true,
+        "status": "已复述"
+      },
+      "comments": ""
+    },
+    {
+      "id": "agent",
+      "title": "Agent 闸门：三态 + 双层",
+      "feynman": {
+        "text": "高自动、中复核、低人工；模型内部门和应用执行门要分开。",
+        "restated": true,
+        "status": "已复述"
+      },
+      "comments": "AutoThink 和应用门容易混，想多看一张对照表。"
+    },
+    {
+      "id": "products",
+      "title": "快速选型：Jev / Laya / StartLux",
+      "feynman": {
+        "text": "",
+        "restated": false,
+        "status": "未复述"
+      },
+      "comments": ""
+    }
+  ],
+  "items": [
+    {
+      "item_id": "pr-gate-fuzzy",
+      "type": "predict_reveal",
+      "sectionId": "demo",
+      "prompt": "阈值 θ=0.70、场景「模糊 0.55」时，闸门会怎样？",
+      "prediction": "通过·可自动",
+      "reveal": "拒答/转人工",
+      "correct": false
+    },
+    {
+      "item_id": "pr-gate-calib",
+      "type": "predict_reveal",
+      "sectionId": "demo",
+      "prompt": "阈值 θ=0.70、场景「校准 0.92」时，闸门会怎样？",
+      "prediction": "通过·可自动",
+      "reveal": "通过·可自动",
+      "correct": true
+    },
+    {
+      "item_id": "qz-prob-vs-dm",
+      "type": "quiz",
+      "sectionId": "contrast",
+      "prompt": "口头「大概一半」算决策模型吗？",
+      "choice": "算——有数字就是决策模型",
+      "correct": false,
+      "answerKey": "不算——像概率 ≠ 可校准、可设门槛的决策模型"
+    },
+    {
+      "item_id": "qz-two-gates",
+      "type": "quiz",
+      "sectionId": "agent",
+      "prompt": "AutoThink 内部门 与 App 执行门 是否同一层？",
+      "choice": "否，应分开",
+      "correct": true,
+      "answerKey": "否，应分开"
+    },
+    {
+      "item_id": "cd-flat-contract",
+      "type": "contract_draft",
+      "sectionId": "demo",
+      "state": "BTC 永续 · 多仓 2.4× · 浮盈 +3.1% · 资金费率转负 · 盘口卖压抬升",
+      "questions": "[平仓, 持有, 加仓] · 是否自动平仓？"
+    }
+  ],
+  "snapshot": {
+    "threshold": 0.7,
+    "threshold_from": 0.7,
+    "threshold_to": 0.7,
+    "threshold_edits": 2,
+    "compareView": "both",
+    "triState": "mid",
+    "scenario": "fuzzy",
+    "pFlat": 0.55,
+    "gate": "block"
+  }
+}
