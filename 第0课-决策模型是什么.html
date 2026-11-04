@@ -108,6 +108,32 @@ a:hover { text-decoration: underline; }
   padding: 0.1em 0.35em;
   border-radius: 4px;
 }
+.diag-banner {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.1rem;
+  background: var(--bg2);
+  border: 1px solid rgba(34,211,238,0.35);
+  border-radius: var(--radius);
+  color: var(--text);
+  text-decoration: none;
+}
+.diag-banner:hover { text-decoration: none; border-color: var(--cyan); }
+.diag-banner strong { display: block; color: var(--cyan); font-size: 0.95rem; }
+.diag-banner .diag-sub { display: block; color: var(--muted); font-size: 0.85rem; font-weight: 400; }
+.diag-go {
+  background: var(--cyan);
+  color: #042026;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
 
 /* —— Sections —— */
 section { margin-bottom: 3rem; }
@@ -1128,6 +1154,13 @@ footer {
       <div class="tag">⚠ 先钉死这个盲点</div>
       <div><code>吐了个像概率的答案</code> ≠ 决策模型。真正的决策模型硬性要求三件事：<strong>选项钉死</strong>、<strong>校准概率</strong>、<strong>可设门槛</strong>。</div>
     </div>
+    <a class="diag-banner" href="第0课-诊结与深化可视化.html">
+      <span>
+        <strong>13:21 学习诊断 + 深化可视化</strong>
+        <span class="diag-sub">三条主张、门槛不等式、契约与费曼，以及原语 / LGBM / 温度 / 选型。</span>
+      </span>
+      <span class="diag-go">打开诊结页 →</span>
+    </a>
   </header>
 
   <!-- 2. Contrast -->
@@ -1648,6 +1681,7 @@ footer {
       <a href="https://laya.studio/learn/rlcd-reinforcement-learning-calibrated-decisions" target="_blank" rel="noopener">rlcd</a>
       <a href="https://wilsonwu.me/zh/blog/2026/jev-vs-laya/" target="_blank" rel="noopener">jev-laya</a>
       <a href="https://systemonemodels.ai/compare/laya-vs-startlux-decision" target="_blank" rel="noopener">compare</a>
+      <a href="第0课-诊结与深化可视化.html">诊结可视化</a>
     </div>
   </footer>
 </div>
