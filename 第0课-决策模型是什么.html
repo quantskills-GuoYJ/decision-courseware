@@ -1589,7 +1589,7 @@ footer {
           </div>
           <div class="webhook-setup" id="webhookSetup" aria-live="polite">
             <div class="ws-title">云端提交设置</div>
-            <p class="ws-hint">粘贴 Grok Bot 例程「决策课件学习日志提交」的 webhook URL 与 sender key。保存到本机 localStorage（不会写进仓库）。也可放同目录 <code>webhook-config.js</code>：<code>window.COURSE_WEBHOOK = { url, key }</code>。</p>
+            <p class="ws-hint">默认走云端代理一键提交（密钥不在浏览器）。若代理不可用，可粘贴例程 webhook URL 与 sender key 到本机 localStorage，或改 <code>webhook-config.js</code>。</p>
             <label>Webhook URL
               <input type="url" id="webhookUrlInput" placeholder="https://…/webhook/…" autocomplete="off" spellcheck="false">
             </label>
@@ -2201,7 +2201,10 @@ footer {
   }
 
   /* —— Webhook —— */
-  function getWebhookConfig() {
+  function getSubmitEndpoint() {
+    var proxy = (typeof window !== "undefined" && window.COURSE_SUBMIT && typeof window.COURSE_SUBMIT.url === "string")
+      ? window.COURSE_SUBMIT.url.trim() : "";
+    if (proxy) return { url: proxy, key: "", mode: "proxy" };
     var cfg = (typeof window !== "undefined" && window.COURSE_WEBHOOK) ? window.COURSE_WEBHOOK : null;
     var url = "", key = "";
     if (cfg && typeof cfg === "object") {
@@ -2212,8 +2215,9 @@ footer {
     }
     if (!url) url = readStored(WEBHOOK_URL_KEY).trim();
     if (!key) key = readStored(WEBHOOK_KEY_KEY).trim();
-    return { url: url, key: key, fromFile: !!(cfg && cfg.url) };
+    return { url: url, key: key, mode: (url && key) ? "direct" : "none", fromFile: !!(cfg && cfg.url) };
   }
+  function getWebhookConfig() { return getSubmitEndpoint(); }
   function refreshWebhookStatus() {
     var st = document.getElementById("webhookStatus");
     var urlIn = document.getElementById("webhookUrlInput");
@@ -2222,15 +2226,18 @@ footer {
     if (urlIn && !urlIn.value) urlIn.value = readStored(WEBHOOK_URL_KEY);
     if (keyIn && !keyIn.value) keyIn.value = readStored(WEBHOOK_KEY_KEY);
     if (!st) return;
-    if (cfg.url && cfg.key) {
+    if (cfg.mode === "proxy") {
+      st.className = "ws-status ok";
+      st.textContent = "已走云端代理 · 可一键提交（无需填写 key）";
+    } else if (cfg.url && cfg.key) {
       st.className = "ws-status ok";
       st.textContent = cfg.fromFile ? "已配置（webhook-config.js）· 可一键提交" : "已配置（本机 localStorage）· 可一键提交";
     } else if (cfg.url || cfg.key) {
       st.className = "ws-status warn";
-      st.textContent = "配置不完整 · 需要 URL 与 sender key";
+      st.textContent = "配置不完整 · 需要 URL 与 sender key（或依赖云端代理）";
     } else {
       st.className = "ws-status";
-      st.textContent = "未配置 · 提交前请先保存";
+      st.textContent = "未配置 · 提交前请先保存，或确认 webhook-config.js 含 COURSE_SUBMIT.url";
     }
   }
   function openWebhookSetup(focus) {
@@ -2292,10 +2299,10 @@ footer {
     } else { fallbackCopy(md); ok(); }
   }
   function doCloudSubmit() {
-    var cfg = getWebhookConfig();
-    if (!cfg.url || !cfg.key) {
+    var cfg = getSubmitEndpoint();
+    if (!cfg.url || (cfg.mode === "direct" && !cfg.key)) {
       openWebhookSetup(true);
-      showToast("请先填写 webhook URL 与 key");
+      showToast(cfg.mode === "proxy" ? "代理地址缺失" : "请先填写 webhook URL 与 key，或确认云端代理已配置");
       return;
     }
     var log = buildLearningLog();
@@ -2309,10 +2316,12 @@ footer {
       schema: SCHEMA_V,
       submittedAt: log.submittedAt
     };
+    var headers = { "Content-Type": "application/json" };
+    if (cfg.mode === "direct" && cfg.key) headers["Authorization"] = "Bearer " + cfg.key;
     setSubmitBusy(true);
     fetch(cfg.url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + cfg.key },
+      headers: headers,
       body: JSON.stringify(body),
       mode: "cors",
       credentials: "omit"
