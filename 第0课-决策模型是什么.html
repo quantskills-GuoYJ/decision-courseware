@@ -871,6 +871,89 @@ footer {
 }
 
 
+/* —— Inline learning feedback (13:21:46) —— */
+.claim-strip {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+.claim-strip a, .claim-strip span.cg {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 0.28rem 0.65rem;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+}
+.claim-strip a.ok { color: var(--ok); border-color: rgba(52,211,153,.45); }
+.claim-strip a.mid { color: var(--cyan); border-color: rgba(34,211,238,.45); }
+.claim-strip a.warn { color: var(--warn); border-color: rgba(251,191,36,.45); }
+.claim-strip span.cg { color: var(--muted); font-weight: 600; }
+.learn-fb {
+  margin-top: 0.85rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--cyan);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem 1rem;
+}
+.learn-fb .lf-h {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--cyan);
+  margin-bottom: 0.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+.learn-fb .lf-match { color: var(--muted); font-weight: 600; letter-spacing: 0; }
+.learn-fb .lf-match.hit { color: var(--ok); }
+.learn-fb .lf-match.drift { color: var(--warn); }
+.learn-fb .lf-fy, .learn-fb .lf-c { font-size: 0.9rem; margin: 0.25rem 0; }
+.learn-fb .lf-c strong { color: var(--lime); }
+.lf-viz { margin-top: 0.7rem; }
+.lf-seg { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.55rem; }
+.lf-seg button {
+  font: inherit; font-size: 0.78rem; font-weight: 650;
+  background: var(--bg2); color: var(--muted);
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.28rem 0.65rem; cursor: pointer;
+}
+.lf-seg button.active { color: var(--cyan); border-color: rgba(34,211,238,.5); background: rgba(34,211,238,.12); }
+.lf-row { display: grid; grid-template-columns: 3.6em 1fr 3em; gap: 0.4rem; align-items: center; font-size: 0.75rem; margin: 0.22rem 0; }
+.lf-row b { font-family: var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+.lf-meter { height: 10px; background: #0d1117; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+.lf-meter i { display: block; height: 100%; width: 0; transition: width .2s ease; }
+.lf-split { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+@media (max-width: 640px) { .lf-split, .lf-gates, .lf-blanks { grid-template-columns: 1fr; } }
+.lf-side { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 0.55rem 0.65rem; }
+.lf-side h4 { font-size: 0.78rem; margin-bottom: 0.15rem; }
+.lf-gates { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem; }
+.lf-gate { text-align: center; background: var(--bg2); border: 1px dashed var(--border); border-radius: 10px; padding: 0.65rem 0.4rem; }
+.lf-gate b { display: block; font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.lf-gate span, .lf-gate em { display: block; font-size: 0.75rem; color: var(--muted); font-style: normal; }
+.lf-gate.bad b { color: var(--danger); }
+.lf-gate.ok b { color: var(--ok); }
+.lf-note { font-size: 0.78rem; color: var(--muted); margin-top: 0.4rem; }
+.lf-range { width: 100%; accent-color: var(--cyan); margin: 0.35rem 0; }
+.lf-radios { display: grid; gap: 0.4rem; margin: 0.55rem 0; }
+.lf-radios label { display: flex; gap: 0.45rem; align-items: flex-start; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.65rem; font-size: 0.88rem; cursor: pointer; }
+.lf-blanks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; }
+.learn-fb input[type="text"] {
+  width: 100%; margin-top: 0.3rem; background: var(--bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px; padding: 0.45rem 0.6rem; font: inherit; font-size: 0.88rem;
+}
+.learn-fb input[type="text"]:focus { outline: none; border-color: var(--cyan); }
+.lf-fb { margin-top: 0.45rem; font-size: 0.82rem; }
+.lf-fb.ok { color: var(--ok); }
+.lf-fb.bad { color: var(--warn); }
+.lf-ghost { margin-top: 0.45rem; background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 0.3rem 0.6rem; font: inherit; font-size: 0.78rem; cursor: pointer; }
+
 /* —— Per-section comments —— */
 .sec-layout {
   display: grid;
@@ -1154,13 +1237,12 @@ footer {
       <div class="tag">⚠ 先钉死这个盲点</div>
       <div><code>吐了个像概率的答案</code> ≠ 决策模型。真正的决策模型硬性要求三件事：<strong>选项钉死</strong>、<strong>校准概率</strong>、<strong>可设门槛</strong>。</div>
     </div>
-    <a class="diag-banner" href="第0课-诊结与深化可视化.html">
-      <span>
-        <strong>13:21 学习诊断 + 深化可视化</strong>
-        <span class="diag-sub">三条主张、门槛不等式、契约与费曼，以及原语 / LGBM / 温度 / 选型。</span>
-      </span>
-      <span class="diag-go">打开诊结页 →</span>
-    </a>
+    <div class="claim-strip" id="claimStrip">
+      <a class="ok" href="#fb-demo">③ 门槛已过</a>
+      <a class="mid" href="#lesson-close">② 契约基本过 · 题型仍开</a>
+      <a class="warn" href="#fb-contrast">① 费曼仍虚</a>
+      <span class="cg">0.55 &lt; 0.70 拒答 · 0.92 ≥ 0.70 通过 · state「BTC永续，震荡，动量因子0.8」</span>
+    </div>
   </header>
 
   <!-- 2. Contrast -->
@@ -1224,6 +1306,21 @@ footer {
       <textarea id="secNote-contrast" data-section="contrast" placeholder="对本节的疑问 / 盲点 / 想法…" rows="4"></textarea>
       <div class="sc-hint" id="secHint-contrast"></div>
     </aside>
+  </div>
+  <div class="learn-fb" id="fb-contrast" data-fb="contrast">
+    <div class="lf-h">学习反馈 · contrast <span class="lf-match" id="lfm-contrast"></span></div>
+    <p class="lf-fy">你写「LLM和决策模型的对比」=标题复读。请改成：决策模型必须同时满足「选项钉死 + 校准概率 + 可设门槛」。</p>
+    <p class="lf-c"><strong>评论·原语</strong>：<code>choice</code> 三选一；<code>score</code> 有序档；<code>noul</code> 是否成立（0–1）。同一 state 可混问。</p>
+    <div class="lf-viz">
+      <div class="lf-seg" id="lfPrimSeg">
+        <button type="button" class="active" data-prim="choice">choice</button>
+        <button type="button" data-prim="score">score</button>
+        <button type="button" data-prim="noul">noul</button>
+      </div>
+      <p class="lf-note">同一 state：BTC永续，震荡，动量因子 0.8</p>
+      <div id="lfPrimBars"></div>
+      <p class="lf-note" id="lfPrimOut"></p>
+    </div>
   </div>
 </section>
 
@@ -1302,6 +1399,28 @@ footer {
       <textarea id="secNote-flow" data-section="flow" placeholder="对本节的疑问 / 盲点 / 想法…" rows="4"></textarea>
       <div class="sc-hint" id="secHint-flow"></div>
     </aside>
+  </div>
+  <div class="learn-fb" id="fb-flow" data-fb="flow">
+    <div class="lf-h">学习反馈 · flow <span class="lf-match" id="lfm-flow"></span></div>
+    <p class="lf-fy">「state + 类型化问题 → 校准选项概率」✓ 保留。</p>
+    <p class="lf-c"><strong>评论·vs LGBM</strong>：都可吐概率；LGBM 训练时钉死类别，DM 每次请求由调用方钉选项、对准可设门槛。</p>
+    <div class="lf-viz">
+      <div class="lf-seg" id="lfQSeg">
+        <button type="button" class="active" data-q="flat">这次：平仓 / 持有 / 加仓</button>
+        <button type="button" data-q="side">换成：做多 / 观望 / 做空</button>
+      </div>
+      <div class="lf-split">
+        <div class="lf-side">
+          <h4 style="color:var(--cyan)">DM · 这次请求钉死</h4>
+          <div id="lfDmBars"></div>
+        </div>
+        <div class="lf-side">
+          <h4 style="color:var(--warn)">LGBM · 训练时锁死</h4>
+          <div id="lfLgbmBars"></div>
+        </div>
+      </div>
+      <p class="lf-note" id="lfLgbmNote">LGBM 的类别头不会跟着换题。</p>
+    </div>
   </div>
 </section>
 
@@ -1398,6 +1517,18 @@ footer {
       <div class="sc-hint" id="secHint-demo"></div>
     </aside>
   </div>
+  <div class="learn-fb" id="fb-demo" data-fb="demo">
+    <div class="lf-h">学习反馈 · demo <span class="lf-match" id="lfm-demo"></span></div>
+    <p class="lf-fy">「LLM 输出模糊，再交 DM 校准」易混——不是流水线；DM <strong>一次前向</strong>就输出已校准概率。</p>
+    <p class="lf-c"><strong>评论·θ</strong>：按误判成本做 Risk–Coverage 扫描，不是固定 0.9；口诀 <code>p&lt;θ→拒答</code>。</p>
+    <div class="lf-viz">
+      <div class="lf-gates" aria-label="13:21 门槛不等式">
+        <div class="lf-gate bad"><b>0.55</b><span>0.55 &lt; θ 0.70</span><em>拒答 / 转人工 ✓</em></div>
+        <div class="lf-gate ok"><b>0.92</b><span>0.92 ≥ θ 0.70</span><em>通过 · 可自动 ✓</em></div>
+      </div>
+      <p class="lf-note">契约 state「BTC永续，震荡，动量因子0.8」，questions「平仓、持有、加仓」。题型 choice 还是 noul 仍开，写在<a href="#lesson-close">页末</a>。</p>
+    </div>
+  </div>
 </section>
 
   <!-- 5. Calibration -->
@@ -1490,6 +1621,16 @@ footer {
       <div class="sc-hint" id="secHint-calib"></div>
     </aside>
   </div>
+  <div class="learn-fb" id="fb-calib" data-fb="calib">
+    <div class="lf-h">学习反馈 · calib <span class="lf-match" id="lfm-calib"></span></div>
+    <p class="lf-fy">仅写 RLCD 不完整：独立校准集拟合温度 → 测试集看 ECE/Brier；<strong>禁用训练集</strong>拟合温度；温度只改锐度不改 argmax。</p>
+    <div class="lf-viz">
+      <label class="lf-note" for="lfTemp">温度 T <output id="lfTempOut">1.00</output></label>
+      <input class="lf-range" type="range" id="lfTemp" min="25" max="400" value="100" step="5">
+      <div id="lfTempBars"></div>
+      <p class="lf-note">固定 logits。argmax 始终是 <strong style="color:var(--lime)" id="lfArgmax">平仓</strong>。T 只改尖或平。</p>
+    </div>
+  </div>
 </section>
 
   <!-- 6. Agent gate -->
@@ -1557,6 +1698,10 @@ footer {
       <div class="sc-hint" id="secHint-agent"></div>
     </aside>
   </div>
+  <div class="learn-fb" id="fb-agent" data-fb="agent">
+    <div class="lf-h">学习反馈 · agent <span class="lf-match" id="lfm-agent"></span></div>
+    <p class="lf-fy">双层方向对。补一句：模型内部门「想清楚了」，App 执行门仍可不自动下单。</p>
+  </div>
 </section>
 
   <!-- 7. Product pick -->
@@ -1608,7 +1753,42 @@ footer {
       <div class="sc-hint" id="secHint-products"></div>
     </aside>
   </div>
+  <div class="learn-fb" id="fb-products" data-fb="products">
+    <div class="lf-h">学习反馈 · products <span class="lf-match" id="lfm-products"></span></div>
+    <p class="lf-fy">「不同模型选型」太虚。改记：托管→Jev；本地可微→Laya；开源+AutoThink→StartLux。</p>
+    <div class="lf-viz">
+      <div class="lf-seg" id="lfProdSeg">
+        <button type="button" class="active" data-prod="jev">托管 → Jev</button>
+        <button type="button" data-prod="laya">本地可微 → Laya</button>
+        <button type="button" data-prod="start">开源+AutoThink → StartLux</button>
+      </div>
+      <p class="lf-note" id="lfProdOut">Jev：托管、零样本、长上下文、多选项 → 云 API。</p>
+    </div>
+  </div>
 </section>
+
+  <section class="learn-fb" id="lesson-close" style="margin-top:1.5rem">
+    <div class="lf-h">页末收束 · 13:21:46</div>
+    <p class="lf-fy">① 平仓用 <code>choice</code> 还是三个 <code>noul</code>？为什么？② 三件套填空。</p>
+    <div class="lf-radios" role="radiogroup" aria-label="choice 或 noul">
+      <label><input type="radio" name="lfPrimKind" value="choice"> <span><code>choice</code> · 三选一，一次三路概率</span></label>
+      <label><input type="radio" name="lfPrimKind" value="noul"> <span>三个 <code>noul</code> · 各自「是否」</span></label>
+    </div>
+    <label class="lf-note" for="lfWhy">为什么
+      <input type="text" id="lfWhy" maxlength="160" placeholder="一句理由" autocomplete="off">
+    </label>
+    <p class="lf-fb" id="lfPrimFb"></p>
+    <p class="lf-c" style="margin-top:.8rem">决策模型必须同时满足：</p>
+    <div class="lf-blanks">
+      <input type="text" id="lfB1" aria-label="第一空" placeholder="____" autocomplete="off">
+      <input type="text" id="lfB2" aria-label="第二空" placeholder="____" autocomplete="off">
+      <input type="text" id="lfB3" aria-label="第三空" placeholder="____" autocomplete="off">
+    </div>
+    <p class="lf-fb" id="lfBlankFb"></p>
+    <button type="button" class="lf-ghost" id="lfReveal">对照第0课的三句话</button>
+    <p class="lf-note" id="lfThree" hidden>选项钉死、校准概率、可设门槛。顺序不限。</p>
+    <p class="lf-note" id="lfSave">写在本机，不发 webhook。</p>
+  </section>
 
 
   <!-- 8. Learning log -->
@@ -1681,7 +1861,7 @@ footer {
       <a href="https://laya.studio/learn/rlcd-reinforcement-learning-calibrated-decisions" target="_blank" rel="noopener">rlcd</a>
       <a href="https://wilsonwu.me/zh/blog/2026/jev-vs-laya/" target="_blank" rel="noopener">jev-laya</a>
       <a href="https://systemonemodels.ai/compare/laya-vs-startlux-decision" target="_blank" rel="noopener">compare</a>
-      <a href="第0课-诊结与深化可视化.html">诊结可视化</a>
+      <a href="#fb-contrast">本节学习反馈</a>
     </div>
   </footer>
 </div>
@@ -2867,6 +3047,213 @@ footer {
   setBars("fuzzy");
   persistThreshMeta();
   refreshLogUI();
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var KEY = "dm_lesson0_diag_followup";
+  function norm(s) {
+    return String(s || "").toLowerCase().replace(/\s+/g, "").replace(/[：:，,。．.、→\-—]/g, "");
+  }
+  var SNAP = {
+    contrast: ["llm和决策模型的对比"],
+    flow: ["输入状态类型化问题输出校准后的选项概率", "state类型化问题校准选项概率"],
+    demo: ["用llm输出模糊用决策模型进行校准", "llm输出模糊再交dm校准"],
+    calib: ["通过rlcd训练进行校准", "通过rlcd训练进行校准"],
+    agent: ["两层闸门autothink模型侧app执行侧", "两层闸门"],
+    products: ["不同模型选型"]
+  };
+  function matchesSnap(id, text) {
+    var n = norm(text);
+    if (!n) return "empty";
+    var keys = SNAP[id] || [];
+    for (var i = 0; i < keys.length; i++) {
+      if (n.indexOf(keys[i]) >= 0) return "hit";
+    }
+    return "drift";
+  }
+  function paintMatch() {
+    document.querySelectorAll(".learn-fb[data-fb]").forEach(function (box) {
+      var id = box.getAttribute("data-fb");
+      var ta = document.getElementById("secFeynman-" + id);
+      var chip = document.getElementById("lfm-" + id);
+      if (!chip) return;
+      var state = matchesSnap(id, ta ? ta.value : "");
+      chip.className = "lf-match" + (state === "hit" ? " hit" : state === "drift" ? " drift" : "");
+      chip.textContent = state === "hit" ? "对上 13:21 原文" : state === "drift" ? "你已改写；下面仍是对 13:21 那版" : "13:21 的反馈（这格目前是空的）";
+    });
+  }
+  ["contrast", "flow", "demo", "calib", "agent", "products"].forEach(function (id) {
+    var ta = document.getElementById("secFeynman-" + id);
+    if (ta) ta.addEventListener("input", paintMatch);
+  });
+  paintMatch();
+
+  function bars(host, labels, probs, color) {
+    if (!host) return;
+    host.innerHTML = "";
+    labels.forEach(function (lab, i) {
+      var row = document.createElement("div");
+      row.className = "lf-row";
+      var name = document.createElement("span");
+      name.textContent = lab;
+      var meter = document.createElement("div");
+      meter.className = "lf-meter";
+      var fill = document.createElement("i");
+      fill.style.width = Math.round(probs[i] * 100) + "%";
+      fill.style.background = color;
+      meter.appendChild(fill);
+      var num = document.createElement("b");
+      num.textContent = probs[i].toFixed(2);
+      row.appendChild(name); row.appendChild(meter); row.appendChild(num);
+      host.appendChild(row);
+    });
+  }
+  function showPrim(which) {
+    var host = document.getElementById("lfPrimBars");
+    var out = document.getElementById("lfPrimOut");
+    if (which === "score") {
+      var ps = [0.05, 0.12, 0.23, 0.40, 0.20];
+      var ev = ps.reduce(function (a, p, i) { return a + (i + 1) * p; }, 0);
+      bars(host, ["1", "2", "3", "4", "5"], ps, "var(--warn)");
+      if (out) out.textContent = "score：有序档分布，期望分 Σ i·p(i) = " + ev.toFixed(2);
+      return;
+    }
+    if (which === "noul") {
+      bars(host, ["是", "否"], [0.62, 0.38], "var(--lime)");
+      if (out) out.textContent = "noul：一个 0–1「是」概率。靠近 0.5 最不确定。不是三路 choice。";
+      return;
+    }
+    bars(host, ["平仓", "持有", "加仓"], [0.62, 0.28, 0.10], "var(--cyan)");
+    if (out) out.textContent = "choice = 平仓 · confidence = 0.62";
+  }
+  document.querySelectorAll("#lfPrimSeg button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("#lfPrimSeg button").forEach(function (b) { b.classList.toggle("active", b === btn); });
+      showPrim(btn.getAttribute("data-prim"));
+    });
+  });
+  showPrim("choice");
+
+  var QS = {
+    flat: { labels: ["平仓", "持有", "加仓"], p: [0.62, 0.28, 0.10] },
+    side: { labels: ["做多", "观望", "做空"], p: [0.48, 0.37, 0.15] }
+  };
+  function showQ(id) {
+    var q = QS[id] || QS.flat;
+    bars(document.getElementById("lfDmBars"), q.labels, q.p, "var(--cyan)");
+    bars(document.getElementById("lfLgbmBars"), ["跌", "平", "涨"], [0.41, 0.37, 0.22], "var(--warn)");
+    var note = document.getElementById("lfLgbmNote");
+    if (note) note.textContent = id === "side" ? "题已换成方向，LGBM 仍是跌/平/涨。" : "LGBM 的类别头不会跟着换题。";
+  }
+  document.querySelectorAll("#lfQSeg button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("#lfQSeg button").forEach(function (b) { b.classList.toggle("active", b === btn); });
+      showQ(btn.getAttribute("data-q"));
+    });
+  });
+  showQ("flat");
+
+  var LOGITS = [1.6, 0.15, -0.9];
+  var TLABS = ["平仓", "持有", "加仓"];
+  function softmax(z, T) {
+    var scaled = z.map(function (v) { return v / T; });
+    var m = Math.max.apply(null, scaled);
+    var exps = scaled.map(function (v) { return Math.exp(v - m); });
+    var s = exps.reduce(function (a, b) { return a + b; }, 0);
+    return exps.map(function (e) { return e / s; });
+  }
+  var temp = document.getElementById("lfTemp");
+  function showTemp() {
+    var T = temp ? Number(temp.value) / 100 : 1;
+    var out = document.getElementById("lfTempOut");
+    if (out) out.textContent = T.toFixed(2);
+    var ps = softmax(LOGITS, T);
+    bars(document.getElementById("lfTempBars"), TLABS, ps, "#c084fc");
+    var arg = 0;
+    ps.forEach(function (p, i) { if (p > ps[arg]) arg = i; });
+    var lab = document.getElementById("lfArgmax");
+    if (lab) lab.textContent = TLABS[arg];
+  }
+  if (temp) temp.addEventListener("input", showTemp);
+  showTemp();
+
+  var PROD = {
+    jev: "Jev：托管、零样本、长上下文、多选项 → 云 API。",
+    laya: "Laya：本地 / 数据不出境、可微调、Apache、低延迟 → 自托管。",
+    start: "StartLux：开源体量谱系 + Instant/AutoThink → 自托管族。"
+  };
+  document.querySelectorAll("#lfProdSeg button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("#lfProdSeg button").forEach(function (b) { b.classList.toggle("active", b === btn); });
+      var el = document.getElementById("lfProdOut");
+      if (el) el.textContent = PROD[btn.getAttribute("data-prod")] || "";
+    });
+  });
+
+  function readStore() {
+    try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; }
+  }
+  function writeStore(d) { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} }
+  var CONCEPTS = [
+    { id: "pin", keys: ["选项钉死", "钉死选项", "选项空间钉死"] },
+    { id: "cal", keys: ["校准概率", "已校准", "概率校准", "校准"] },
+    { id: "thr", keys: ["可设门槛", "执行门槛", "可设阈值", "门槛"] }
+  ];
+  function conceptOf(text) {
+    var n = norm(text);
+    if (!n) return null;
+    for (var i = 0; i < CONCEPTS.length; i++) {
+      for (var k = 0; k < CONCEPTS[i].keys.length; k++) {
+        if (n.indexOf(norm(CONCEPTS[i].keys[k])) >= 0) return CONCEPTS[i].id;
+      }
+    }
+    return null;
+  }
+  var whyEl = document.getElementById("lfWhy");
+  var blanks = [document.getElementById("lfB1"), document.getElementById("lfB2"), document.getElementById("lfB3")];
+  function paintClose() {
+    var picked = document.querySelector('input[name="lfPrimKind"]:checked');
+    var kind = picked ? picked.value : "";
+    var why = whyEl ? whyEl.value : "";
+    var texts = blanks.map(function (el) { return el ? el.value : ""; });
+    var pfb = document.getElementById("lfPrimFb");
+    if (pfb) {
+      if (kind === "choice") { pfb.className = "lf-fb ok"; pfb.textContent = "对上了：三个互斥动作是一次 choice，三路概率加总为 1。"; }
+      else if (kind === "noul") { pfb.className = "lf-fb bad"; pfb.textContent = "三个 noul 是三个独立的「是」概率，加起来不必为 1。这组动作更贴 choice。"; }
+      else { pfb.className = "lf-fb"; pfb.textContent = ""; }
+    }
+    var seen = {};
+    texts.forEach(function (t) { var id = conceptOf(t); if (id) seen[id] = true; });
+    var nHit = Object.keys(seen).length;
+    var bfb = document.getElementById("lfBlankFb");
+    var any = texts.some(function (t) { return String(t).trim(); });
+    if (bfb) {
+      if (!any) { bfb.className = "lf-fb"; bfb.textContent = ""; }
+      else if (nHit === 3) { bfb.className = "lf-fb ok"; bfb.textContent = "三件套齐了。"; }
+      else { bfb.className = "lf-fb bad"; bfb.textContent = "已对上 " + nHit + "/3。"; }
+    }
+    writeStore({ kind: kind, why: why, blanks: texts });
+    var save = document.getElementById("lfSave");
+    if (save) save.textContent = (kind || why.trim() || any) ? "已写入本机（不发 webhook）" : "写在本机，不发 webhook。";
+  }
+  var saved = readStore();
+  if (saved.kind) {
+    var radio = document.querySelector('input[name="lfPrimKind"][value="' + saved.kind + '"]');
+    if (radio) radio.checked = true;
+  }
+  if (whyEl && typeof saved.why === "string") whyEl.value = saved.why;
+  if (Array.isArray(saved.blanks)) saved.blanks.forEach(function (v, i) { if (blanks[i] && typeof v === "string") blanks[i].value = v; });
+  document.querySelectorAll('input[name="lfPrimKind"]').forEach(function (el) { el.addEventListener("change", paintClose); });
+  if (whyEl) whyEl.addEventListener("input", paintClose);
+  blanks.forEach(function (el) { if (el) el.addEventListener("input", paintClose); });
+  var reveal = document.getElementById("lfReveal");
+  if (reveal) reveal.addEventListener("click", function () {
+    var t = document.getElementById("lfThree");
+    if (t) t.hidden = !t.hidden;
+  });
+  paintClose();
 })();
 </script>
 </body>
