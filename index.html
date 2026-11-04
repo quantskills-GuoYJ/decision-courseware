@@ -830,6 +830,9 @@ footer {
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
+  line-height: 1.45;
+  text-align: center;
+  max-width: min(36rem, calc(100vw - 2rem));
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s, transform 0.2s;
@@ -946,8 +949,18 @@ footer {
   color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.65rem;
 }
 .contract-draft textarea:focus { outline: none; border-color: var(--ok); box-shadow: 0 0 0 2px rgba(163,230,53,0.18); }
+.contract-draft .cd-hint { margin-top: 0.5rem; font-size: 0.78rem; color: var(--muted); line-height: 1.45; }
+.contract-draft .cd-hint.bad { color: #f87171; }
+.contract-draft .cd-hint.ok { color: var(--ok); }
+.contract-draft.needs-input { border-color: rgba(248,113,113,0.7); }
+.contract-draft textarea.needs-input { border-color: #f87171; box-shadow: 0 0 0 2px rgba(248,113,113,0.2); }
+.submit-gate-tip { margin-top: 0.65rem; font-size: 0.82rem; line-height: 1.45; }
+.submit-gate-tip.bad { color: #f87171; }
+.submit-gate-tip.warn { color: var(--warn); }
 .demo.locked-until-predict .threshold-panel { opacity: 0.45; pointer-events: none; }
 .predict-box.done { opacity: 0.92; }
+.predict-box.need-retry { border-color: rgba(248,113,113,0.7); }
+.predict-box button.pb-opt.wrong { border-color: #f87171; background: rgba(248,113,113,0.1); }
 
 /* —— Floating export bar —— */
 .export-float {
@@ -1306,21 +1319,22 @@ footer {
 
 
         <div class="contract-draft" id="contractDraft">
-          <div class="cd-title">平仓契约草稿 · contract_draft（可空）</div>
-          <label for="contractState">state（非结构化状态）</label>
+          <div class="cd-title">平仓契约草稿 · contract_draft（提交前必填）</div>
+          <label for="contractState">state（非结构化状态，必填）</label>
           <textarea id="contractState" placeholder="例：BTC 永续 · 多仓 2.4× · 浮盈 +3.1% · …" rows="2"></textarea>
-          <label for="contractQuestions">questions（钉死的选项问题）</label>
+          <label for="contractQuestions">questions（钉死的选项问题，必填）</label>
           <textarea id="contractQuestions" placeholder="例：[平仓, 持有, 加仓] · 是否自动平仓？" rows="2"></textarea>
+          <p class="cd-hint" id="contractHint">一键提交前，state 与 questions 都要写上内容（空格不算）。</p>
         </div>
 
         <div class="predict-box" id="predictBox" data-item-prefix="pr-gate">
-          <div class="pb-title">预测再揭晓 · 先猜闸门，再拖门槛</div>
+          <div class="pb-title">预测再揭晓 · 先猜闸门，猜错须再猜一次</div>
           <div class="pb-prompt" id="predictPrompt">阈值 θ≈0.70、当前场景下，闸门会怎样？</div>
           <div class="pb-opts" role="group" aria-label="预测选项">
             <button type="button" class="pb-opt" data-pred="通过·可自动">通过·可自动</button>
             <button type="button" class="pb-opt" data-pred="拒答/转人工">拒答/转人工</button>
           </div>
-          <div class="pb-fb" id="predictFb">先选一项预测，再操作门槛 / 场景。</div>
+          <div class="pb-fb" id="predictFb">先选一项预测，再操作门槛 / 场景。猜错后要再猜一次，选中与揭晓一致才算完成。</div>
         </div>
 
         <div class="threshold-panel">
@@ -1587,6 +1601,7 @@ footer {
             <button type="button" class="btn-learn ghost" id="btnClearLog">清空交互记录</button>
             <button type="button" class="btn-learn ghost" id="btnWebhookSetup">Webhook 设置</button>
           </div>
+          <div class="submit-gate-tip" id="submitGateTip" hidden></div>
           <div class="webhook-setup" id="webhookSetup" aria-live="polite">
             <div class="ws-title">云端提交设置</div>
             <p class="ws-hint">默认走云端代理一键提交（密钥不在浏览器）。若代理不可用，可粘贴例程 webhook URL 与 sender key 到本机 localStorage，或改 <code>webhook-config.js</code>。</p>
@@ -1659,6 +1674,7 @@ footer {
   var FEYNMAN_KEY = "dm_lesson0_feynman";
   var ITEMS_KEY = "dm_lesson0_items";
   var CONTRACT_KEY = "dm_lesson0_contract";
+  var PREDICT_RETRY_KEY = "dm_lesson0_predict_retry";
   var THRESH_META_KEY = "dm_lesson0_thresh_meta";
   var WEBHOOK_URL_KEY = "dm_webhook_url";
   var WEBHOOK_KEY_KEY = "dm_webhook_key";
@@ -1703,13 +1719,13 @@ footer {
     } catch (e) {}
   }
 
-  function showToast(msg) {
+  function showToast(msg, ms) {
     var t = document.getElementById("learnToast");
     if (!t) return;
     t.textContent = msg;
     t.classList.add("show");
     clearTimeout(showToast._tid);
-    showToast._tid = setTimeout(function () { t.classList.remove("show"); }, 2200);
+    showToast._tid = setTimeout(function () { t.classList.remove("show"); }, ms || 2200);
   }
 
   /* —— Live UI state —— */
@@ -1765,12 +1781,40 @@ footer {
 
   function persistSectionNotes() { writeJSON(SECTION_NOTES_KEY, sectionNotes); }
   function persistFeynman() { writeJSON(FEYNMAN_KEY, feynmanMap); }
+  function normEcho(s) {
+    return String(s || "").toLowerCase().replace(/\s+/g, "").replace(/[：:，,。．.、·\-—_「」"'“”‘’（）()]/g, "");
+  }
+  function isTitleEcho(text, title) {
+    var a = normEcho(text);
+    var b = normEcho(title);
+    if (!a || !b) return false;
+    if (a === b) return true;
+    var shorter = a.length < b.length ? a : b;
+    var longer = a.length < b.length ? b : a;
+    return longer.indexOf(shorter) >= 0 && (longer.length - shorter.length) <= 6;
+  }
+  function feynmanIssue(sid, text) {
+    var meta = null;
+    SECTION_META.forEach(function (m) { if (m.id === sid) meta = m; });
+    var t = String(text || "").trim();
+    if (!t) return "empty";
+    if (meta && isTitleEcho(t, meta.title)) return "echo";
+    return "";
+  }
   function updateFyStatus(sid, text) {
     var st = document.getElementById("secFyStatus-" + sid);
     if (!st) return;
-    var ok = !!(text && String(text).trim());
-    st.textContent = ok ? "已复述" : "未复述";
-    st.className = "fy-status " + (ok ? "ok" : "miss");
+    var issue = feynmanIssue(sid, text);
+    if (issue === "echo") {
+      st.textContent = "和本节标题太像 · 请换自己的话";
+      st.className = "fy-status miss";
+    } else if (issue === "empty") {
+      st.textContent = "未复述 · 建议用自己的话写 1–2 句";
+      st.className = "fy-status miss";
+    } else {
+      st.textContent = "已复述";
+      st.className = "fy-status ok";
+    }
   }
   function loadSectionUI() {
     SECTION_META.forEach(function (meta) {
@@ -1917,6 +1961,27 @@ footer {
   var contractQEl = document.getElementById("contractQuestions");
   var contractTimer = null;
   function persistContract() { writeJSON(CONTRACT_KEY, contract); }
+  function refreshContractHint(forceMsg) {
+    var hint = document.getElementById("contractHint");
+    var draft = document.getElementById("contractDraft");
+    var stateEmpty = !(contractStateEl && String(contractStateEl.value || "").trim());
+    var questionsEmpty = !(contractQEl && String(contractQEl.value || "").trim());
+    var showBad = !!forceMsg && (stateEmpty || questionsEmpty);
+    if (contractStateEl) contractStateEl.classList.toggle("needs-input", showBad && stateEmpty);
+    if (contractQEl) contractQEl.classList.toggle("needs-input", showBad && questionsEmpty);
+    if (draft) draft.classList.toggle("needs-input", showBad);
+    if (!hint) return;
+    if (showBad) {
+      hint.className = "cd-hint bad";
+      hint.textContent = forceMsg;
+    } else if (stateEmpty || questionsEmpty) {
+      hint.className = "cd-hint";
+      hint.textContent = "一键提交前，state 与 questions 都要写上内容（空格不算）。";
+    } else {
+      hint.className = "cd-hint ok";
+      hint.textContent = "契约已填写。若某一场景预测猜错，要再猜对才能一键提交。";
+    }
+  }
   if (contractStateEl) {
     contractStateEl.value = contract.state || "";
     contractStateEl.addEventListener("input", function () {
@@ -1924,6 +1989,7 @@ footer {
       contractTimer = setTimeout(function () {
         contract.state = contractStateEl.value;
         persistContract();
+        refreshContractHint();
       }, 400);
     });
   }
@@ -1934,22 +2000,53 @@ footer {
       contractTimer = setTimeout(function () {
         contract.questions = contractQEl.value;
         persistContract();
+        refreshContractHint();
       }, 400);
     });
   }
+  refreshContractHint();
 
   /* —— Predict then reveal —— */
-  var predictedScenarios = {}; // scenarioId -> {prediction, reveal, correct}
-  Object.keys(itemStore).forEach(function (k) {
-    var it = itemStore[k];
-    if (it && it.type === "predict_reveal") {
-      var sc = k.indexOf("calib") >= 0 ? "calib" : (k.indexOf("fuzzy") >= 0 ? "fuzzy" : null);
-      if (sc) predictedScenarios[sc] = it;
-    }
-  });
+  var predictedScenarios = {}; // scenarioId -> settled predict_reveal item
+  var predictRetry = readJSON(PREDICT_RETRY_KEY, {}) || {};
+  if (typeof predictRetry !== "object" || Array.isArray(predictRetry)) predictRetry = {};
   var demoPanel = document.getElementById("demoPanel");
   var predictFb = document.getElementById("predictFb");
   var predictPrompt = document.getElementById("predictPrompt");
+
+  function predictItemId(sc) { return sc === "calib" ? "pr-gate-calib" : "pr-gate-fuzzy"; }
+  function scenarioLabel(sc) { return sc === "calib" ? "校准 0.92" : "模糊 0.55"; }
+  function persistPredictRetry() { writeJSON(PREDICT_RETRY_KEY, predictRetry); }
+  function reconcilePredictState() {
+    ["fuzzy", "calib"].forEach(function (sc) {
+      var id = predictItemId(sc);
+      var it = itemStore[id];
+      if (it && it.type === "predict_reveal" && it.correct === true) {
+        predictedScenarios[sc] = it;
+        predictRetry[sc] = {
+          phase: "settled",
+          attempts: Math.max(1, (predictRetry[sc] && predictRetry[sc].attempts) || 1)
+        };
+      } else if (it && it.type === "predict_reveal" && it.correct === false) {
+        predictRetry[sc] = {
+          phase: "need-retry",
+          attempts: Math.max(1, (predictRetry[sc] && predictRetry[sc].attempts) || 1),
+          prediction: it.prediction || "",
+          reveal: it.reveal || ""
+        };
+        delete itemStore[id];
+        delete predictedScenarios[sc];
+      } else if (predictRetry[sc] && predictRetry[sc].phase === "need-retry") {
+        delete predictedScenarios[sc];
+      } else {
+        delete predictedScenarios[sc];
+        if (predictRetry[sc]) delete predictRetry[sc];
+      }
+    });
+    persistItems();
+    persistPredictRetry();
+  }
+  reconcilePredictState();
 
   function updatePredictPrompt() {
     if (!predictPrompt) return;
@@ -1959,30 +2056,42 @@ footer {
   }
   function unlockDemoIfReady() {
     if (!demoPanel) return;
-    if (predictedScenarios[current]) demoPanel.classList.remove("locked-until-predict");
+    var saved = predictedScenarios[current];
+    if (saved && saved.correct === true) demoPanel.classList.remove("locked-until-predict");
     else demoPanel.classList.add("locked-until-predict");
   }
   function restorePredictUI() {
     updatePredictPrompt();
     var box = document.getElementById("predictBox");
     var saved = predictedScenarios[current];
+    var retry = predictRetry[current];
+    var needRetry = !!(retry && retry.phase === "need-retry" && !(saved && saved.correct === true));
     if (!box) return;
     box.querySelectorAll(".pb-opt").forEach(function (b) {
-      b.classList.remove("picked", "correct");
-      if (saved && b.getAttribute("data-pred") === saved.prediction) {
-        b.classList.add("picked");
-        if (saved.correct) b.classList.add("correct");
+      b.classList.remove("picked", "correct", "wrong");
+      if (saved && saved.correct === true && b.getAttribute("data-pred") === saved.prediction) {
+        b.classList.add("picked", "correct");
+      } else if (needRetry && retry.prediction && b.getAttribute("data-pred") === retry.prediction) {
+        b.classList.add("picked", "wrong");
       }
     });
     if (predictFb) {
-      if (saved) {
-        predictFb.className = "pb-fb " + (saved.correct ? "ok" : "bad");
-        predictFb.textContent = "已预测：" + saved.prediction + " · 实际：" + saved.reveal + (saved.correct ? " · 猜对" : " · 未猜中");
+      if (saved && saved.correct === true) {
+        var again = retry && retry.attempts > 1;
+        predictFb.className = "pb-fb ok";
+        predictFb.textContent = (again ? "再猜命中：" : "已预测：") + saved.prediction + " · 实际：" + saved.reveal + " · 猜对";
         box.classList.add("done");
+        box.classList.remove("need-retry");
+      } else if (needRetry) {
+        var live = gateLabelFor(getThreshold(), current);
+        predictFb.className = "pb-fb bad";
+        predictFb.textContent = "未猜中。按当前门槛，实际是「" + live + "」。请再猜一次，选中与揭晓一致后，这一项才算完成。";
+        box.classList.remove("done");
+        box.classList.add("need-retry");
       } else {
         predictFb.className = "pb-fb";
-        predictFb.textContent = "先选一项预测，再操作门槛 / 场景。";
-        box.classList.remove("done");
+        predictFb.textContent = "先选一项预测，再操作门槛 / 场景。猜错后要再猜一次，选中与揭晓一致才算完成。";
+        box.classList.remove("done", "need-retry");
       }
     }
     unlockDemoIfReady();
@@ -1993,8 +2102,26 @@ footer {
       var th = getThreshold();
       var reveal = gateLabelFor(th, current);
       var correct = prediction === reveal;
-      var itemId = current === "calib" ? "pr-gate-calib" : "pr-gate-fuzzy";
-      var lab = current === "fuzzy" ? "模糊 0.55" : "校准 0.92";
+      var itemId = predictItemId(current);
+      var lab = scenarioLabel(current);
+      var prior = predictRetry[current] || { phase: "idle", attempts: 0 };
+      var attempts = (prior.attempts || 0) + 1;
+      if (!correct) {
+        predictRetry[current] = {
+          phase: "need-retry",
+          attempts: attempts,
+          prediction: prediction,
+          reveal: reveal
+        };
+        delete itemStore[itemId];
+        delete predictedScenarios[current];
+        persistItems();
+        persistPredictRetry();
+        restorePredictUI();
+        refreshLogUI();
+        showToast("猜错了，请再猜一次（与揭晓一致后才算完成）", 3200);
+        return;
+      }
       var item = {
         item_id: itemId,
         type: "predict_reveal",
@@ -2002,11 +2129,13 @@ footer {
         prompt: "阈值 θ=" + th.toFixed(2) + "、场景「" + lab + "」时，闸门会怎样？",
         prediction: prediction,
         reveal: reveal,
-        correct: correct
+        correct: true
       };
       itemStore[itemId] = item;
       predictedScenarios[current] = item;
+      predictRetry[current] = { phase: "settled", attempts: attempts };
       persistItems();
+      persistPredictRetry();
       restorePredictUI();
       refreshLogUI();
     });
@@ -2165,6 +2294,12 @@ footer {
       else if (it.type === "predict_reveal") lines.push("predict " + it.item_id + " · " + it.prediction + " → " + it.reveal + (it.correct ? " ✓" : " ✗"));
       else if (it.type === "contract_draft") lines.push("contract · state " + ((it.state || "").trim() ? "有" : "空") + " / q " + ((it.questions || "").trim() ? "有" : "空"));
     });
+    ["fuzzy", "calib"].forEach(function (sc) {
+      var id = predictItemId(sc);
+      var pending = predictRetry[sc] && predictRetry[sc].phase === "need-retry";
+      var has = (log.items || []).some(function (it) { return it && it.item_id === id; });
+      if (pending && !has) lines.push("predict " + id + " · 猜错，待再猜");
+    });
     var snap = log.snapshot || {};
     lines.push("snapshot θ " + Number(snap.threshold_from).toFixed(2) + "→" + Number(snap.threshold_to).toFixed(2)
       + " edits=" + snap.threshold_edits + " · " + snap.scenario + " · " + snap.gate);
@@ -2192,9 +2327,106 @@ footer {
     downloadBlob("决策模型-第0课-学习日志.md", buildMarkdown(log), "text/markdown;charset=utf-8");
     showToast("已下载 Markdown 摘要");
   }
+  function contractGaps() {
+    var state = contractStateEl ? String(contractStateEl.value || "") : String(contract.state || "");
+    var questions = contractQEl ? String(contractQEl.value || "") : String(contract.questions || "");
+    return { stateEmpty: !state.trim(), questionsEmpty: !questions.trim() };
+  }
+  function predictBlockScenarios() {
+    var out = [];
+    ["fuzzy", "calib"].forEach(function (sc) {
+      var retry = predictRetry[sc];
+      var it = itemStore[predictItemId(sc)];
+      if (retry && retry.phase === "need-retry") out.push(sc);
+      else if (it && it.type === "predict_reveal" && it.correct === false) out.push(sc);
+    });
+    return out;
+  }
+  function feynmanWarnings() {
+    var emptyN = 0;
+    var echoN = 0;
+    SECTION_META.forEach(function (meta) {
+      var fy = document.getElementById("secFeynman-" + meta.id);
+      var text = fy ? fy.value : (feynmanMap[meta.id] || "");
+      var issue = feynmanIssue(meta.id, text);
+      if (issue === "empty") emptyN++;
+      else if (issue === "echo") echoN++;
+    });
+    var bits = [];
+    if (emptyN) bits.push(emptyN + " 节还没写费曼");
+    if (echoN) bits.push(echoN + " 节几乎是标题原文");
+    return bits.length ? ("费曼提醒：" + bits.join("，") + "。这次不拦截提交。") : "";
+  }
+  function showSubmitGateTip(msg, kind) {
+    var el = document.getElementById("submitGateTip");
+    if (!el) return;
+    if (!msg) {
+      el.hidden = true;
+      el.textContent = "";
+      el.className = "submit-gate-tip";
+      return;
+    }
+    el.hidden = false;
+    el.className = "submit-gate-tip " + (kind === "warn" ? "warn" : "bad");
+    el.textContent = msg;
+  }
+  function evaluateSubmitGates() {
+    var gaps = contractGaps();
+    var preds = predictBlockScenarios();
+    var parts = [];
+    if (gaps.stateEmpty || gaps.questionsEmpty) {
+      var miss = [];
+      if (gaps.stateEmpty) miss.push("state");
+      if (gaps.questionsEmpty) miss.push("questions");
+      parts.push("平仓契约的 " + miss.join(" 与 ") + " 还是空的");
+    }
+    if (preds.length) {
+      parts.push(preds.map(scenarioLabel).join("、") + " 的预测猜错后还没再猜对");
+    }
+    return {
+      ok: parts.length === 0,
+      message: parts.length ? ("还不能一键提交：" + parts.join("；") + "。请补全后再交。复制 Markdown 仍可用。") : "",
+      focus: (gaps.stateEmpty || gaps.questionsEmpty) ? "contract" : (preds.length ? "predict" : ""),
+      field: gaps.stateEmpty ? "state" : "questions",
+      scenario: preds[0] || "fuzzy",
+      feynmanNote: feynmanWarnings()
+    };
+  }
+  function focusContractField(field) {
+    var el = field === "questions" ? contractQEl : contractStateEl;
+    var box = document.getElementById("contractDraft");
+    if (box && box.scrollIntoView) {
+      try { box.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
+    }
+    if (el && el.focus) {
+      try { el.focus(); } catch (e2) {}
+    }
+  }
+  function focusPredictScenario(sc) {
+    if (current !== sc) {
+      var btn = document.querySelector('.scenario-btns button[data-sc="' + sc + '"]');
+      if (btn) btn.click();
+    } else {
+      restorePredictUI();
+    }
+    var box = document.getElementById("predictBox");
+    if (box && box.scrollIntoView) {
+      try { box.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
+    }
+  }
   function doCopyMd() {
     var md = buildMarkdown(buildLearningLog());
-    function ok() { showToast("已复制 · 可粘贴到群（含 @决策模型学习）"); }
+    var gate = evaluateSubmitGates();
+    var extra = "";
+    if (!gate.ok) {
+      extra = " · " + gate.message;
+      showSubmitGateTip(gate.message, "bad");
+      if (gate.focus === "contract") refreshContractHint(gate.message);
+    } else if (gate.feynmanNote) {
+      extra = " · " + gate.feynmanNote;
+      showSubmitGateTip(gate.feynmanNote, "warn");
+    }
+    function ok() { showToast("已复制 · 可粘贴到群（含 @决策模型学习）" + extra, extra ? 4200 : 2200); }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(md).then(ok).catch(function () { fallbackCopy(md); ok(); });
     } else { fallbackCopy(md); ok(); }
@@ -2299,6 +2531,20 @@ footer {
     } else { fallbackCopy(md); ok(); }
   }
   function doCloudSubmit() {
+    var gate = evaluateSubmitGates();
+    if (!gate.ok) {
+      showSubmitGateTip(gate.message, "bad");
+      if (gate.focus === "contract") {
+        refreshContractHint(gate.message);
+        focusContractField(gate.field);
+      } else if (gate.focus === "predict") {
+        focusPredictScenario(gate.scenario);
+      }
+      showToast(gate.message, 4600);
+      return;
+    }
+    if (gate.feynmanNote) showSubmitGateTip(gate.feynmanNote, "warn");
+    else showSubmitGateTip("");
     var cfg = getSubmitEndpoint();
     if (!cfg.url || (cfg.mode === "direct" && !cfg.key)) {
       openWebhookSetup(true);
@@ -2331,7 +2577,7 @@ footer {
           throw new Error("HTTP " + res.status + (t ? (": " + t.slice(0, 120)) : ""));
         });
       }
-      showToast("已提交给学习 · 等待批改");
+      showToast(gate.feynmanNote ? ("已提交给学习 · 等待批改。" + gate.feynmanNote) : "已提交给学习 · 等待批改", gate.feynmanNote ? 4200 : 2200);
     }).catch(function (err) {
       var msg = (err && err.message) ? err.message : "网络/CORS 错误";
       copyMarkdownFallback("提交失败（" + msg + "）");
@@ -2377,7 +2623,9 @@ footer {
       if (!confirm("清空本课语义答题记录？（各节评论/费曼/契约默认保留）")) return;
       itemStore = {};
       predictedScenarios = {};
+      predictRetry = {};
       persistItems();
+      persistPredictRetry();
       threshMeta = { from: getThreshold(), edits: 0, last: getThreshold() };
       persistThreshMeta();
       restorePredictUI();
@@ -2438,13 +2686,10 @@ footer {
           if (Array.isArray(data.items)) {
             itemStore = {};
             predictedScenarios = {};
+            predictRetry = {};
             data.items.forEach(function (it) {
               if (!it || !it.item_id) return;
               itemStore[it.item_id] = it;
-              if (it.type === "predict_reveal") {
-                var sc = it.item_id.indexOf("calib") >= 0 ? "calib" : "fuzzy";
-                predictedScenarios[sc] = it;
-              }
               if (it.type === "contract_draft") {
                 contract = { state: it.state || "", questions: it.questions || "" };
                 persistContract();
@@ -2452,6 +2697,8 @@ footer {
                 if (contractQEl) contractQEl.value = contract.questions;
               }
             });
+            reconcilePredictState();
+            refreshContractHint();
             persistItems();
             // refresh quiz UI without rebinding
             document.querySelectorAll(".learn-quiz").forEach(function (box) {
