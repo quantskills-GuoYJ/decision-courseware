@@ -1,0 +1,2302 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第0课 · 决策模型是什么</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --bg2: #161b22;
+  --bg3: #1c2333;
+  --card: #1a2332;
+  --border: #2d3a4f;
+  --text: #e6edf3;
+  --muted: #8b9cb3;
+  --cyan: #22d3ee;
+  --cyan-dim: rgba(34, 211, 238, 0.15);
+  --lime: #a3e635;
+  --lime-dim: rgba(163, 230, 53, 0.15);
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --ok: #34d399;
+  --radius: 12px;
+  --font: "Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --mono: "JetBrains Mono", "SF Mono", "Fira Code", ui-monospace, monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 4.5rem;
+}
+a { color: var(--cyan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem 5.5rem; }
+
+/* —— Hero —— */
+.hero {
+  padding: 3.5rem 0 2.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2.5rem;
+  position: relative;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  top: -40px; left: 10%; right: 10%;
+  height: 180px;
+  background: radial-gradient(ellipse, rgba(34,211,238,0.12), transparent 70%);
+  pointer-events: none;
+}
+.badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  background: var(--cyan-dim);
+  border: 1px solid rgba(34,211,238,0.35);
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  margin-bottom: 1rem;
+}
+.hero h1 {
+  font-size: clamp(1.75rem, 5vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.75rem;
+}
+.hero h1 span { color: var(--cyan); }
+.takeaway {
+  font-size: 1.05rem;
+  color: var(--muted);
+  max-width: 38em;
+}
+.takeaway strong {
+  color: var(--lime);
+  font-weight: 600;
+}
+.blindspot {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, rgba(251,191,36,0.08), rgba(248,113,113,0.06));
+  border: 1px solid rgba(251,191,36,0.35);
+  border-left: 3px solid var(--warn);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+}
+.blindspot .tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--warn);
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+}
+.blindspot code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  color: var(--warn);
+  background: rgba(251,191,36,0.12);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+/* —— Sections —— */
+section { margin-bottom: 3rem; }
+.sec-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 0.4rem;
+}
+h2 {
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.01em;
+}
+.lead { color: var(--muted); margin-bottom: 1.25rem; font-size: 0.95rem; }
+
+/* —— Contrast cards —— */
+.toggle-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  background: var(--bg2);
+  padding: 0.35rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  width: fit-content;
+}
+.toggle-bar button {
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1.1rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.toggle-bar button.active {
+  background: var(--cyan-dim);
+  color: var(--cyan);
+}
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 640px) {
+  .cards-grid { grid-template-columns: 1fr; }
+  .cards-grid.hide-llm .card-llm,
+  .cards-grid.hide-dm .card-dm { display: none; }
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.card h3 {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.card h3 .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.card-llm h3 .dot { background: var(--muted); }
+.card-dm h3 .dot { background: var(--lime); }
+.card ul { list-style: none; }
+.card li {
+  position: relative;
+  padding-left: 1.1rem;
+  margin-bottom: 0.55rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.card li::before {
+  content: "·";
+  position: absolute;
+  left: 0.2rem;
+  color: var(--cyan);
+  font-weight: 700;
+}
+.card-dm li strong, .card-dm .hl { color: var(--lime); }
+.card-llm li strong { color: var(--text); }
+.req-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.pill {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: var(--lime-dim);
+  color: var(--lime);
+  border: 1px solid rgba(163,230,53,0.3);
+}
+
+/* —— Flow SVG —— */
+.flow-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem 1rem;
+  overflow-x: auto;
+}
+.flow-box svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+.flow-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.flow-legend span { display: flex; align-items: center; gap: 0.4rem; }
+.flow-legend i {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 3px;
+}
+
+/* —— Interactive demo —— */
+.demo {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.demo-head {
+  padding: 1rem 1.25rem;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.demo-head h3 { font-size: 1rem; }
+.scenario-btns { display: flex; gap: 0.4rem; }
+.scenario-btns button {
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.scenario-btns button.active {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: var(--cyan-dim);
+}
+.demo-body { padding: 1.25rem; }
+.state-box {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  color: var(--muted);
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+.state-box .k { color: var(--cyan); }
+.options-locked {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+.opt-chip {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.opt-chip.locked::after {
+  content: " 钉死";
+  font-size: 0.65rem;
+  color: var(--lime);
+  opacity: 0.85;
+}
+.prob-bars { margin-bottom: 1.5rem; }
+.prob-row {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr 3.2rem;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.prob-row .lbl { font-size: 0.85rem; font-weight: 600; }
+.bar-track {
+  height: 22px;
+  background: var(--bg);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  display: flex;
+  align-items: center;
+  padding-left: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #0d1117;
+}
+.bar-fill.flat { background: linear-gradient(90deg, #22d3ee, #67e8f9); }
+.bar-fill.hold { background: linear-gradient(90deg, #94a3b8, #cbd5e1); }
+.bar-fill.add { background: linear-gradient(90deg, #a3e635, #bef264); }
+.prob-val {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: right;
+  color: var(--cyan);
+}
+.threshold-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.15rem;
+}
+.threshold-panel label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.85rem;
+  margin-bottom: 0.65rem;
+}
+.threshold-panel label .val {
+  font-family: var(--mono);
+  color: var(--lime);
+  font-weight: 700;
+}
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  outline: none;
+  margin-bottom: 1rem;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+  border: 2px solid #0d1117;
+  box-shadow: 0 0 0 3px rgba(34,211,238,0.25);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+  border: 2px solid #0d1117;
+}
+.gate-result {
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  transition: all 0.25s;
+}
+.gate-result.pass {
+  background: rgba(52,211,153,0.12);
+  border: 1px solid rgba(52,211,153,0.4);
+  color: var(--ok);
+}
+.gate-result.reject {
+  background: rgba(248,113,113,0.12);
+  border: 1px solid rgba(248,113,113,0.4);
+  color: var(--danger);
+}
+.gate-result .icon { font-size: 1.15rem; line-height: 1; }
+.gate-result .detail {
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+.hint-row {
+  margin-top: 0.85rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.hint-row em { color: var(--warn); font-style: normal; font-weight: 600; }
+
+/* —— Calibration —— */
+.calib-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 700px) { .calib-grid { grid-template-columns: 1fr; } }
+.chart-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.chart-card h3 { font-size: 0.95rem; margin-bottom: 0.75rem; }
+.metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.metric {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+}
+.metric .name {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--cyan);
+  font-weight: 700;
+}
+.metric p { font-size: 0.82rem; color: var(--muted); margin-top: 0.25rem; }
+.calib-note {
+  margin-top: 1rem;
+  padding: 1rem 1.15rem;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.calib-note strong { color: var(--text); }
+.calib-note a { font-weight: 600; }
+.case-box {
+  margin-top: 1rem;
+  padding: 1rem 1.15rem;
+  background: linear-gradient(135deg, var(--lime-dim), var(--cyan-dim));
+  border: 1px solid rgba(163,230,53,0.3);
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+}
+.case-box .title { font-weight: 700; color: var(--lime); margin-bottom: 0.4rem; font-size: 0.8rem; letter-spacing: 0.04em; }
+.case-nums {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+.case-num {
+  flex: 1;
+  min-width: 120px;
+  background: rgba(13,17,23,0.5);
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+}
+.case-num .n {
+  font-family: var(--mono);
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+.case-num .n.bad { color: var(--danger); }
+.case-num .n.good { color: var(--ok); }
+.case-num .s { font-size: 0.75rem; color: var(--muted); }
+
+/* —— Agent gate —— */
+.agent-states {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+@media (max-width: 600px) { .agent-states { grid-template-columns: 1fr; } }
+.state-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.state-card:hover { border-color: var(--cyan); transform: translateY(-2px); }
+.state-card.active { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan); }
+.state-card .emoji { font-size: 1.5rem; margin-bottom: 0.4rem; }
+.state-card h4 { font-size: 0.95rem; margin-bottom: 0.3rem; }
+.state-card p { font-size: 0.78rem; color: var(--muted); }
+.state-card.high h4 { color: var(--ok); }
+.state-card.mid h4 { color: var(--warn); }
+.state-card.low h4 { color: var(--danger); }
+.layers {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.15rem;
+}
+.layers h3 { font-size: 0.9rem; margin-bottom: 0.75rem; }
+.layer {
+  display: flex;
+  gap: 0.85rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.layer:last-child { border-bottom: none; padding-bottom: 0; }
+.layer:first-of-type { padding-top: 0; }
+.layer .num {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: var(--cyan-dim);
+  color: var(--cyan);
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.layer .txt strong { display: block; font-size: 0.88rem; margin-bottom: 0.15rem; }
+.layer .txt span { font-size: 0.8rem; color: var(--muted); }
+
+/* —— Product cards —— */
+.products {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+}
+@media (max-width: 700px) { .products { grid-template-columns: 1fr; } }
+.prod {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.2s;
+}
+.prod:hover { border-color: var(--cyan); }
+.prod .brand {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 0.35rem;
+}
+.prod h3 { font-size: 1.05rem; margin-bottom: 0.5rem; }
+.prod p { font-size: 0.82rem; color: var(--muted); flex: 1; margin-bottom: 1rem; }
+.prod .links { display: flex; flex-direction: column; gap: 0.35rem; }
+.prod .links a {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0;
+}
+
+/* —— Footer —— */
+footer {
+  margin-top: 2rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--border);
+}
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.15rem 1.25rem;
+  flex-wrap: wrap;
+}
+.progress-bar-wrap {
+  flex: 1;
+  min-width: 140px;
+}
+.progress-bar-wrap .lab {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+  display: flex;
+  justify-content: space-between;
+}
+.pbar {
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.pbar-fill {
+  height: 100%;
+  width: 12%;
+  background: linear-gradient(90deg, var(--cyan), var(--lime));
+  border-radius: 4px;
+}
+.next-note {
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.next-note strong { color: var(--lime); }
+.refs {
+  margin-top: 1.25rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.refs a { margin-right: 0.75rem; white-space: nowrap; }
+
+/* —— Learning log / notes —— */
+.learn-panel {
+  margin-bottom: 2.5rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.learn-panel-head {
+  padding: 1rem 1.25rem;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.learn-panel-head h3 { font-size: 1rem; }
+.learn-panel-head .meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.learn-panel-body { padding: 1.25rem; }
+.learn-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1.15rem;
+}
+@media (max-width: 720px) { .learn-grid { grid-template-columns: 1fr; } }
+.notes-block label.notes-lab {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--cyan);
+  margin-bottom: 0.45rem;
+}
+.notes-block textarea {
+  width: 100%;
+  min-height: 160px;
+  resize: vertical;
+  font-family: var(--font);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.notes-block textarea:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 2px rgba(34,211,238,0.2);
+}
+.notes-block textarea::placeholder { color: #5a6a80; }
+.notes-hint {
+  margin-top: 0.45rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  min-height: 1.2em;
+}
+.notes-hint.saved { color: var(--ok); }
+.export-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.export-block .blurb {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.btn-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.btn-learn {
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.btn-learn.primary {
+  background: linear-gradient(135deg, rgba(34,211,238,0.25), rgba(163,230,53,0.18));
+  border-color: rgba(34,211,238,0.5);
+  color: var(--cyan);
+  font-size: 1rem;
+  padding: 0.9rem 1rem;
+}
+.btn-learn.primary:hover {
+  background: linear-gradient(135deg, rgba(34,211,238,0.35), rgba(163,230,53,0.28));
+  border-color: var(--cyan);
+}
+.btn-learn.secondary {
+  background: var(--bg2);
+  color: var(--text);
+}
+.btn-learn.secondary:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+.btn-learn.ghost {
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 0.5rem 0.75rem;
+}
+.btn-learn.ghost:hover { color: var(--warn); border-color: rgba(251,191,36,0.4); }
+.import-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border);
+}
+.import-row label {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.import-row input[type="file"] {
+  font-size: 0.75rem;
+  color: var(--muted);
+  max-width: 100%;
+}
+.log-preview {
+  margin-top: 1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  max-height: 140px;
+  overflow: auto;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.log-preview .empty { opacity: 0.7; }
+.sticky-notes {
+  position: sticky;
+  bottom: 0;
+  z-index: 40;
+  margin: 0 -1.25rem;
+  padding: 0.65rem 1.25rem;
+  background: rgba(13,17,23,0.92);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  font-size: 0.8rem;
+}
+.sticky-notes .sn-lab {
+  font-weight: 700;
+  color: var(--lime);
+  white-space: nowrap;
+}
+.sticky-notes a {
+  font-weight: 600;
+}
+.sticky-notes .sn-count {
+  font-family: var(--mono);
+  color: var(--muted);
+  margin-left: auto;
+}
+.toast-learn {
+  position: fixed;
+  bottom: 4.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: var(--bg3);
+  border: 1px solid rgba(34,211,238,0.45);
+  color: var(--text);
+  padding: 0.65rem 1.1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.toast-learn.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+
+/* —— Per-section comments —— */
+.sec-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 1rem;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .sec-layout { grid-template-columns: 1fr; }
+}
+.sec-main { min-width: 0; }
+.sec-comment {
+  position: sticky;
+  top: 0.75rem;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+  border-left: 3px solid var(--cyan);
+}
+@media (max-width: 860px) {
+  .sec-comment { position: static; }
+}
+.sec-comment .sc-lab {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--cyan);
+  margin-bottom: 0.4rem;
+}
+.sec-comment textarea {
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+  font-family: var(--font);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.55rem 0.65rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.sec-comment textarea:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 2px rgba(34,211,238,0.18);
+}
+.sec-comment textarea::placeholder { color: #5a6a80; }
+.sec-comment .sc-hint {
+  margin-top: 0.3rem;
+  font-size: 0.68rem;
+  color: var(--muted);
+  min-height: 1em;
+}
+.sec-comment .sc-hint.saved { color: var(--ok); }
+
+/* —— Floating export bar —— */
+.export-float {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: rgba(13,17,23,0.94);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  padding: 0.55rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem 0.85rem;
+  box-shadow: 0 -6px 24px rgba(0,0,0,0.35);
+}
+.export-float .ef-lab {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--lime);
+}
+.export-float .ef-meta {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.export-float .btn-export-now {
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0.55rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(34,211,238,0.55);
+  background: linear-gradient(135deg, rgba(34,211,238,0.3), rgba(163,230,53,0.2));
+  color: var(--cyan);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.export-float .btn-export-now:hover {
+  border-color: var(--cyan);
+  background: linear-gradient(135deg, rgba(34,211,238,0.4), rgba(163,230,53,0.3));
+}
+.export-float .btn-export-copy {
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  cursor: pointer;
+}
+.export-float .btn-export-copy:hover { border-color: var(--cyan); color: var(--cyan); }
+.export-float a.ef-link {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.export-float a.ef-link:hover { color: var(--cyan); }
+
+/* —— Webhook setup / cloud submit —— */
+.webhook-setup {
+  display: none;
+  margin-top: 0.35rem;
+  padding: 0.85rem 0.9rem;
+  background: var(--bg2);
+  border: 1px solid rgba(34,211,238,0.35);
+  border-radius: 10px;
+  gap: 0.55rem;
+  flex-direction: column;
+}
+.webhook-setup.open { display: flex; }
+.webhook-setup .ws-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--cyan);
+}
+.webhook-setup .ws-hint {
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.webhook-setup label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.webhook-setup input {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+.webhook-setup .ws-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.webhook-setup .ws-status {
+  font-size: 0.72rem;
+  color: var(--muted);
+  min-height: 1.1em;
+}
+.webhook-setup .ws-status.ok { color: var(--ok); }
+.webhook-setup .ws-status.warn { color: var(--warn); }
+.btn-learn.primary.submitting {
+  opacity: 0.7;
+  pointer-events: none;
+}
+.export-float .btn-export-submit {
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0.55rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(163,230,53,0.55);
+  background: linear-gradient(135deg, rgba(163,230,53,0.28), rgba(34,211,238,0.22));
+  color: var(--lime);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.export-float .btn-export-submit:hover {
+  border-color: var(--lime);
+  background: linear-gradient(135deg, rgba(163,230,53,0.38), rgba(34,211,238,0.32));
+}
+.export-float .btn-export-now {
+  /* demoted copy button on float bar */
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.45rem 0.85rem;
+}
+.export-float .btn-export-now:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: var(--bg2);
+}
+
+.toast-learn { bottom: 4.25rem; }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 1. Hero -->
+  <header class="hero">
+    <div class="badge">Lesson 0 · Decision Models</div>
+    <h1>第0课：<span>决策模型</span>是什么</h1>
+    <p class="takeaway">
+      一句话：决策模型把<strong>非结构化状态</strong> + <strong>调用方钉死的选项问题</strong>，一次前向映射成<strong>已校准的选项概率</strong>——不是让 LLM「吐一段像概率的话」。
+    </p>
+    <div class="blindspot">
+      <div class="tag">⚠ 先钉死这个盲点</div>
+      <div><code>吐了个像概率的答案</code> ≠ 决策模型。真正的决策模型硬性要求三件事：<strong>选项钉死</strong>、<strong>校准概率</strong>、<strong>可设门槛</strong>。</div>
+    </div>
+  </header>
+
+  <!-- 2. Contrast -->
+  <section id="contrast">
+  <div class="sec-layout">
+    <div class="sec-main">
+    <div class="sec-label">Section 02</div>
+    <h2>生成式 LLM vs 决策模型</h2>
+    <p class="lead">一个擅长开放生成；一个专门回答「在钉死的选项里，各有多大把握？」</p>
+
+    <div class="toggle-bar" role="tablist">
+      <button type="button" class="active" data-view="both" aria-selected="true">并排对比</button>
+      <button type="button" data-view="llm" aria-selected="false">只看 LLM</button>
+      <button type="button" data-view="dm" aria-selected="false">只看决策模型</button>
+    </div>
+
+    <div class="cards-grid" id="contrastGrid">
+      <article class="card card-llm">
+        <h3><span class="dot"></span>生成式 LLM</h3>
+        <ul>
+          <li><strong>自回归</strong>逐 token 生成开放文本</li>
+          <li>选项空间<strong>不固定</strong>——可编造任何说法</li>
+          <li>「概率」常是口头数字，未必校准</li>
+          <li>适合：写作、检索摘要、开放推理</li>
+          <li>不适合：需要拒答门槛的交易决策</li>
+        </ul>
+      </article>
+      <article class="card card-dm">
+        <h3><span class="dot"></span>决策模型</h3>
+        <ul>
+          <li><strong>非自回归</strong>：一次前向 → 选项概率</li>
+          <li>选项空间<strong class="hl">钉死</strong>（caller-defined）</li>
+          <li>输出是<strong class="hl">已校准</strong>的概率分布</li>
+          <li>原语：<strong class="hl">choice / score / noul</strong></li>
+          <li>适合：平仓与否、风控闸门、Agent 执行门</li>
+        </ul>
+        <div class="req-row">
+          <span class="pill">① 选项钉死</span>
+          <span class="pill">② 校准概率</span>
+          <span class="pill">③ 可设门槛</span>
+        </div>
+      </article>
+    </div>
+  
+    </div>
+    <aside class="sec-comment" aria-label="本节评论：生成式 LLM vs 决策模型">
+      <label class="sc-lab" for="secNote-contrast">本节评论</label>
+      <textarea id="secNote-contrast" data-section="contrast" placeholder="对本节的疑问 / 盲点 / 想法…" rows="4"></textarea>
+      <div class="sc-hint" id="secHint-contrast"></div>
+    </aside>
+  </div>
+</section>
+
+  <!-- 3. Flow diagram -->
+  <section id="flow">
+  <div class="sec-layout">
+    <div class="sec-main">
+    <div class="sec-label">Section 03</div>
+    <h2>一次前向：状态 → 校准概率</h2>
+    <p class="lead">非结构化状态 + 类型化问题 → 单次 forward pass → choice / score / noul 概率。</p>
+
+    <div class="flow-box">
+      <svg viewBox="0 0 840 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="决策模型数据流">
+        <!-- State box -->
+        <rect x="20" y="40" width="160" height="140" rx="12" fill="#1a2332" stroke="#2d3a4f" stroke-width="1.5"/>
+        <text x="100" y="70" text-anchor="middle" fill="#22d3ee" font-size="12" font-weight="700" font-family="system-ui">STATE</text>
+        <text x="100" y="95" text-anchor="middle" fill="#8b9cb3" font-size="11" font-family="system-ui">非结构化状态</text>
+        <text x="100" y="118" text-anchor="middle" fill="#e6edf3" font-size="10" font-family="ui-monospace,monospace">盘口 / 仓位</text>
+        <text x="100" y="138" text-anchor="middle" fill="#e6edf3" font-size="10" font-family="ui-monospace,monospace">新闻 / 特征</text>
+        <text x="100" y="158" text-anchor="middle" fill="#e6edf3" font-size="10" font-family="ui-monospace,monospace">对话上下文</text>
+
+        <!-- Arrow 1 -->
+        <path d="M190 110 H230" stroke="#22d3ee" stroke-width="2" marker-end="url(#arr)"/>
+
+        <!-- Questions box -->
+        <rect x="240" y="40" width="170" height="140" rx="12" fill="#1a2332" stroke="#2d3a4f" stroke-width="1.5"/>
+        <text x="325" y="70" text-anchor="middle" fill="#a3e635" font-size="12" font-weight="700" font-family="system-ui">TYPED Q</text>
+        <text x="325" y="95" text-anchor="middle" fill="#8b9cb3" font-size="11" font-family="system-ui">调用方钉死选项</text>
+        <text x="325" y="118" text-anchor="middle" fill="#e6edf3" font-size="10" font-family="ui-monospace,monospace">[平仓, 持有, 加仓]</text>
+        <text x="325" y="138" text-anchor="middle" fill="#e6edf3" font-size="10" font-family="ui-monospace,monospace">choice · score · noul</text>
+        <text x="325" y="158" text-anchor="middle" fill="#8b9cb3" font-size="10" font-family="system-ui">固定选项空间</text>
+
+        <!-- Arrow 2 -->
+        <path d="M420 110 H460" stroke="#22d3ee" stroke-width="2" marker-end="url(#arr)"/>
+
+        <!-- Model -->
+        <rect x="470" y="55" width="130" height="110" rx="12" fill="#0d1117" stroke="#22d3ee" stroke-width="2"/>
+        <text x="535" y="95" text-anchor="middle" fill="#22d3ee" font-size="13" font-weight="700" font-family="system-ui">Decision</text>
+        <text x="535" y="115" text-anchor="middle" fill="#22d3ee" font-size="13" font-weight="700" font-family="system-ui">Model</text>
+        <text x="535" y="140" text-anchor="middle" fill="#8b9cb3" font-size="10" font-family="system-ui">1× forward</text>
+        <text x="535" y="155" text-anchor="middle" fill="#8b9cb3" font-size="10" font-family="system-ui">非自回归</text>
+
+        <!-- Arrow 3 -->
+        <path d="M610 110 H650" stroke="#a3e635" stroke-width="2" marker-end="url(#arr2)"/>
+
+        <!-- Output -->
+        <rect x="660" y="40" width="160" height="140" rx="12" fill="#1a2332" stroke="#a3e635" stroke-width="1.5"/>
+        <text x="740" y="70" text-anchor="middle" fill="#a3e635" font-size="12" font-weight="700" font-family="system-ui">CALIBRATED</text>
+        <text x="740" y="95" text-anchor="middle" fill="#8b9cb3" font-size="11" font-family="system-ui">已校准概率</text>
+        <text x="740" y="120" text-anchor="middle" fill="#e6edf3" font-size="11" font-family="ui-monospace,monospace">p_flat = 0.72</text>
+        <text x="740" y="140" text-anchor="middle" fill="#e6edf3" font-size="11" font-family="ui-monospace,monospace">p_hold = 0.21</text>
+        <text x="740" y="160" text-anchor="middle" fill="#e6edf3" font-size="11" font-family="ui-monospace,monospace">p_add  = 0.07</text>
+
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6" fill="none" stroke="#22d3ee" stroke-width="1.5"/>
+          </marker>
+          <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6" fill="none" stroke="#a3e635" stroke-width="1.5"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="flow-legend">
+        <span><i style="background:#22d3ee"></i> 输入：状态 + 类型化问题</span>
+        <span><i style="background:#a3e635"></i> 输出：校准后的选项概率</span>
+        <span><i style="background:#2d3a4f"></i> 原语 choice / score / noul</span>
+      </div>
+    </div>
+  
+    </div>
+    <aside class="sec-comment" aria-label="本节评论：一次前向：状态 → 校准概率">
+      <label class="sc-lab" for="secNote-flow">本节评论</label>
+      <textarea id="secNote-flow" data-section="flow" placeholder="对本节的疑问 / 盲点 / 想法…" rows="4"></textarea>
+      <div class="sc-hint" id="secHint-flow"></div>
+    </aside>
+  </div>
+</section>
+
+  <!-- 4. Interactive example -->
+  <section id="demo">
+  <div class="sec-layout">
+    <div class="sec-main">
+    <div class="sec-label">Section 04</div>
+    <h2>互动示例：要不要平仓？</h2>
+    <p class="lead">选项钉死为 [平仓, 持有, 加仓]。拖动门槛，看「像概率」的 0.55 与校准后的 0.92 行为差在哪。</p>
+
+    <div class="demo">
+      <div class="demo-head">
+        <h3>仓位决策闸门</h3>
+        <div class="scenario-btns" role="group" aria-label="场景切换">
+          <button type="button" class="active" data-sc="fuzzy" id="btnFuzzy">模糊 0.55</button>
+          <button type="button" data-sc="calib" id="btnCalib">校准 0.92</button>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="state-box" id="stateText">
+          <span class="k">state</span> · BTC 永续 · 多仓 2.4× · 浮盈 +3.1% · 资金费率转负 · 盘口卖压抬升
+        </div>
+
+        <div class="options-locked" aria-label="钉死的选项">
+          <span class="opt-chip locked">平仓</span>
+          <span class="opt-chip locked">持有</span>
+          <span class="opt-chip locked">加仓</span>
+        </div>
+
+        <div class="prob-bars" id="probBars">
+          <div class="prob-row">
+            <span class="lbl">平仓</span>
+            <div class="bar-track"><div class="bar-fill flat" id="barFlat" style="width:55%">p</div></div>
+            <span class="prob-val" id="valFlat">0.55</span>
+          </div>
+          <div class="prob-row">
+            <span class="lbl">持有</span>
+            <div class="bar-track"><div class="bar-fill hold" id="barHold" style="width:30%">p</div></div>
+            <span class="prob-val" id="valHold">0.30</span>
+          </div>
+          <div class="prob-row">
+            <span class="lbl">加仓</span>
+            <div class="bar-track"><div class="bar-fill add" id="barAdd" style="width:15%">p</div></div>
+            <span class="prob-val" id="valAdd">0.15</span>
+          </div>
+        </div>
+
+        <div class="threshold-panel">
+          <label>
+            <span>执行门槛 · 若 p<sub>平仓</sub> &lt; threshold → 拒答 / 转人工</span>
+            <span class="val" id="thVal">0.70</span>
+          </label>
+          <input type="range" id="threshold" min="50" max="95" value="70" step="1" aria-valuemin="50" aria-valuemax="95" aria-valuenow="70">
+          <div class="gate-result reject" id="gateResult">
+            <span class="icon">⛔</span>
+            <div>
+              <div id="gateTitle">拒答 / 转人工复核</div>
+              <div class="detail" id="gateDetail">p_flat=0.55 &lt; threshold=0.70 —— 口头「大概一半」不够下单。</div>
+            </div>
+          </div>
+          <p class="hint-row">切换场景：<em>模糊 0.55</em> 在常见门槛下被拦；<em>校准 0.92</em> 才过闸。这就是「可设门槛」的意义。</p>
+        </div>
+      </div>
+    </div>
+  
+    </div>
+    <aside class="sec-comment" aria-label="本节评论：互动示例：要不要平仓？">
+      <label class="sc-lab" for="secNote-demo">本节评论</label>
+      <textarea id="secNote-demo" data-section="demo" placeholder="对本节的疑问 / 盲点 / 想法…" rows="4"></textarea>
+      <div class="sc-hint" id="secHint-demo"></div>
+    </aside>
+  </div>
+</section>
+
+  <!-- 5. Calibration -->
+  <section id="calib">
+  <div class="sec-layout">
+    <div class="sec-main">
+    <div class="sec-label">Section 05</div>
+    <h2>校准长什么样</h2>
+    <p class="lead">可靠性图（reliability）与 ECE / Brier：概率说 80%，真实命中也该接近 80%。</p>
+
+    <div class="calib-grid">
+      <div class="chart-card">
+        <h3>可靠性示意（理想 vs 未校准）</h3>
+        <svg viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg" width="100%" style="max-height:260px" aria-label="可靠性图示意">
+          <!-- axes -->
+          <line x1="40" y1="200" x2="300" y2="200" stroke="#2d3a4f" stroke-width="1.5"/>
+          <line x1="40" y1="200" x2="40" y2="20" stroke="#2d3a4f" stroke-width="1.5"/>
+          <text x="170" y="230" text-anchor="middle" fill="#8b9cb3" font-size="11" font-family="system-ui">预测概率</text>
+          <text x="14" y="110" text-anchor="middle" fill="#8b9cb3" font-size="11" font-family="system-ui" transform="rotate(-90 14 110)">实际频率</text>
+          <!-- diagonal perfect -->
+          <line x1="40" y1="200" x2="280" y2="40" stroke="#a3e635" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.7"/>
+          <text x="250" y="55" fill="#a3e635" font-size="10" font-family="system-ui">完美校准</text>
+          <!-- uncalibrated curve (overconfident) -->
+          <path d="M40,195 C90,185 130,160 160,130 S230,70 280,55" fill="none" stroke="#f87171" stroke-width="2.5"/>
+          <circle cx="100" cy="178" r="4" fill="#f87171"/>
+          <circle cx="160" cy="130" r="4" fill="#f87171"/>
+          <circle cx="220" cy="85" r="4" fill="#f87171"/>
+          <circle cx="280" cy="55" r="4" fill="#f87171"/>
+          <!-- calibrated closer to diagonal -->
+          <path d="M40,195 C90,175 140,145 180,115 S240,60 280,45" fill="none" stroke="#22d3ee" stroke-width="2" opacity="0.85"/>
+          <text x="95" y="35" fill="#f87171" font-size="10" font-family="system-ui">未校准（过信）</text>
+          <text x="95" y="50" fill="#22d3ee" font-size="10" font-family="system-ui">校准后更贴对角线</text>
+          <!-- tick labels -->
+          <text x="40" y="214" text-anchor="middle" fill="#8b9cb3" font-size="9">0</text>
+          <text x="160" y="214" text-anchor="middle" fill="#8b9cb3" font-size="9">0.5</text>
+          <text x="280" y="214" text-anchor="middle" fill="#8b9cb3" font-size="9">1</text>
+          <text x="32" y="204" text-anchor="end" fill="#8b9cb3" font-size="9">0</text>
+          <text x="32" y="45" text-anchor="end" fill="#8b9cb3" font-size="9">1</text>
+        </svg>
+      </div>
+      <div class="metrics">
+        <div class="metric">
+          <div class="name">ECE</div>
+          <p>Expected Calibration Error：分桶后 |预测置信 − 实际准确率| 的加权平均。越小越好。</p>
+        </div>
+        <div class="metric">
+          <div class="name">Brier Score</div>
+          <p>均方概率误差。同时惩罚「错得自信」与「对得含糊」。越小越好。</p>
+        </div>
+        <div class="metric">
+          <div class="name">NLL · 后处理</div>
+          <p>负对数似然。常用 <strong style="color:#e6edf3">temperature scaling</strong> / isotonic；训练侧有 <strong style="color:#e6edf3">RLCD</strong>（Reinforcement Learning for Calibrated Decisions）。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="calib-note">
+      概念参考：<a href="https://laya.studio/learn/calibrated-probabilities" target="_blank" rel="noopener">Laya · Calibrated Probabilities</a>
+      ·
+      <a href="https://laya.studio/learn/rlcd-reinforcement-learning-calibrated-decisions" target="_blank" rel="noopener">RLCD</a>
+      —— 概率必须可解释为长期频率，才能放心设门槛。
+    </div>
+
+    <div class="case-box">
+      <div class="title">LAYA SUPPORT SAMPLE · 90% GATE（研究摘录，未另造数）</div>
+      <p>未校准：90% 门槛下约 <strong>840</strong> 条自动通过，其中 <strong>97</strong> 条错误 → 校准后同等闸门错误降至 <strong>36</strong>，更多转人工。</p>
+      <div class="case-nums">
+        <div class="case-num">
+          <div class="n bad">97</div>
+          <div class="s">校准前 · 闸门内错误</div>
+        </div>
+        <div class="case-num">
+          <div class="n good">36</div>
+          <div class="s">校准后 · 闸门内错误</div>
+        </div>
+        <div class="case-num">
+          <div class="n" style="color:var(--cyan)">840</div>
+          <div class="s">未校准时自动通过量</div>
+        </div>
+      </div>
+    </div>
+  
+    </div>
+    <aside class="sec-comment" aria-label="本节评论：校准长什么样">
+      <label class="sc-lab" for="secNote-calib">本节评论</label>
+      <textarea id="secNote-calib" data-section="calib" placeholder="对本节的疑问 / 盲点 / 想法…" rows="4"></textarea>
+      <div class="sc-hint" id="secHint-calib"></div>
+    </aside>
+  </div>
+</section>
+
+  <!-- 6. Agent gate -->
+  <section id="agent">
+  <div class="sec-layout">
+    <div class="sec-main">
+    <div class="sec-label">Section 06</div>
+    <h2>Agent 闸门：三态 + 双层</h2>
+    <p class="lead">用 risk–coverage 门槛扫描，把决策压成三种执行态。点选卡片查看含义。</p>
+
+    <div class="agent-states" id="agentStates">
+      <div class="state-card high active" data-state="high" tabindex="0" role="button" aria-pressed="true">
+        <div class="emoji">🟢</div>
+        <h4>高 · 自动</h4>
+        <p>置信过门槛，系统直接执行</p>
+      </div>
+      <div class="state-card mid" data-state="mid" tabindex="0" role="button" aria-pressed="false">
+        <div class="emoji">🟡</div>
+        <h4>中 · 复核</h4>
+        <p>落在灰区，排队人工确认</p>
+      </div>
+      <div class="state-card low" data-state="low" tabindex="0" role="button" aria-pressed="false">
+        <div class="emoji">🔴</div>
+        <h4>低 · 人工</h4>
+        <p>拒答或强制人工接管</p>
+      </div>
+    </div>
+
+    <div class="layers">
+      <h3>两层闸门，别混为一谈</h3>
+      <div class="layer">
+        <div class="num">1</div>
+        <div class="txt">
+          <strong>AutoThink · 模型内部门</strong>
+          <span>模型侧是否继续深思 / 是否输出决策分布——StartLux AutoThink 的内部 gate。</span>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="num">2</div>
+        <div class="txt">
+          <strong>App · 执行门</strong>
+          <span>应用侧根据校准概率与业务风险，决定自动 / 复核 / 人工。与模型内部门分离。</span>
+        </div>
+      </div>
+    </div>
+  
+    </div>
+    <aside class="sec-comment" aria-label="本节评论：Agent 闸门：三态 + 双层">
+      <label class="sc-lab" for="secNote-agent">本节评论</label>
+      <textarea id="secNote-agent" data-section="agent" placeholder="对本节的疑问 / 盲点 / 想法…" rows="4"></textarea>
+      <div class="sc-hint" id="secHint-agent"></div>
+    </aside>
+  </div>
+</section>
+
+  <!-- 7. Product pick -->
+  <section id="products">
+  <div class="sec-layout">
+    <div class="sec-main">
+    <div class="sec-label">Section 07</div>
+    <h2>快速选型：Jev / Laya / StartLux</h2>
+    <p class="lead">事实来自公开对比与文档；按接入形态与体量选，不编造榜单分数。</p>
+
+    <div class="products">
+      <article class="prod">
+        <div class="brand">Jev</div>
+        <h3>TypeSafe 闭源 API</h3>
+        <p>面向生产的类型安全决策 API；封闭服务形态，强调结构化调用与安全边界。</p>
+        <div class="links">
+          <a href="https://wilsonwu.me/zh/blog/2026/jev-vs-laya/" target="_blank" rel="noopener">Jev vs Laya 对比 →</a>
+          <a href="https://decisioneval.dev/decision-models/vs-llms/" target="_blank" rel="noopener">Decision Models vs LLMs →</a>
+        </div>
+      </article>
+      <article class="prod">
+        <div class="brand">Laya</div>
+        <h3>Apache · ~0.3–0.4B</h3>
+        <p>小体量开源决策模型；强调校准概率与 RLCD；适合边缘 / 低延迟闸门。</p>
+        <div class="links">
+          <a href="https://laya.studio/learn/calibrated-probabilities" target="_blank" rel="noopener">校准概率概念 →</a>
+          <a href="https://laya.studio/learn/rlcd-reinforcement-learning-calibrated-decisions" target="_blank" rel="noopener">RLCD →</a>
+          <a href="https://systemonemodels.ai/compare/laya-vs-startlux-decision" target="_blank" rel="noopener">Laya vs StartLux →</a>
+        </div>
+      </article>
+      <article class="prod">
+        <div class="brand">StartLux</div>
+        <h3>Instant / AutoThink 开源权重</h3>
+        <p>开放权重决策系列；Instant 快路径，AutoThink 带内部思考门，与应用执行门分层。</p>
+        <div class="links">
+          <a href="https://decision.startlux.com/" target="_blank" rel="noopener">StartLux Decision →</a>
+          <a href="https://github.com/StartLuxLabs/Startlux-Decision" target="_blank" rel="noopener">GitHub 仓库 →</a>
+        </div>
+      </article>
+    </div>
+  
+    </div>
+    <aside class="sec-comment" aria-label="本节评论：快速选型：Jev / Laya / StartLux">
+      <label class="sc-lab" for="secNote-products">本节评论</label>
+      <textarea id="secNote-products" data-section="products" placeholder="对本节的疑问 / 盲点 / 想法…" rows="4"></textarea>
+      <div class="sc-hint" id="secHint-products"></div>
+    </aside>
+  </div>
+</section>
+
+
+  <!-- 8. Learning log -->
+  <section id="learn-log" class="learn-panel" aria-labelledby="learnLogTitle">
+    <div class="learn-panel-head">
+      <h3 id="learnLogTitle">📝 学习日志 · 笔记与导出</h3>
+      <span class="meta" id="logCountLabel">事件 0 / 100</span>
+    </div>
+    <div class="learn-panel-body">
+      <div class="learn-grid">
+        <div class="notes-block">
+          <label class="notes-lab" for="learnerNotes">全局自由笔记 / <code>state</code>+<code>questions</code> 练习答案</label>
+          <textarea id="learnerNotes" placeholder="各节旁已有「本节评论」。这里可写跨节练习：用自己的话写一段 state + 钉死的 questions，并说明你会设什么门槛……"></textarea>
+          <div class="notes-hint" id="notesSavedHint">尚未保存本地笔记</div>
+        </div>
+        <div class="export-block">
+          <p class="blurb">各节评论 + 交互会自动记入本机。优先<strong>一键提交给学习</strong>（云端 webhook → @决策模型学习）；未配置时点提交会弹出填写框。也可复制到剪贴板（顶部含 <code>@决策模型学习</code>）或另存 Markdown。</p>
+          <div class="btn-row">
+            <button type="button" class="btn-learn primary" id="btnCloudSubmit">一键提交给学习</button>
+            <button type="button" class="btn-learn secondary" id="btnCopyMd">一键复制学习日志</button>
+            <button type="button" class="btn-learn ghost" id="btnExportMd">导出 Markdown</button>
+            <button type="button" class="btn-learn ghost" id="btnExportJson">另存 JSON 备份</button>
+            <button type="button" class="btn-learn ghost" id="btnClearLog">清空交互记录</button>
+            <button type="button" class="btn-learn ghost" id="btnWebhookSetup">Webhook 设置</button>
+          </div>
+          <div class="webhook-setup" id="webhookSetup" aria-live="polite">
+            <div class="ws-title">云端提交设置</div>
+            <p class="ws-hint">粘贴 Grok Bot 例程「决策课件学习日志提交」的 webhook URL 与 sender key。保存到本机 localStorage（不会写进仓库）。也可放同目录 <code>webhook-config.js</code>：<code>window.COURSE_WEBHOOK = { url, key }</code>。</p>
+            <label>Webhook URL
+              <input type="url" id="webhookUrlInput" placeholder="https://…/webhook/…" autocomplete="off" spellcheck="false">
+            </label>
+            <label>Sender key
+              <input type="password" id="webhookKeyInput" placeholder="sender key / secret" autocomplete="off" spellcheck="false">
+            </label>
+            <div class="ws-actions">
+              <button type="button" class="btn-learn secondary" id="btnWebhookSave">保存到本机</button>
+              <button type="button" class="btn-learn ghost" id="btnWebhookClear">清除本机配置</button>
+            </div>
+            <div class="ws-status" id="webhookStatus">未配置 · 提交前请先保存</div>
+          </div>
+          <div class="import-row">
+            <label for="importJson">导入 JSON 恢复：</label>
+            <input type="file" id="importJson" accept=".json,application/json">
+          </div>
+        </div>
+      </div>
+      <div class="log-preview" id="logPreview" aria-live="polite"><span class="empty">尚无交互记录 —— 试试切换「并排对比」或拖动门槛。</span></div>
+    </div>
+  </section>
+
+  <!-- 9. Footer -->
+  <footer>
+    <div class="progress">
+      <div class="progress-bar-wrap">
+        <div class="lab"><span>学习进度</span><span>第 0 / ≈8 课</span></div>
+        <div class="pbar"><div class="pbar-fill"></div></div>
+      </div>
+      <div class="next-note">
+        <strong>盲点已标</strong>：「像概率」≠ 决策模型。<br>
+        下一课：校准深挖（ECE / Brier / temperature / RLCD）。
+      </div>
+    </div>
+    <div class="refs">
+      延伸阅读：
+      <a href="https://decisioneval.dev/decision-models/vs-llms/" target="_blank" rel="noopener">vs-llms</a>
+      <a href="https://decision.startlux.com/" target="_blank" rel="noopener">startlux</a>
+      <a href="https://github.com/StartLuxLabs/Startlux-Decision" target="_blank" rel="noopener">github</a>
+      <a href="https://laya.studio/learn/calibrated-probabilities" target="_blank" rel="noopener">calib</a>
+      <a href="https://laya.studio/learn/rlcd-reinforcement-learning-calibrated-decisions" target="_blank" rel="noopener">rlcd</a>
+      <a href="https://wilsonwu.me/zh/blog/2026/jev-vs-laya/" target="_blank" rel="noopener">jev-laya</a>
+      <a href="https://systemonemodels.ai/compare/laya-vs-startlux-decision" target="_blank" rel="noopener">compare</a>
+    </div>
+  </footer>
+</div>
+
+<div class="export-float" id="exportFloat" role="region" aria-label="一键提交给学习">
+  <span class="ef-lab">学习日志</span>
+  <span class="ef-meta" id="stickyLogCount">0 条交互</span>
+  <button type="button" class="btn-export-submit" id="btnCloudSubmitFloat">一键提交给学习</button>
+  <button type="button" class="btn-export-now" id="btnCopyMdFloat">一键复制学习日志</button>
+  <button type="button" class="btn-export-copy" id="btnExportMdFloat">导出 Markdown</button>
+  <a class="ef-link" href="#learn-log">打开笔记 / Webhook</a>
+</div>
+<div class="toast-learn" id="learnToast" role="status"></div>
+
+
+<script src="webhook-config.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var LOG_KEY = "dm_lesson0_log";
+  var NOTES_KEY = "dm_lesson0_notes";
+  var SECTION_NOTES_KEY = "dm_lesson0_section_notes";
+  var WEBHOOK_URL_KEY = "dm_webhook_url";
+  var WEBHOOK_KEY_KEY = "dm_webhook_key";
+  var MAX_LOG = 100;
+  var LESSON_TITLE = "第0课 · 决策模型是什么";
+  var COURSE_ID = "第0课";
+  var COURSE_SOURCE = "decision-courseware";
+
+  var SECTION_META = [
+    { id: "contrast", title: "生成式 LLM vs 决策模型" },
+    { id: "flow", title: "一次前向：状态 → 校准概率" },
+    { id: "demo", title: "互动示例：要不要平仓？" },
+    { id: "calib", title: "校准长什么样" },
+    { id: "agent", title: "Agent 闸门：三态 + 双层" },
+    { id: "products", title: "快速选型：Jev / Laya / StartLux" }
+  ];
+
+  /* —— Interaction log —— */
+  var logEvents = [];
+  try {
+    var raw = localStorage.getItem(LOG_KEY);
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) logEvents = parsed.slice(-MAX_LOG);
+    }
+  } catch (e) { logEvents = []; }
+
+  function nowISO() {
+    try { return new Date().toISOString(); } catch (e) { return String(Date.now()); }
+  }
+  function fmtLocal(iso) {
+    try {
+      var d = new Date(iso);
+      return d.toLocaleString("zh-CN", { hour12: false, timeZone: "Asia/Taipei" });
+    } catch (e) { return iso; }
+  }
+  function persistLog() {
+    try { localStorage.setItem(LOG_KEY, JSON.stringify(logEvents)); } catch (e) {}
+    refreshLogUI();
+  }
+  function pushLog(type, detail, extra) {
+    var ev = { t: nowISO(), type: type, detail: detail || "" };
+    if (extra && typeof extra === "object") {
+      for (var k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) ev[k] = extra[k];
+    }
+    logEvents.push(ev);
+    if (logEvents.length > MAX_LOG) logEvents = logEvents.slice(-MAX_LOG);
+    persistLog();
+  }
+  function humanLine(ev) {
+    var when = fmtLocal(ev.t);
+    var map = {
+      contrast: "对比视图",
+      scenario: "场景模式",
+      threshold: "门槛调整",
+      gate: "闸门结果",
+      section: "访问章节",
+      agent_state: "Agent 态",
+      notes_save: "笔记保存",
+      section_note: "本节评论",
+      export: "导出",
+      import: "导入",
+      clear: "清空记录"
+    };
+    var label = map[ev.type] || ev.type;
+    return when + " · " + label + " · " + (ev.detail || "");
+  }
+  function refreshLogUI() {
+    var n = logEvents.length;
+    var countEl = document.getElementById("logCountLabel");
+    var stickyEl = document.getElementById("stickyLogCount");
+    if (countEl) countEl.textContent = "事件 " + n + " / " + MAX_LOG;
+    if (stickyEl) stickyEl.textContent = n + " 条交互";
+    var prev = document.getElementById("logPreview");
+    if (!prev) return;
+    if (!n) {
+      prev.innerHTML = '<span class="empty">尚无交互记录 —— 试试切换「并排对比」或拖动门槛。</span>';
+      return;
+    }
+    var recent = logEvents.slice(-12);
+    prev.textContent = recent.map(humanLine).join("\n");
+  }
+
+  /* —— Global notes —— */
+  var notesEl = document.getElementById("learnerNotes");
+  var notesHint = document.getElementById("notesSavedHint");
+  var notesTimer = null;
+  function loadNotes() {
+    try {
+      var saved = localStorage.getItem(NOTES_KEY);
+      if (saved != null && notesEl) {
+        notesEl.value = saved;
+        if (notesHint) {
+          notesHint.textContent = saved ? "已从本机恢复全局笔记" : "尚未保存全局笔记";
+          notesHint.className = "notes-hint" + (saved ? " saved" : "");
+        }
+      }
+    } catch (e) {}
+  }
+  function saveNotes(silent) {
+    if (!notesEl) return;
+    try {
+      localStorage.setItem(NOTES_KEY, notesEl.value);
+      if (notesHint) {
+        notesHint.textContent = "已保存 · " + fmtLocal(nowISO()) + "（Asia/Taipei）";
+        notesHint.className = "notes-hint saved";
+      }
+      if (!silent) pushLog("notes_save", "全局笔记已保存", { chars: notesEl.value.length });
+    } catch (e) {
+      if (notesHint) {
+        notesHint.textContent = "保存失败（本机存储不可用）";
+        notesHint.className = "notes-hint";
+      }
+    }
+  }
+  if (notesEl) {
+    notesEl.addEventListener("input", function () {
+      if (notesHint) {
+        notesHint.textContent = "输入中…";
+        notesHint.className = "notes-hint";
+      }
+      clearTimeout(notesTimer);
+      notesTimer = setTimeout(function () { saveNotes(true); }, 400);
+    });
+  }
+  loadNotes();
+
+  /* —— Per-section notes —— */
+  var sectionNotes = {};
+  try {
+    var snRaw = localStorage.getItem(SECTION_NOTES_KEY);
+    if (snRaw) {
+      var snParsed = JSON.parse(snRaw);
+      if (snParsed && typeof snParsed === "object" && !Array.isArray(snParsed)) sectionNotes = snParsed;
+    }
+  } catch (e) { sectionNotes = {}; }
+
+  var sectionTimers = {};
+  function persistSectionNotes() {
+    try { localStorage.setItem(SECTION_NOTES_KEY, JSON.stringify(sectionNotes)); } catch (e) {}
+  }
+  function loadSectionNotesUI() {
+    SECTION_META.forEach(function (meta) {
+      var ta = document.getElementById("secNote-" + meta.id);
+      var hint = document.getElementById("secHint-" + meta.id);
+      if (!ta) return;
+      var val = sectionNotes[meta.id] || "";
+      ta.value = val;
+      if (hint) {
+        hint.textContent = val ? "已从本机恢复" : "";
+        hint.className = "sc-hint" + (val ? " saved" : "");
+      }
+      ta.addEventListener("input", function () {
+        var sid = meta.id;
+        if (hint) {
+          hint.textContent = "输入中…";
+          hint.className = "sc-hint";
+        }
+        clearTimeout(sectionTimers[sid]);
+        sectionTimers[sid] = setTimeout(function () {
+          sectionNotes[sid] = ta.value;
+          persistSectionNotes();
+          if (hint) {
+            hint.textContent = "已保存";
+            hint.className = "sc-hint saved";
+          }
+        }, 400);
+      });
+    });
+  }
+  loadSectionNotesUI();
+
+  function showToast(msg) {
+    var t = document.getElementById("learnToast");
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(showToast._tid);
+    showToast._tid = setTimeout(function () { t.classList.remove("show"); }, 2200);
+  }
+
+  /* —— Live UI state (for export snapshot) —— */
+  var viewLabels = { both: "并排对比", llm: "只看 LLM", dm: "只看决策模型" };
+  var currentView = "both";
+  var current = "fuzzy";
+  var lastGateOutcome = null;
+  var currentAgent = "high";
+  var agentLabels = { high: "高·自动", mid: "中·复核", low: "低·人工" };
+
+  var scenarios = {
+    fuzzy: {
+      flat: 0.55, hold: 0.30, add: 0.15,
+      state: '<span class="k">state</span> · BTC 永续 · 多仓 2.4× · 浮盈 +3.1% · 资金费率转负 · 盘口卖压抬升 · <em style="color:#fbbf24">口头置信 ~0.55</em>'
+    },
+    calib: {
+      flat: 0.92, hold: 0.06, add: 0.02,
+      state: '<span class="k">state</span> · BTC 永续 · 多仓 2.4× · 浮盈 +3.1% · 资金费率转负 · 盘口卖压抬升 · <em style="color:#a3e635">校准后 p_flat=0.92</em>'
+    }
+  };
+
+  function getThreshold() {
+    var el = document.getElementById("threshold");
+    return el ? parseInt(el.value, 10) / 100 : 0.7;
+  }
+  function captureUiState() {
+    var sc = scenarios[current] || scenarios.fuzzy;
+    var th = getThreshold();
+    var p = sc.flat;
+    var gate = p >= th ? "通过·可自动" : "拒答/转人工";
+    return {
+      contrastView: currentView,
+      contrastLabel: viewLabels[currentView] || currentView,
+      scenario: current,
+      scenarioLabel: current === "fuzzy" ? "模糊 0.55" : "校准 0.92",
+      p_flat: sc.flat,
+      p_hold: sc.hold,
+      p_add: sc.add,
+      threshold: th,
+      gate: gate,
+      agentState: currentAgent,
+      agentLabel: agentLabels[currentAgent] || currentAgent
+    };
+  }
+
+  /* —— Export markdown / json —— */
+  function buildPayload() {
+    var sn = {};
+    SECTION_META.forEach(function (meta) {
+      var ta = document.getElementById("secNote-" + meta.id);
+      var v = ta ? ta.value : (sectionNotes[meta.id] || "");
+      sectionNotes[meta.id] = v;
+      sn[meta.id] = v;
+    });
+    persistSectionNotes();
+    return {
+      lesson: LESSON_TITLE,
+      exportedAt: nowISO(),
+      notes: notesEl ? notesEl.value : "",
+      sectionNotes: sn,
+      uiState: captureUiState(),
+      events: logEvents.slice()
+    };
+  }
+  function buildMarkdown(payload) {
+    var lines = [];
+    lines.push("@决策模型学习");
+    lines.push("");
+    lines.push("# 决策模型 · 第0课 · 学习日志");
+    lines.push("");
+    lines.push("- **课程**：" + payload.lesson);
+    lines.push("- **导出时间（UTC）**：" + payload.exportedAt);
+    lines.push("- **导出时间（Asia/Taipei）**：" + fmtLocal(payload.exportedAt));
+    lines.push("- **交互条数**：" + payload.events.length);
+    lines.push("");
+
+    var ui = payload.uiState || captureUiState();
+    lines.push("## 当前课件状态");
+    lines.push("");
+    lines.push("- **对比视图**：" + (ui.contrastLabel || ui.contrastView));
+    lines.push("- **互动场景**：" + (ui.scenarioLabel || ui.scenario));
+    lines.push("- **选项概率**：p_flat=" + Number(ui.p_flat).toFixed(2)
+      + " · p_hold=" + Number(ui.p_hold).toFixed(2)
+      + " · p_add=" + Number(ui.p_add).toFixed(2));
+    lines.push("- **执行门槛 threshold**：" + Number(ui.threshold).toFixed(2));
+    lines.push("- **闸门结果**：" + (ui.gate || ""));
+    lines.push("- **Agent 态**：" + (ui.agentLabel || ui.agentState || ""));
+    lines.push("");
+
+    lines.push("## 各节评论");
+    lines.push("");
+    var sn = payload.sectionNotes || {};
+    var anySec = false;
+    SECTION_META.forEach(function (meta) {
+      var note = (sn[meta.id] || "").trim();
+      if (!note) return;
+      anySec = true;
+      lines.push("### " + meta.title);
+      lines.push("");
+      lines.push(note);
+      lines.push("");
+    });
+    if (!anySec) {
+      lines.push("（各节评论均为空）");
+      lines.push("");
+    }
+
+    lines.push("## 全局自由笔记 / 练习答案");
+    lines.push("");
+    var notes = (payload.notes || "").trim();
+    lines.push(notes ? notes : "（空）");
+    lines.push("");
+
+    lines.push("## 交互摘要（时间序）");
+    lines.push("");
+    if (!payload.events.length) {
+      lines.push("（无记录）");
+    } else {
+      payload.events.forEach(function (ev, i) {
+        lines.push((i + 1) + ". " + humanLine(ev));
+      });
+    }
+    lines.push("");
+    lines.push("---");
+    lines.push("*由课件「第0课-决策模型是什么」学习日志版自动生成*");
+    lines.push("");
+    return lines.join("\n");
+  }
+  function downloadBlob(filename, text, mime) {
+    var blob = new Blob([text], { type: mime || "text/plain;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () {
+      URL.revokeObjectURL(url);
+      a.remove();
+    }, 0);
+  }
+  function doExportMd() {
+    var payload = buildPayload();
+    var md = buildMarkdown(payload);
+    downloadBlob("决策模型-第0课-学习日志.md", md, "text/markdown;charset=utf-8");
+    pushLog("export", "导出 Markdown（含各节评论+课件状态）");
+    showToast("已下载 决策模型-第0课-学习日志.md");
+  }
+  function doCopyMd() {
+    var md = buildMarkdown(buildPayload());
+    function ok() {
+      pushLog("export", "复制 Markdown 到剪贴板");
+      showToast("已复制 · 可粘贴到群（含 @决策模型学习）");
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(md).then(ok).catch(function () {
+        fallbackCopy(md); ok();
+      });
+    } else {
+      fallbackCopy(md); ok();
+    }
+  }
+  function fallbackCopy(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    ta.remove();
+  }
+
+
+  /* —— Cloud webhook submit —— */
+  function readStored(key) {
+    try { return localStorage.getItem(key) || ""; } catch (e) { return ""; }
+  }
+  function writeStored(key, val) {
+    try {
+      if (val == null || val === "") localStorage.removeItem(key);
+      else localStorage.setItem(key, val);
+    } catch (e) {}
+  }
+  function getWebhookConfig() {
+    var cfg = (typeof window !== "undefined" && window.COURSE_WEBHOOK) ? window.COURSE_WEBHOOK : null;
+    var url = "";
+    var key = "";
+    if (cfg && typeof cfg === "object") {
+      if (typeof cfg.url === "string") url = cfg.url.trim();
+      if (typeof cfg.key === "string") key = cfg.key.trim();
+      else if (typeof cfg.senderKey === "string") key = cfg.senderKey.trim();
+      else if (typeof cfg.secret === "string") key = cfg.secret.trim();
+    }
+    if (!url) url = readStored(WEBHOOK_URL_KEY).trim();
+    if (!key) key = readStored(WEBHOOK_KEY_KEY).trim();
+    return { url: url, key: key, fromFile: !!(cfg && cfg.url) };
+  }
+  function refreshWebhookStatus() {
+    var st = document.getElementById("webhookStatus");
+    var urlIn = document.getElementById("webhookUrlInput");
+    var keyIn = document.getElementById("webhookKeyInput");
+    var cfg = getWebhookConfig();
+    if (urlIn && !urlIn.value) urlIn.value = readStored(WEBHOOK_URL_KEY);
+    if (keyIn && !keyIn.value) keyIn.value = readStored(WEBHOOK_KEY_KEY);
+    if (!st) return;
+    if (cfg.url && cfg.key) {
+      st.className = "ws-status ok";
+      st.textContent = cfg.fromFile
+        ? "已配置（webhook-config.js）· 可一键提交"
+        : "已配置（本机 localStorage）· 可一键提交";
+    } else if (cfg.url || cfg.key) {
+      st.className = "ws-status warn";
+      st.textContent = "配置不完整 · 需要 URL 与 sender key";
+    } else {
+      st.className = "ws-status";
+      st.textContent = "未配置 · 提交前请先保存";
+    }
+  }
+  function openWebhookSetup(focus) {
+    var panel = document.getElementById("webhookSetup");
+    if (!panel) return;
+    panel.classList.add("open");
+    refreshWebhookStatus();
+    if (focus) {
+      var urlIn = document.getElementById("webhookUrlInput");
+      if (urlIn) urlIn.focus();
+      try { panel.scrollIntoView({ behavior: "smooth", block: "nearest" }); } catch (e) {}
+    }
+  }
+  function closeWebhookSetup() {
+    var panel = document.getElementById("webhookSetup");
+    if (panel) panel.classList.remove("open");
+  }
+  function saveWebhookFromForm() {
+    var urlIn = document.getElementById("webhookUrlInput");
+    var keyIn = document.getElementById("webhookKeyInput");
+    var url = urlIn ? String(urlIn.value || "").trim() : "";
+    var key = keyIn ? String(keyIn.value || "").trim() : "";
+    writeStored(WEBHOOK_URL_KEY, url);
+    writeStored(WEBHOOK_KEY_KEY, key);
+    refreshWebhookStatus();
+    if (url && key) {
+      showToast("Webhook 已保存到本机");
+      pushLog("export", "保存 webhook 配置（本机）");
+    } else {
+      showToast("请同时填写 URL 与 key");
+    }
+  }
+  function clearWebhookLocal() {
+    writeStored(WEBHOOK_URL_KEY, "");
+    writeStored(WEBHOOK_KEY_KEY, "");
+    var urlIn = document.getElementById("webhookUrlInput");
+    var keyIn = document.getElementById("webhookKeyInput");
+    if (urlIn) urlIn.value = "";
+    if (keyIn) keyIn.value = "";
+    refreshWebhookStatus();
+    showToast("已清除本机 webhook 配置");
+  }
+  function setSubmitBusy(busy) {
+    ["btnCloudSubmit", "btnCloudSubmitFloat"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      if (busy) {
+        el.classList.add("submitting");
+        el.setAttribute("aria-busy", "true");
+        el.dataset.prevLabel = el.textContent;
+        el.textContent = "提交中…";
+      } else {
+        el.classList.remove("submitting");
+        el.removeAttribute("aria-busy");
+        if (el.dataset.prevLabel) el.textContent = el.dataset.prevLabel;
+      }
+    });
+  }
+  function copyMarkdownFallback(reason) {
+    var md = buildMarkdown(buildPayload());
+    function ok() {
+      showToast((reason || "提交失败") + " · 已改复制到剪贴板");
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(md).then(ok).catch(function () {
+        fallbackCopy(md); ok();
+      });
+    } else {
+      fallbackCopy(md); ok();
+    }
+  }
+  function doCloudSubmit() {
+    var cfg = getWebhookConfig();
+    if (!cfg.url || !cfg.key) {
+      openWebhookSetup(true);
+      showToast("请先填写 webhook URL 与 key");
+      return;
+    }
+    var payload = buildPayload();
+    var md = buildMarkdown(payload);
+    var body = {
+      markdown: md,
+      json: payload,
+      course: COURSE_ID,
+      source: COURSE_SOURCE,
+      lesson: LESSON_TITLE,
+      submittedAt: nowISO()
+    };
+    setSubmitBusy(true);
+    var headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + cfg.key
+    };
+    fetch(cfg.url, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(body),
+      mode: "cors",
+      credentials: "omit"
+    }).then(function (res) {
+      if (!res.ok) {
+        return res.text().then(function (t) {
+          var err = new Error("HTTP " + res.status + (t ? (": " + t.slice(0, 120)) : ""));
+          err.status = res.status;
+          throw err;
+        });
+      }
+      pushLog("export", "云端提交学习日志成功");
+      showToast("已提交给学习 · 等待批改");
+    }).catch(function (err) {
+      var msg = (err && err.message) ? err.message : "网络/CORS 错误";
+      pushLog("export", "云端提交失败：" + msg);
+      copyMarkdownFallback("提交失败（" + msg + "）");
+    }).then(function () {
+      setSubmitBusy(false);
+    });
+  }
+
+  var btnWhSave = document.getElementById("btnWebhookSave");
+  if (btnWhSave) btnWhSave.addEventListener("click", saveWebhookFromForm);
+  var btnWhClear = document.getElementById("btnWebhookClear");
+  if (btnWhClear) btnWhClear.addEventListener("click", clearWebhookLocal);
+  var btnWhSetup = document.getElementById("btnWebhookSetup");
+  if (btnWhSetup) {
+    btnWhSetup.addEventListener("click", function () {
+      var panel = document.getElementById("webhookSetup");
+      if (panel && panel.classList.contains("open")) closeWebhookSetup();
+      else openWebhookSetup(true);
+    });
+  }
+  ["btnCloudSubmit", "btnCloudSubmitFloat"].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener("click", doCloudSubmit);
+  });
+  refreshWebhookStatus();
+
+  ["btnExportMd", "btnExportMdFloat"].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener("click", doExportMd);
+  });
+  ["btnCopyMd", "btnCopyMdFloat"].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener("click", doCopyMd);
+  });
+
+  var btnExportJson = document.getElementById("btnExportJson");
+  if (btnExportJson) {
+    btnExportJson.addEventListener("click", function () {
+      var payload = buildPayload();
+      downloadBlob("决策模型-第0课-学习日志.json", JSON.stringify(payload, null, 2), "application/json;charset=utf-8");
+      pushLog("export", "导出 JSON");
+      showToast("已下载 JSON 备份");
+    });
+  }
+  var btnClear = document.getElementById("btnClearLog");
+  if (btnClear) {
+    btnClear.addEventListener("click", function () {
+      if (!confirm("清空本课交互记录？（各节评论与全局笔记不会删）")) return;
+      logEvents = [];
+      persistLog();
+      pushLog("clear", "已清空并重新开始记录");
+      showToast("交互记录已清空");
+    });
+  }
+
+  /* —— Import JSON —— */
+  var importInput = document.getElementById("importJson");
+  if (importInput) {
+    importInput.addEventListener("change", function () {
+      var file = importInput.files && importInput.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        try {
+          var data = JSON.parse(String(reader.result || ""));
+          if (typeof data.notes === "string" && notesEl) {
+            notesEl.value = data.notes;
+            saveNotes(true);
+          }
+          if (data.sectionNotes && typeof data.sectionNotes === "object") {
+            sectionNotes = data.sectionNotes;
+            persistSectionNotes();
+            SECTION_META.forEach(function (meta) {
+              var ta = document.getElementById("secNote-" + meta.id);
+              var hint = document.getElementById("secHint-" + meta.id);
+              if (ta) ta.value = sectionNotes[meta.id] || "";
+              if (hint) {
+                var v = sectionNotes[meta.id] || "";
+                hint.textContent = v ? "已从导入恢复" : "";
+                hint.className = "sc-hint" + (v ? " saved" : "");
+              }
+            });
+          }
+          if (Array.isArray(data.events)) {
+            logEvents = data.events.slice(-MAX_LOG);
+            persistLog();
+          }
+          pushLog("import", "从文件恢复：" + (file.name || "json"));
+          showToast("已导入学习日志");
+        } catch (err) {
+          showToast("导入失败：JSON 无效");
+        }
+        importInput.value = "";
+      };
+      reader.readAsText(file, "UTF-8");
+    });
+  }
+
+  /* —— Contrast toggle —— */
+  var grid = document.getElementById("contrastGrid");
+  var toggles = document.querySelectorAll(".toggle-bar button");
+  toggles.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      toggles.forEach(function (b) {
+        b.classList.remove("active");
+        b.setAttribute("aria-selected", "false");
+      });
+      btn.classList.add("active");
+      btn.setAttribute("aria-selected", "true");
+      var v = btn.getAttribute("data-view");
+      currentView = v || "both";
+      grid.classList.remove("hide-llm", "hide-dm");
+      if (v === "llm") grid.classList.add("hide-dm");
+      if (v === "dm") grid.classList.add("hide-llm");
+      pushLog("contrast", viewLabels[v] || v, { view: v });
+    });
+  });
+
+  function setBars(sc, silent) {
+    var s = scenarios[sc];
+    document.getElementById("barFlat").style.width = (s.flat * 100) + "%";
+    document.getElementById("barHold").style.width = (s.hold * 100) + "%";
+    document.getElementById("barAdd").style.width = (s.add * 100) + "%";
+    document.getElementById("valFlat").textContent = s.flat.toFixed(2);
+    document.getElementById("valHold").textContent = s.hold.toFixed(2);
+    document.getElementById("valAdd").textContent = s.add.toFixed(2);
+    document.getElementById("stateText").innerHTML = s.state;
+    updateGate(silent);
+  }
+
+  function updateGate(silent) {
+    var th = getThreshold();
+    var p = scenarios[current].flat;
+    document.getElementById("thVal").textContent = th.toFixed(2);
+    document.getElementById("threshold").setAttribute("aria-valuenow", String(Math.round(th * 100)));
+    var el = document.getElementById("gateResult");
+    var title = document.getElementById("gateTitle");
+    var detail = document.getElementById("gateDetail");
+    var outcome, outcomeLabel;
+    if (p >= th) {
+      el.className = "gate-result pass";
+      el.querySelector(".icon").textContent = "✅";
+      title.textContent = "通过 · 可自动执行平仓";
+      detail.textContent = "p_flat=" + p.toFixed(2) + " ≥ threshold=" + th.toFixed(2) + " —— 校准概率过闸。";
+      outcome = "auto";
+      outcomeLabel = "自动";
+    } else {
+      el.className = "gate-result reject";
+      el.querySelector(".icon").textContent = "⛔";
+      title.textContent = "拒答 / 转人工复核";
+      detail.textContent = "p_flat=" + p.toFixed(2) + " < threshold=" + th.toFixed(2) + " —— 置信不足，不自动下单。";
+      outcome = "reject";
+      outcomeLabel = "拒答/人工";
+    }
+    if (!silent && lastGateOutcome !== outcome) {
+      lastGateOutcome = outcome;
+      pushLog("gate", outcomeLabel + "（p_flat=" + p.toFixed(2) + ", θ=" + th.toFixed(2) + "）", {
+        outcome: outcome, p_flat: p, threshold: th, scenario: current
+      });
+    } else if (silent) {
+      lastGateOutcome = outcome;
+    }
+  }
+
+  var thTimer = null;
+  document.getElementById("threshold").addEventListener("input", function () {
+    updateGate(true);
+    clearTimeout(thTimer);
+    thTimer = setTimeout(function () {
+      var th = getThreshold();
+      pushLog("threshold", "threshold=" + th.toFixed(2) + "（场景 " + (current === "fuzzy" ? "0.55" : "0.92") + "）", {
+        threshold: th, scenario: current
+      });
+      updateGate(false);
+    }, 350);
+  });
+
+  document.querySelectorAll(".scenario-btns button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll(".scenario-btns button").forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      current = btn.getAttribute("data-sc");
+      var label = current === "fuzzy" ? "模糊 0.55" : "校准 0.92";
+      pushLog("scenario", label, { scenario: current, p_flat: scenarios[current].flat });
+      lastGateOutcome = null;
+      setBars(current, false);
+    });
+  });
+
+  /* —— Agent state cards —— */
+  var cards = document.querySelectorAll(".state-card");
+  cards.forEach(function (card) {
+    function activate() {
+      cards.forEach(function (c) {
+        c.classList.remove("active");
+        c.setAttribute("aria-pressed", "false");
+      });
+      card.classList.add("active");
+      card.setAttribute("aria-pressed", "true");
+      var st = card.getAttribute("data-state");
+      currentAgent = st || "high";
+      pushLog("agent_state", agentLabels[st] || st, { state: st });
+    }
+    card.addEventListener("click", activate);
+    card.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activate(); }
+    });
+  });
+
+  /* —— Section visits —— */
+  var sectionNames = {
+    contrast: "生成式 LLM vs 决策模型",
+    flow: "一次前向：状态 → 校准概率",
+    demo: "互动示例：要不要平仓？",
+    calib: "校准长什么样",
+    agent: "Agent 闸门",
+    products: "快速选型",
+    "learn-log": "学习日志"
+  };
+  var seenSections = {};
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        var id = entry.target.id;
+        if (!id || seenSections[id]) return;
+        if (entry.intersectionRatio < 0.35) return;
+        seenSections[id] = true;
+        pushLog("section", sectionNames[id] || id, { section: id });
+      });
+    }, { threshold: [0.35, 0.5] });
+    Object.keys(sectionNames).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) io.observe(el);
+    });
+  }
+
+  /* init */
+  setBars("fuzzy", true);
+  refreshLogUI();
+  pushLog("section", "进入课件", { section: "hero" });
+})();
+</script>
+</body>
+</html>
