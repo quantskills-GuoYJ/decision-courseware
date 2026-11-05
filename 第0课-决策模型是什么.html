@@ -37,7 +37,7 @@ body {
 }
 a { color: var(--cyan); text-decoration: none; }
 a:hover { text-decoration: underline; }
-.wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem 5.5rem; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem 9.5rem; }
 
 /* —— Hero —— */
 .hero {
@@ -1237,6 +1237,240 @@ footer {
 
 .toast-learn { bottom: 4.25rem; }
 
+/* —— Page-in tutor drawer —— */
+.tutor-fab {
+  position: fixed;
+  right: max(0.75rem, env(safe-area-inset-right));
+  bottom: calc(var(--export-bar-h, 74px) + 12px);
+  z-index: 65;
+  font-family: var(--font);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 0.55rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(34,211,238,0.55);
+  background: linear-gradient(135deg, rgba(34,211,238,0.28), rgba(13,17,23,0.94));
+  color: var(--cyan);
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.tutor-fab:hover { border-color: var(--cyan); }
+.tutor-fab[aria-expanded="true"] {
+  background: var(--cyan);
+  color: #042026;
+  border-color: var(--cyan);
+}
+.tutor-drawer {
+  position: fixed;
+  right: max(0.75rem, env(safe-area-inset-right));
+  bottom: calc(var(--export-bar-h, 74px) + 62px);
+  z-index: 66;
+  width: min(400px, calc(100vw - 1.5rem));
+  height: min(540px, calc(100dvh - var(--export-bar-h, 74px) - 84px));
+  display: flex;
+  flex-direction: column;
+  background: var(--bg2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 18px 48px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+.tutor-drawer[hidden] { display: none !important; }
+.tutor-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem 0.35rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(13,17,23,0.55);
+}
+.tutor-tabs {
+  display: flex;
+  flex: 1;
+  gap: 0.35rem;
+  padding: 0.2rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.tutor-tabs button {
+  flex: 1;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.4rem 0.35rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.tutor-tabs button[aria-selected="true"] {
+  background: var(--cyan-dim);
+  color: var(--cyan);
+}
+.tutor-close {
+  font-family: inherit;
+  font-size: 1.05rem;
+  line-height: 1;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+}
+.tutor-close:hover { color: var(--text); border-color: var(--cyan); }
+.tutor-help {
+  margin: 0;
+  padding: 0.4rem 0.75rem 0.15rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.tutor-source {
+  margin: 0;
+  padding: 0 0.75rem;
+  font-size: 0.7rem;
+  color: var(--lime);
+}
+.tutor-log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.7rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--bg);
+}
+.tutor-empty {
+  margin: auto 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.tutor-bubble {
+  max-width: 92%;
+  padding: 0.48rem 0.68rem;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.tutor-bubble.user {
+  align-self: flex-end;
+  background: var(--cyan-dim);
+  border: 1px solid rgba(34,211,238,0.35);
+}
+.tutor-bubble.assistant {
+  align-self: flex-start;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.tutor-bubble.error {
+  align-self: stretch;
+  color: var(--danger);
+  background: rgba(248,113,113,0.08);
+  border: 1px solid rgba(248,113,113,0.45);
+}
+.tutor-bubble.pending::after {
+  content: "▍";
+  color: var(--cyan);
+  margin-left: 0.12rem;
+  animation: tutor-blink 1s steps(1) infinite;
+}
+@keyframes tutor-blink { 50% { opacity: 0; } }
+.tutor-compose {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.55rem 0.7rem 0.65rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg2);
+}
+.tutor-compose textarea {
+  width: 100%;
+  min-height: 64px;
+  max-height: 140px;
+  resize: vertical;
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+}
+.tutor-compose textarea:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 2px rgba(34,211,238,0.18);
+}
+.tutor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+.tutor-actions button {
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.38rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.tutor-send {
+  border: 1px solid rgba(34,211,238,0.55);
+  background: linear-gradient(135deg, rgba(34,211,238,0.3), rgba(163,230,53,0.18));
+  color: var(--cyan);
+}
+.tutor-send:disabled { opacity: 0.45; cursor: not-allowed; }
+.tutor-pull {
+  border: 1px solid rgba(163,230,53,0.45);
+  background: rgba(163,230,53,0.1);
+  color: var(--lime);
+}
+.tutor-keyhint {
+  margin-left: auto;
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+.tutor-status {
+  min-height: 1em;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.tutor-status.bad { color: var(--danger); }
+.fy-tutor-send {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-family: var(--font);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(163,230,53,0.45);
+  background: rgba(163,230,53,0.1);
+  color: var(--lime);
+  cursor: pointer;
+}
+.fy-tutor-send:hover { border-color: var(--lime); }
+@media (max-width: 520px) {
+  .tutor-drawer {
+    left: 0.55rem;
+    right: 0.55rem;
+    width: auto;
+  }
+  .tutor-keyhint { display: none; }
+}
+
 </style>
 </head>
 <body>
@@ -1968,6 +2202,28 @@ footer {
 </div>
 <div class="toast-learn" id="learnToast" role="status"></div>
 
+<button type="button" class="tutor-fab" id="tutorFab" aria-expanded="false" aria-controls="tutorDrawer">学伴</button>
+<aside class="tutor-drawer" id="tutorDrawer" hidden role="dialog" aria-labelledby="tutorTitle" aria-modal="false">
+  <div class="tutor-head">
+    <div class="tutor-tabs" role="tablist" aria-label="学伴模式">
+      <button type="button" role="tab" id="tutorTabSoc" aria-controls="tutorLog" aria-selected="true" data-mode="socratic">侧栏学伴</button>
+      <button type="button" role="tab" id="tutorTabFy" aria-controls="tutorLog" aria-selected="false" data-mode="feynman">费曼批改</button>
+    </div>
+    <button type="button" class="tutor-close" id="tutorClose" aria-label="关闭学伴">×</button>
+  </div>
+  <p class="tutor-help" id="tutorTitle">闭卷题仍由页面规则判定；AI 只追问/批改费曼</p>
+  <p class="tutor-source" id="tutorSource" hidden></p>
+  <div class="tutor-log" id="tutorLog" role="log" aria-live="polite" aria-relevant="additions"></div>
+  <div class="tutor-compose">
+    <textarea id="tutorInput" rows="3" placeholder="就这一课追问…" maxlength="4000"></textarea>
+    <div class="tutor-actions">
+      <button type="button" class="tutor-pull" id="tutorPull" hidden>填入当前费曼</button>
+      <button type="button" class="tutor-send" id="tutorSend">发送</button>
+      <span class="tutor-keyhint">Enter 发送 · Shift+Enter 换行</span>
+    </div>
+    <div class="tutor-status" id="tutorStatus" aria-live="polite"></div>
+  </div>
+</aside>
 
 <script src="webhook-config.js"></script>
 <script>
@@ -3139,6 +3395,44 @@ footer {
   setBars("fuzzy");
   persistThreshMeta();
   refreshLogUI();
+
+  window.__dmCollectTutorAnswers = function () {
+    var log = buildLearningLog();
+    var answers = {
+      "qz-prob-vs-dm": "",
+      "qz-two-gates": "",
+      "pr-gate-fuzzy": "",
+      "pr-gate-calib": ""
+    };
+    (log.items || []).forEach(function (it) {
+      if (!it || !it.item_id) return;
+      if (it.type === "quiz") answers[it.item_id] = it.choice || "";
+      else if (it.type === "predict_reveal") answers[it.item_id] = it.prediction || "";
+      else if (it.type === "contract_draft") {
+        answers["contract.state"] = it.state || "";
+        answers["contract.questions"] = it.questions || "";
+      }
+    });
+    var predPicked = document.querySelector("#predictBox .pb-opt.picked");
+    if (predPicked) {
+      var pid = current === "calib" ? "pr-gate-calib" : "pr-gate-fuzzy";
+      answers[pid] = predPicked.getAttribute("data-pred") || predPicked.textContent.trim();
+    }
+    (log.sections || []).forEach(function (sec) {
+      answers["feynman." + sec.id] = (sec.feynman && sec.feynman.text) || "";
+      answers["comment." + sec.id] = sec.comments || "";
+      var rw = document.getElementById("rw-" + sec.id);
+      answers["rewrite." + sec.id] = rw ? (rw.value || "") : "";
+    });
+    var snap = log.snapshot || {};
+    answers.threshold = snap.threshold;
+    answers.scenario = snap.scenario || "";
+    answers.gate = snap.gate || "";
+    answers.pFlat = snap.pFlat;
+    answers.compareView = snap.compareView || "";
+    answers.triState = snap.triState || "";
+    return answers;
+  };
 })();
 </script>
 <script>
@@ -3648,12 +3942,516 @@ footer {
   var saved = readStore();
   fetch("lesson0-consensus.json").then(function (res) { return res.json(); }).then(function (data) {
     CFG = data;
+    if (data && data.v != null) window.__dmConsensusVersion = String(data.v);
     fillConsList();
     restore(saved);
   }).catch(function () {
     var fb = document.getElementById("lfPrimFb");
     if (fb) { fb.className = "lf-fb bad"; fb.textContent = "共识配置没有载入，核对本课暂时不可用。"; }
   });
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+
+  var TUTOR_URL = (window.COURSE_TUTOR && window.COURSE_TUTOR.url)
+    ? String(window.COURSE_TUTOR.url)
+    : "https://decision-course-submit.abgyja.workers.dev/api/tutor";
+  var SUMMARY_KEY = "dm_lesson0_tutor_summaries";
+  var LESSON_ID = "lesson-0";
+  var MAX_HISTORY = 8;
+
+  var fab = document.getElementById("tutorFab");
+  var drawer = document.getElementById("tutorDrawer");
+  var logEl = document.getElementById("tutorLog");
+  var input = document.getElementById("tutorInput");
+  var sendBtn = document.getElementById("tutorSend");
+  var pullBtn = document.getElementById("tutorPull");
+  var statusEl = document.getElementById("tutorStatus");
+  var sourceEl = document.getElementById("tutorSource");
+  var tabSoc = document.getElementById("tutorTabSoc");
+  var tabFy = document.getElementById("tutorTabFy");
+  var closeBtn = document.getElementById("tutorClose");
+  if (!fab || !drawer || !logEl || !input || !sendBtn) return;
+
+  var mode = "socratic";
+  var threads = { socratic: [], feynman: [] };
+  var streaming = false;
+  var live = null;
+  var abortCtrl = null;
+  var lastFy = null;
+
+  function readSummaries() {
+    try {
+      var arr = JSON.parse(localStorage.getItem(SUMMARY_KEY) || "[]");
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+  window.__dmTutorSummaries = readSummaries();
+
+  function stashSummary(entry) {
+    var arr = readSummaries();
+    arr.push(entry);
+    if (arr.length > 30) arr = arr.slice(arr.length - 30);
+    window.__dmTutorSummaries = arr;
+    try { localStorage.setItem(SUMMARY_KEY, JSON.stringify(arr)); } catch (e) {}
+  }
+
+  function setStatus(text, bad) {
+    if (!statusEl) return;
+    statusEl.textContent = text || "";
+    statusEl.className = "tutor-status" + (bad ? " bad" : "");
+  }
+
+  function syncBarOffset() {
+    var bar = document.getElementById("exportFloat");
+    var h = bar ? Math.ceil(bar.getBoundingClientRect().height) : 74;
+    if (h < 40) h = 74;
+    document.documentElement.style.setProperty("--export-bar-h", h + "px");
+  }
+  syncBarOffset();
+  window.addEventListener("resize", syncBarOffset);
+  if (window.ResizeObserver) {
+    var bar = document.getElementById("exportFloat");
+    if (bar) new ResizeObserver(syncBarOffset).observe(bar);
+  }
+
+  function fieldCaption(ta) {
+    if (!ta) return "";
+    var sid = "";
+    if (ta.id && ta.id.indexOf("secFeynman-") === 0) sid = ta.id.slice("secFeynman-".length);
+    else if (ta.getAttribute) sid = ta.getAttribute("data-rw") || ta.getAttribute("data-section") || "";
+    var kind = ta.classList && ta.classList.contains("feynman-ta") ? "费曼复述" : "改写";
+    return (sid ? sid + " · " : "") + kind;
+  }
+
+  function visibleSectionId() {
+    var ids = ["contrast", "flow", "demo", "calib", "agent", "products"];
+    var best = null;
+    var bestArea = 0;
+    ids.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      var r = el.getBoundingClientRect();
+      var top = Math.max(r.top, 0);
+      var bot = Math.min(r.bottom, window.innerHeight || 0);
+      var area = bot - top;
+      if (area > bestArea) { bestArea = area; best = id; }
+    });
+    return best;
+  }
+
+  function pickFeynmanField() {
+    if (lastFy && document.documentElement.contains(lastFy)) return lastFy;
+    var sid = visibleSectionId();
+    if (sid) {
+      var rw = document.getElementById("rw-" + sid);
+      var fy = document.getElementById("secFeynman-" + sid);
+      if (rw && String(rw.value || "").trim()) return rw;
+      if (fy && String(fy.value || "").trim()) return fy;
+      if (fy) return fy;
+      if (rw) return rw;
+    }
+    return document.querySelector("textarea.feynman-ta");
+  }
+
+  function fillFromField(ta, announceEmpty) {
+    if (!ta) {
+      setStatus("没有找到费曼输入框。", true);
+      return;
+    }
+    var text = String(ta.value || "").trim();
+    if (sourceEl) {
+      sourceEl.hidden = false;
+      sourceEl.textContent = "来自 " + fieldCaption(ta);
+    }
+    if (!text) {
+      input.value = "";
+      setStatus(announceEmpty || "这一格还是空的。先写一句，再发送。", true);
+      return;
+    }
+    input.value = text.slice(0, 4000);
+    setStatus("");
+  }
+
+  function openDrawer(nextMode) {
+    if (nextMode) setMode(nextMode);
+    drawer.hidden = false;
+    fab.setAttribute("aria-expanded", "true");
+    syncBarOffset();
+    renderThread();
+    try { input.focus(); } catch (e) {}
+  }
+  function closeDrawer() {
+    drawer.hidden = true;
+    fab.setAttribute("aria-expanded", "false");
+  }
+  function toggleDrawer() {
+    if (drawer.hidden) openDrawer();
+    else closeDrawer();
+  }
+
+  function setMode(next) {
+    if (next !== "socratic" && next !== "feynman") return;
+    if (streaming && next !== mode) stopStream();
+    mode = next;
+    if (tabSoc) tabSoc.setAttribute("aria-selected", mode === "socratic" ? "true" : "false");
+    if (tabFy) tabFy.setAttribute("aria-selected", mode === "feynman" ? "true" : "false");
+    if (pullBtn) pullBtn.hidden = mode !== "feynman";
+    input.placeholder = mode === "feynman"
+      ? "贴上费曼改写，或点「填入当前费曼」"
+      : "就这一课追问，例如：口头概率和校准概率差在哪？";
+    if (sourceEl && mode !== "feynman") sourceEl.hidden = true;
+    renderThread();
+  }
+
+  function renderThread() {
+    var items = threads[mode];
+    logEl.textContent = "";
+    if (!items.length && !live) {
+      var empty = document.createElement("p");
+      empty.className = "tutor-empty";
+      empty.textContent = mode === "feynman"
+        ? "把费曼复述或改写发来批改。也可以点各输入框下的「送去批改」。"
+        : "可以问概念、盲点，或某一节在讲什么。闭卷对错仍以页面规则为准。";
+      logEl.appendChild(empty);
+      return;
+    }
+    items.forEach(function (m) { logEl.appendChild(bubbleEl(m.role, m.content, false)); });
+    if (live && live.mode === mode) logEl.appendChild(live.el);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function bubbleEl(role, content, pending) {
+    var el = document.createElement("div");
+    var cls = "tutor-bubble ";
+    if (role === "user") cls += "user";
+    else if (role === "error") cls += "error";
+    else cls += "assistant";
+    if (pending) cls += " pending";
+    el.className = cls;
+    el.textContent = content || "";
+    return el;
+  }
+
+  function historyPayload() {
+    var msgs = [];
+    threads[mode].forEach(function (m) {
+      if (m.role === "user" || m.role === "assistant") {
+        msgs.push({ role: m.role, content: String(m.content || "").slice(0, 2000) });
+      }
+    });
+    if (msgs.length > MAX_HISTORY) msgs = msgs.slice(msgs.length - MAX_HISTORY);
+    return msgs;
+  }
+
+  function collectAnswers() {
+    try {
+      if (typeof window.__dmCollectTutorAnswers === "function") {
+        var snap = window.__dmCollectTutorAnswers();
+        if (snap && typeof snap === "object") return snap;
+      }
+    } catch (e) {}
+    return {};
+  }
+
+  function consensusVersion() {
+    var v = window.__dmConsensusVersion;
+    if (v == null || v === "") return "1";
+    return String(v);
+  }
+
+  function handleSseLine(line, state) {
+    if (line === "") {
+      dispatchSse(state);
+      return;
+    }
+    if (line.charAt(0) === ":") return;
+    if (line.indexOf("event:") === 0) {
+      state.event = line.slice(6).trim();
+      return;
+    }
+    if (line.indexOf("data:") === 0) {
+      var v = line.slice(5);
+      if (v.charAt(0) === " ") v = v.slice(1);
+      state.data.push(v);
+    }
+  }
+  function dispatchSse(state) {
+    if (!state.event && !state.data.length) return;
+    var raw = state.data.join("\n");
+    var eventName = state.event || "message";
+    state.event = "";
+    state.data = [];
+    var payload = {};
+    if (raw) {
+      try { payload = JSON.parse(raw); }
+      catch (e1) { payload = { msg: raw }; }
+    }
+    onSseEvent(eventName, payload);
+  }
+  function consumeChunk(text, state) {
+    state.buf += text;
+    var parts = state.buf.split(/\r?\n/);
+    state.buf = parts.pop();
+    parts.forEach(function (line) { handleSseLine(line, state); });
+  }
+
+  function stopStream() {
+    if (abortCtrl) {
+      try { abortCtrl.abort(); } catch (e) {}
+    }
+  }
+
+  function finishLive(role, content) {
+    if (live && live.mode === mode) {
+      threads[mode].push({ role: role, content: content });
+    } else if (live) {
+      threads[live.mode].push({ role: role, content: content });
+    }
+    live = null;
+  }
+
+  var acc = "";
+  function onSseEvent(eventName, payload) {
+    if (!live) return;
+    if (eventName === "token") {
+      var t = payload && payload.t != null ? String(payload.t) : "";
+      acc += t;
+      live.el.textContent = acc;
+      live.el.className = "tutor-bubble assistant pending";
+      if (live.mode === mode) logEl.scrollTop = logEl.scrollHeight;
+      return;
+    }
+    if (eventName === "done") {
+      var shown = acc || (payload && payload.summary ? String(payload.summary) : "");
+      if (!shown) shown = "（学伴没有返回文字）";
+      live.el.textContent = shown;
+      live.el.className = "tutor-bubble assistant";
+      if (payload && payload.summary) {
+        stashSummary({
+          at: new Date().toISOString(),
+          mode: (payload.mode || live.mode || mode),
+          summary: String(payload.summary)
+        });
+      }
+      finishLive("assistant", shown);
+      streaming = false;
+      abortCtrl = null;
+      sendBtn.textContent = "发送";
+      setStatus("");
+      renderThread();
+      return;
+    }
+    if (eventName === "error") {
+      var msg = (payload && payload.msg) ? String(payload.msg)
+        : ("学伴出错" + (payload && payload.code ? "（" + payload.code + "）" : ""));
+      var shownErr = acc ? (acc + "\n" + msg) : msg;
+      live.el.textContent = shownErr;
+      live.el.className = "tutor-bubble error";
+      finishLive("error", shownErr);
+      streaming = false;
+      abortCtrl = null;
+      sendBtn.textContent = "发送";
+      setStatus(msg, true);
+      renderThread();
+    }
+  }
+
+  function beginAssistantBubble() {
+    acc = "";
+    var el = bubbleEl("assistant", "", true);
+    live = { mode: mode, el: el };
+    renderThread();
+  }
+
+  function failTurn(msg) {
+    if (live) {
+      live.el.textContent = msg;
+      live.el.className = "tutor-bubble error";
+      finishLive("error", msg);
+    } else {
+      threads[mode].push({ role: "error", content: msg });
+    }
+    streaming = false;
+    abortCtrl = null;
+    sendBtn.textContent = "发送";
+    setStatus(msg, true);
+    renderThread();
+  }
+
+  function settleOpenStream() {
+    if (!streaming) return;
+    if (acc && live) {
+      live.el.textContent = acc;
+      live.el.className = "tutor-bubble assistant";
+      finishLive("assistant", acc);
+      streaming = false;
+      abortCtrl = null;
+      sendBtn.textContent = "发送";
+      setStatus("");
+      renderThread();
+      return;
+    }
+    failTurn("学伴流提前结束。");
+  }
+
+  function readSse(res) {
+    if (!res.body || !res.body.getReader) {
+      return res.text().then(function (text) {
+        var state = { buf: "", event: "", data: [] };
+        consumeChunk(text, state);
+        if (state.buf) handleSseLine(state.buf, state);
+        dispatchSse(state);
+        settleOpenStream();
+      });
+    }
+    var reader = res.body.getReader();
+    var decoder = new TextDecoder();
+    var state = { buf: "", event: "", data: [] };
+    function pump() {
+      return reader.read().then(function (result) {
+        if (result.done) {
+          if (state.buf) handleSseLine(state.buf, state);
+          dispatchSse(state);
+          settleOpenStream();
+          return;
+        }
+        consumeChunk(decoder.decode(result.value, { stream: true }), state);
+        if (!streaming) {
+          try {
+            var pendingCancel = reader.cancel();
+            if (pendingCancel && pendingCancel.catch) pendingCancel.catch(function () {});
+          } catch (e3) {}
+          return;
+        }
+        return pump();
+      });
+    }
+    return pump();
+  }
+
+  function sendMessage(text) {
+    var msg = String(text || "").trim();
+    if (!msg || streaming) return;
+    if (msg.length > 4000) msg = msg.slice(0, 4000);
+    var prior = historyPayload();
+    threads[mode].push({ role: "user", content: msg });
+    input.value = "";
+    streaming = true;
+    sendBtn.textContent = "停止";
+    setStatus("正在回复…");
+    beginAssistantBubble();
+    abortCtrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+    var body = {
+      mode: mode,
+      lessonId: LESSON_ID,
+      message: msg,
+      answers: collectAnswers(),
+      history: prior,
+      consensusVersion: consensusVersion(),
+      locale: "zh-Hans"
+    };
+    var opts = {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
+      cache: "no-store",
+      body: JSON.stringify(body)
+    };
+    if (abortCtrl) opts.signal = abortCtrl.signal;
+    fetch(TUTOR_URL, opts).then(function (res) {
+      if (!res.ok) {
+        return res.text().then(function (t) {
+          var detail = "";
+          if (t) {
+            try {
+              var parsed = JSON.parse(t);
+              detail = parsed.msg || parsed.message || "";
+            } catch (e2) { detail = t.slice(0, 180); }
+          }
+          failTurn(detail || ("学伴请求失败（" + res.status + "）"));
+        });
+      }
+      var ctype = (res.headers && res.headers.get && res.headers.get("content-type")) || "";
+      if (ctype.indexOf("application/json") >= 0 && ctype.indexOf("event-stream") < 0) {
+        return res.json().then(function (j) {
+          if (j && (j.msg || j.code)) onSseEvent("error", j);
+          else failTurn("学伴返回了非流式响应。");
+        });
+      }
+      return readSse(res);
+    }).catch(function (err) {
+      if (!streaming) return;
+      if (err && err.name === "AbortError") {
+        var partial = acc ? (acc + "\n（已停止）") : "（已停止）";
+        if (live) {
+          live.el.textContent = partial;
+          live.el.className = "tutor-bubble assistant";
+          finishLive("assistant", partial);
+        }
+        streaming = false;
+        abortCtrl = null;
+        sendBtn.textContent = "发送";
+        setStatus("已停止");
+        renderThread();
+        return;
+      }
+      failTurn("学伴连不上（网络或跨域）。页面规则题不受影响。");
+    });
+  }
+
+  function onSendClick() {
+    if (streaming) { stopStream(); return; }
+    sendMessage(input.value);
+  }
+
+  fab.addEventListener("click", toggleDrawer);
+  if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
+  if (tabSoc) tabSoc.addEventListener("click", function () { setMode("socratic"); });
+  if (tabFy) tabFy.addEventListener("click", function () { setMode("feynman"); });
+  sendBtn.addEventListener("click", onSendClick);
+  if (pullBtn) {
+    pullBtn.addEventListener("click", function () {
+      setMode("feynman");
+      fillFromField(pickFeynmanField(), "当前没有可批改的费曼文字。");
+      try { input.focus(); } catch (e) {}
+    });
+  }
+  input.addEventListener("keydown", function (e) {
+    if (e.isComposing || e.keyCode === 229) return;
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (!streaming) sendMessage(input.value);
+    }
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !drawer.hidden) closeDrawer();
+  });
+  document.addEventListener("focusin", function (e) {
+    var t = e.target;
+    if (!t || !t.matches) return;
+    if (t.matches("textarea.feynman-ta, textarea[data-rw]")) lastFy = t;
+  });
+
+  document.querySelectorAll("textarea.feynman-ta, textarea[data-rw]").forEach(function (ta) {
+    if (ta.getAttribute("data-tutor-hook")) return;
+    ta.setAttribute("data-tutor-hook", "1");
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "fy-tutor-send";
+    btn.textContent = "送去批改";
+    btn.title = "打开费曼批改，带上这段文字。闭卷核对仍在页面上。";
+    btn.addEventListener("click", function () {
+      openDrawer("feynman");
+      fillFromField(ta, "这一格还是空的。先写一句，再发送。");
+    });
+    var host = (ta.parentElement && ta.parentElement.tagName === "LABEL") ? ta.parentElement : ta;
+    host.insertAdjacentElement("afterend", btn);
+  });
+
+  setMode("socratic");
+  renderThread();
 })();
 </script>
 </body>
