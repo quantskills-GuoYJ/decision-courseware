@@ -1462,6 +1462,46 @@ footer {
   cursor: pointer;
 }
 .fy-tutor-send:hover { border-color: var(--lime); }
+.fy-tutor-inline {
+  display: block;
+  margin-top: 0.45rem;
+  padding: 0.5rem 0.65rem 0.55rem;
+  border-radius: 10px;
+  border: 1px solid rgba(34,211,238,0.35);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+.fy-tutor-inline[hidden] { display: none !important; }
+.fy-inline-lab {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--cyan);
+  margin-bottom: 0.2rem;
+}
+.fy-inline-body {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.fy-tutor-inline.pending { border-color: rgba(163,230,53,0.45); }
+.fy-tutor-inline.pending .fy-inline-body::after {
+  content: "▍";
+  color: var(--cyan);
+  margin-left: 0.12rem;
+  animation: tutor-blink 1s steps(1) infinite;
+}
+.fy-tutor-inline.error {
+  color: var(--danger);
+  background: rgba(248,113,113,0.08);
+  border-color: rgba(248,113,113,0.45);
+}
+.fy-tutor-inline.hint {
+  color: var(--warn);
+  background: rgba(251,191,36,0.06);
+  border-color: rgba(251,191,36,0.4);
+}
+.fy-tutor-inline.hint .fy-inline-lab { color: var(--warn); }
 @media (max-width: 520px) {
   .tutor-drawer {
     left: 0.55rem;
@@ -3955,9 +3995,23 @@ footer {
 (function () {
   "use strict";
 
-  var TUTOR_URL = (window.COURSE_TUTOR && window.COURSE_TUTOR.url)
-    ? String(window.COURSE_TUTOR.url)
-    : "https://decision-course-submit.abgyja.workers.dev/api/tutor";
+  var TUTOR_WORKER_HOST = "decision-course-submit.abgyja.workers.dev";
+  var TUTOR_ABSOLUTE = "https://" + TUTOR_WORKER_HOST + "/api/tutor";
+
+  function resolveTutorUrl() {
+    var host = "";
+    try { host = String(location.host || "").toLowerCase(); } catch (e) {}
+    var configured = "";
+    if (window.COURSE_TUTOR && window.COURSE_TUTOR.url != null) {
+      configured = String(window.COURSE_TUTOR.url).trim();
+    }
+    var onWorker = host === TUTOR_WORKER_HOST;
+    var stock = !configured || configured.replace(/\/+$/, "") === TUTOR_ABSOLUTE;
+    if (configured && !(onWorker && stock)) return configured;
+    if (onWorker) return "/api/tutor";
+    return configured || TUTOR_ABSOLUTE;
+  }
+  var TUTOR_URL = resolveTutorUrl();
   var SUMMARY_KEY = "dm_lesson0_tutor_summaries";
   var LESSON_ID = "lesson-0";
   var MAX_HISTORY = 8;
@@ -4002,6 +4056,48 @@ footer {
     if (!statusEl) return;
     statusEl.textContent = text || "";
     statusEl.className = "tutor-status" + (bad ? " bad" : "");
+  }
+
+  function clipText(s, n) {
+    var t = String(s || "").replace(/\s+/g, " ").trim();
+    if (t.length <= n) return t;
+    return t.slice(0, n) + "…";
+  }
+
+  function formatTransportError(err) {
+    var name = (err && err.name) ? String(err.name) : "Error";
+    var message = (err && err.message) ? String(err.message) : "";
+    var human = name === "TypeError" ? "学伴连不上（网络或跨域）。" : "学伴连不上。";
+    if (name === "AbortError") human = "学伴请求已中止。";
+    return human + " " + name + (message ? "：" + message : "");
+  }
+
+  function formatHttpError(res, bodyText) {
+    var status = (res && res.status != null) ? String(res.status) : "?";
+    var snippet = "";
+    if (bodyText) {
+      var parsedMsg = "";
+      try {
+        var parsed = JSON.parse(bodyText);
+        if (parsed && (parsed.msg || parsed.message)) parsedMsg = String(parsed.msg || parsed.message);
+      } catch (e) {}
+      snippet = clipText(parsedMsg || bodyText, 160);
+    }
+    var line = "学伴请求失败（HTTP " + status + "）。";
+    return snippet ? (line + " " + snippet) : line;
+  }
+
+  function paintInline(panel, text, kind) {
+    if (!panel) return;
+    panel.hidden = false;
+    panel.classList.remove("pending", "error", "hint");
+    if (kind) panel.classList.add(kind);
+    var body = panel.querySelector(".fy-inline-body");
+    if (body) body.textContent = text || "";
+  }
+
+  function syncLivePanel(text, kind) {
+    if (live && live.panel) paintInline(live.panel, text, kind);
   }
 
   function syncBarOffset() {
@@ -4113,7 +4209,7 @@ footer {
       var empty = document.createElement("p");
       empty.className = "tutor-empty";
       empty.textContent = mode === "feynman"
-        ? "把费曼复述或改写发来批改。也可以点各输入框下的「送去批改」。"
+        ? "把费曼复述或改写发来批改。各节「送去批改」的回复显示在按钮下方，这里同步留一份。"
         : "可以问概念、盲点，或某一节在讲什么。闭卷对错仍以页面规则为准。";
       logEl.appendChild(empty);
       return;
@@ -4219,8 +4315,10 @@ footer {
     if (eventName === "token") {
       var t = payload && payload.t != null ? String(payload.t) : "";
       acc += t;
-      live.el.textContent = acc;
+      var shownTok = acc || "正在批改…";
+      live.el.textContent = shownTok;
       live.el.className = "tutor-bubble assistant pending";
+      syncLivePanel(shownTok, "pending");
       if (live.mode === mode) logEl.scrollTop = logEl.scrollHeight;
       return;
     }
@@ -4229,6 +4327,7 @@ footer {
       if (!shown) shown = "（学伴没有返回文字）";
       live.el.textContent = shown;
       live.el.className = "tutor-bubble assistant";
+      syncLivePanel(shown, "");
       if (payload && payload.summary) {
         stashSummary({
           at: new Date().toISOString(),
@@ -4250,6 +4349,7 @@ footer {
       var shownErr = acc ? (acc + "\n" + msg) : msg;
       live.el.textContent = shownErr;
       live.el.className = "tutor-bubble error";
+      syncLivePanel(shownErr, "error");
       finishLive("error", shownErr);
       streaming = false;
       abortCtrl = null;
@@ -4259,10 +4359,11 @@ footer {
     }
   }
 
-  function beginAssistantBubble() {
+  function beginAssistantBubble(panel) {
     acc = "";
     var el = bubbleEl("assistant", "", true);
-    live = { mode: mode, el: el };
+    live = { mode: mode, el: el, panel: panel || null };
+    if (panel) paintInline(panel, "正在批改…", "pending");
     renderThread();
   }
 
@@ -4270,6 +4371,7 @@ footer {
     if (live) {
       live.el.textContent = msg;
       live.el.className = "tutor-bubble error";
+      syncLivePanel(msg, "error");
       finishLive("error", msg);
     } else {
       threads[mode].push({ role: "error", content: msg });
@@ -4286,6 +4388,7 @@ footer {
     if (acc && live) {
       live.el.textContent = acc;
       live.el.className = "tutor-bubble assistant";
+      syncLivePanel(acc, "");
       finishLive("assistant", acc);
       streaming = false;
       abortCtrl = null;
@@ -4332,17 +4435,28 @@ footer {
     return pump();
   }
 
-  function sendMessage(text) {
+  function sendMessage(text, targetPanel) {
     var msg = String(text || "").trim();
-    if (!msg || streaming) return;
+    if (!msg) return;
+    if (streaming) {
+      if (targetPanel && (!live || live.panel !== targetPanel)) {
+        paintInline(targetPanel, "上一条还在回复，请稍候。", "hint");
+      }
+      return;
+    }
     if (msg.length > 4000) msg = msg.slice(0, 4000);
+    if (targetPanel && mode !== "feynman") setMode("feynman");
+    if (targetPanel && sourceEl && targetPanel._field) {
+      sourceEl.hidden = false;
+      sourceEl.textContent = "来自 " + fieldCaption(targetPanel._field);
+    }
     var prior = historyPayload();
     threads[mode].push({ role: "user", content: msg });
-    input.value = "";
+    if (!targetPanel) input.value = "";
     streaming = true;
     sendBtn.textContent = "停止";
-    setStatus("正在回复…");
-    beginAssistantBubble();
+    setStatus(targetPanel ? "正在批改…" : "正在回复…");
+    beginAssistantBubble(targetPanel || null);
     abortCtrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
     var body = {
       mode: mode,
@@ -4355,7 +4469,7 @@ footer {
     };
     var opts = {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
+      headers: { "Content-Type": "application/json" },
       cache: "no-store",
       body: JSON.stringify(body)
     };
@@ -4363,14 +4477,10 @@ footer {
     fetch(TUTOR_URL, opts).then(function (res) {
       if (!res.ok) {
         return res.text().then(function (t) {
-          var detail = "";
-          if (t) {
-            try {
-              var parsed = JSON.parse(t);
-              detail = parsed.msg || parsed.message || "";
-            } catch (e2) { detail = t.slice(0, 180); }
-          }
-          failTurn(detail || ("学伴请求失败（" + res.status + "）"));
+          failTurn(formatHttpError(res, t) + " 页面规则题不受影响。");
+        }, function (readErr) {
+          if (readErr && readErr.name === "AbortError") throw readErr;
+          failTurn(formatHttpError(res, "") + " 页面规则题不受影响。");
         });
       }
       var ctype = (res.headers && res.headers.get && res.headers.get("content-type")) || "";
@@ -4384,20 +4494,22 @@ footer {
     }).catch(function (err) {
       if (!streaming) return;
       if (err && err.name === "AbortError") {
-        var partial = acc ? (acc + "\n（已停止）") : "（已停止）";
+        var why = "AbortError" + (err.message ? "：" + err.message : "");
+        var partial = acc ? (acc + "\n（已停止 · " + why + "）") : ("（已停止 · " + why + "）");
         if (live) {
           live.el.textContent = partial;
           live.el.className = "tutor-bubble assistant";
+          syncLivePanel(partial, "");
           finishLive("assistant", partial);
         }
         streaming = false;
         abortCtrl = null;
         sendBtn.textContent = "发送";
-        setStatus("已停止");
+        setStatus("已停止 · " + why);
         renderThread();
         return;
       }
-      failTurn("学伴连不上（网络或跨域）。页面规则题不受影响。");
+      failTurn(formatTransportError(err) + " 页面规则题不受影响。");
     });
   }
 
@@ -4441,13 +4553,34 @@ footer {
     btn.type = "button";
     btn.className = "fy-tutor-send";
     btn.textContent = "送去批改";
-    btn.title = "打开费曼批改，带上这段文字。闭卷核对仍在页面上。";
+    btn.title = "立刻批改这段文字，回复显示在按钮下方。闭卷核对仍在页面上。";
+    var panel = document.createElement("div");
+    panel.className = "fy-tutor-inline";
+    panel.hidden = true;
+    panel.setAttribute("role", "status");
+    panel.setAttribute("aria-live", "polite");
+    var lab = document.createElement("div");
+    lab.className = "fy-inline-lab";
+    lab.textContent = "费曼批改";
+    var body = document.createElement("div");
+    body.className = "fy-inline-body";
+    panel.appendChild(lab);
+    panel.appendChild(body);
+    panel._field = ta;
     btn.addEventListener("click", function () {
-      openDrawer("feynman");
-      fillFromField(ta, "这一格还是空的。先写一句，再发送。");
+      var text = String(ta.value || "").trim();
+      lastFy = ta;
+      if (!text) {
+        paintInline(panel, "先写一句，再送去批改。", "hint");
+        try { panel.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (e) {}
+        return;
+      }
+      sendMessage(text, panel);
+      try { panel.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (e) {}
     });
     var host = (ta.parentElement && ta.parentElement.tagName === "LABEL") ? ta.parentElement : ta;
     host.insertAdjacentElement("afterend", btn);
+    btn.insertAdjacentElement("afterend", panel);
   });
 
   setMode("socratic");
