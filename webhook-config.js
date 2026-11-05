@@ -7,6 +7,9 @@
 window.COURSE_SUBMIT = {
   url: "https://decision-course-submit.abgyja.workers.dev/submit"
 };
+window.COURSE_TUTOR = {
+  url: "https://decision-course-submit.abgyja.workers.dev/api/tutor"
+};
 window.COURSE_WEBHOOK = {
   url: "",
   key: ""
