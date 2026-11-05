@@ -3038,7 +3038,14 @@ footer {
   function getSubmitEndpoint() {
     var proxy = (typeof window !== "undefined" && window.COURSE_SUBMIT && typeof window.COURSE_SUBMIT.url === "string")
       ? window.COURSE_SUBMIT.url.trim() : "";
-    if (proxy) return { url: proxy, key: "", mode: "proxy" };
+    if (proxy) {
+      var host = "";
+      try { host = String(location.host || "").toLowerCase(); } catch (eHost) {}
+      if (host === "dm-course.vibeniubi.com" && proxy.replace(/\/+$/, "") === "https://dm-course.vibeniubi.com/submit") {
+        proxy = "/submit";
+      }
+      return { url: proxy, key: "", mode: "proxy" };
+    }
     var cfg = (typeof window !== "undefined" && window.COURSE_WEBHOOK) ? window.COURSE_WEBHOOK : null;
     var url = "", key = "";
     if (cfg && typeof cfg === "object") {

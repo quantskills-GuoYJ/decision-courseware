@@ -10,7 +10,7 @@
 
 页面主按钮：**一键提交给学习**。公开 Pages 把同一份学习日志 JSON POST 到 CORS 代理（密钥不在浏览器）：
 
-`https://decision-course-submit.abgyja.workers.dev/submit`
+`https://dm-course.vibeniubi.com/submit`
 
 `webhook-config.js` 设置 `window.COURSE_SUBMIT.url` 为该地址，并让 `window.COURSE_WEBHOOK` 保持空。页面若发现 `COURSE_SUBMIT.url`，提交时不带 `Authorization`。Worker 持有真实 webhook URL 与 key，并代发 `Authorization: Bearer`。
 

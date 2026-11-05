@@ -5,7 +5,7 @@
  *   window.COURSE_WEBHOOK = { url, key }
  */
 window.COURSE_SUBMIT = {
-  url: "https://decision-course-submit.abgyja.workers.dev/submit"
+  url: "https://dm-course.vibeniubi.com/submit"
 };
 window.COURSE_TUTOR = {
   // Default tutor endpoint (custom domain; *.workers.dev is blocked on some networks).
