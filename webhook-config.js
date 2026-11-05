@@ -8,9 +8,10 @@ window.COURSE_SUBMIT = {
   url: "https://decision-course-submit.abgyja.workers.dev/submit"
 };
 window.COURSE_TUTOR = {
-  // Stock Pages endpoint. Lesson script rewrites this to same-origin /api/tutor
-  // when location.host is the Worker. Any other url is an override and is kept.
-  url: "https://decision-course-submit.abgyja.workers.dev/api/tutor"
+  // Default tutor endpoint (custom domain; *.workers.dev is blocked on some networks).
+  // Lesson script uses same-origin /api/tutor when location.host is this host.
+  // Any other url is an override and is kept.
+  url: "https://dm-course.vibeniubi.com/api/tutor"
 };
 window.COURSE_WEBHOOK = {
   url: "",
