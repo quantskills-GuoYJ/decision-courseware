@@ -1622,6 +1622,84 @@ footer {
   color: var(--lime);
 }
 .gdf-cap[hidden] { display: none !important; }
+.calib-viz .cv-split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.15fr);
+  gap: 0.65rem;
+  margin-top: 0.45rem;
+}
+@media (max-width: 700px) {
+  .calib-viz .cv-split { grid-template-columns: 1fr; }
+}
+.cv-node {
+  min-width: 0;
+  padding: 0.55rem 0.65rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+.cv-k {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--cyan);
+  margin-bottom: 0.25rem;
+}
+.cv-lab {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.cv-lab output {
+  font-family: var(--mono);
+  color: var(--text);
+  font-weight: 700;
+}
+.cv-note,
+.cv-metric {
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.cv-metric b {
+  font-family: var(--mono);
+  color: var(--text);
+  font-weight: 700;
+}
+.cv-metric b.ece-temp { color: var(--warn); }
+.cv-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.7rem;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.cv-legend i {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-right: 0.28rem;
+  border-radius: 2px;
+  vertical-align: -1px;
+}
+.cv-legend .dash {
+  width: 0.85rem;
+  height: 0;
+  border-radius: 0;
+  background: transparent;
+  border-top: 2px dashed var(--lime);
+  vertical-align: 3px;
+}
+.calib-viz.is-focused .cv-node { opacity: 0.42; }
+.calib-viz.is-focused .cv-node.is-focus {
+  opacity: 1;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(34,211,238,0.28);
+}
+.calib-viz svg { display: block; width: 100%; height: auto; }
 @media (max-width: 520px) {
   .tutor-drawer {
     left: 0.55rem;
@@ -1994,6 +2072,32 @@ footer {
     <div class="sec-label">Section 05</div>
     <h2>校准长什么样</h2>
     <p class="lead">可靠性图（reliability）与 ECE / Brier：概率说 80%，真实命中也该接近 80%。</p>
+
+    <div class="gdf calib-viz" id="tutorCalibViz" data-compare="temp-vs-calib" aria-label="校准不等于调温度">
+      <div class="gdf-h">校准 ≠ 调温度</div>
+      <div class="cv-split">
+        <div class="cv-node" data-viz-node="sharpness">
+          <div class="cv-k">锋利度</div>
+          <label class="cv-lab" for="tutorCalibTemp">温度 T <output id="tutorCalibTempOut">0.50</output></label>
+          <input class="lf-range" id="tutorCalibTemp" type="range" min="25" max="400" value="50" step="5" aria-valuemin="25" aria-valuemax="400" aria-valuenow="50" aria-label="温度">
+          <div id="tutorCalibBars"></div>
+          <p class="cv-note">固定 logits。拖温度只改有多尖，argmax 不变。</p>
+          <p class="cv-metric">调温度 ECE <b id="tutorCalibEceTemp" class="ece-temp">0.18</b></p>
+        </div>
+        <div class="cv-node" data-viz-node="reliability">
+          <div class="cv-k">可靠性</div>
+          <svg id="tutorCalibPlot" viewBox="0 0 320 248" role="img" aria-label="可靠性图：未校准、调温度、已校准"></svg>
+          <ul class="cv-legend">
+            <li><i class="dash"></i>完美校准</li>
+            <li><i style="background:#f87171"></i>未校准</li>
+            <li><i style="background:#fbbf24"></i>调温度</li>
+            <li><i style="background:#22d3ee"></i>已校准</li>
+          </ul>
+          <p class="cv-metric">未校准 ECE <b id="tutorCalibEceRaw">0.12</b> · 已校准 ECE <b id="tutorCalibEceCal">0.04</b></p>
+        </div>
+      </div>
+      <p class="gdf-cap" hidden></p>
+    </div>
 
     <div class="calib-grid">
       <div class="chart-card">
@@ -4169,7 +4273,11 @@ footer {
     calib: "校准",
     noul: "拒答"
   };
+  // calib-curve whitelist: focus sharpness|reliability (legacy "calib" → reliability);
+  // compare temp-vs-calib or omitted; nodes, if present, only those two names.
+  var CALIB_FOCUS_LABEL = { sharpness: "锋利度", reliability: "可靠性" };
   function vizNeutral(root) {
+    if (!root) return;
     root.classList.remove("is-focused");
     root.removeAttribute("data-focus");
     var nodes = root.querySelectorAll("[data-viz-node]");
@@ -4180,54 +4288,107 @@ footer {
     var cap = root.querySelector(".gdf-cap");
     if (cap) { cap.textContent = ""; cap.hidden = true; }
   }
-  function applyTutorViz(viz) {
+  function clipVizCaption(caption) {
+    if (typeof caption !== "string") return "";
+    var text = caption.replace(/\s+/g, " ").trim();
+    if (!text) return "";
+    var chars = Array.from(text);
+    if (chars.length > 40) text = chars.slice(0, 40).join("");
+    return text;
+  }
+  function applyFlowViz(viz) {
     var root = document.getElementById("tutorViz");
     if (!root) return null;
+    if (viz.compare != null && viz.compare !== "" && viz.compare !== "gen-vs-decision") return null;
+    if (viz.nodes != null && !Array.isArray(viz.nodes)) return null;
+    var focus = "";
+    if (viz.focus != null && viz.focus !== "") {
+      focus = String(viz.focus);
+      if (!VIZ_FOCUS[focus]) focus = "";
+    }
+    vizNeutral(document.getElementById("tutorCalibViz"));
+    vizNeutral(root);
+    var focusedEl = null;
+    if (focus) {
+      focusedEl = root.querySelector('[data-viz-node="' + focus + '"]');
+      if (focusedEl) {
+        root.classList.add("is-focused");
+        root.setAttribute("data-focus", focus);
+        focusedEl.classList.add("is-focus");
+        focusedEl.setAttribute("aria-current", "true");
+      }
+    }
+    var caption = clipVizCaption(viz.caption);
+    var capEl = root.querySelector(".gdf-cap");
+    if (capEl && caption) {
+      capEl.textContent = caption;
+      capEl.hidden = false;
+    }
+    if (!focusedEl || !VIZ_FOCUS_LABEL[focus]) return null;
+    try { root.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (eScroll) {}
+    return { focus: focus, label: VIZ_FOCUS_LABEL[focus], caption: caption, chart: "双轨图", target: "tutorViz" };
+  }
+  function applyCalibViz(viz) {
+    var root = document.getElementById("tutorCalibViz");
+    if (!root) return null;
+    if (viz.compare != null && viz.compare !== "" && viz.compare !== "temp-vs-calib") return null;
+    if (viz.nodes != null) {
+      if (!Array.isArray(viz.nodes)) return null;
+      for (var i = 0; i < viz.nodes.length; i++) {
+        if (viz.nodes[i] !== "sharpness" && viz.nodes[i] !== "reliability") return null;
+      }
+    }
+    var focus = viz.focus == null ? "" : String(viz.focus);
+    if (focus === "calib") focus = "reliability";
+    if (!CALIB_FOCUS_LABEL[focus]) return null;
+    var focusedEl = root.querySelector('[data-viz-node="' + focus + '"]');
+    if (!focusedEl) return null;
+    vizNeutral(document.getElementById("tutorViz"));
+    vizNeutral(root);
+    root.classList.add("is-focused");
+    root.setAttribute("data-focus", focus);
+    focusedEl.classList.add("is-focus");
+    focusedEl.setAttribute("aria-current", "true");
+    var caption = clipVizCaption(viz.caption);
+    var capEl = root.querySelector(".gdf-cap");
+    if (capEl && caption) {
+      capEl.textContent = caption;
+      capEl.hidden = false;
+    }
+    try { focusedEl.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (eScroll) {}
+    return { focus: focus, label: CALIB_FOCUS_LABEL[focus], caption: caption, chart: "校准图", target: "tutorCalibViz" };
+  }
+  function applyTutorViz(viz) {
     try {
-      if (viz == null || viz === false) { vizNeutral(root); return null; }
+      if (viz == null || viz === false) {
+        vizNeutral(document.getElementById("tutorViz"));
+        vizNeutral(document.getElementById("tutorCalibViz"));
+        return null;
+      }
       if (typeof viz !== "object" || Array.isArray(viz)) return null;
-      if (viz.type !== "flow") return null;
-      if (viz.compare != null && viz.compare !== "" && viz.compare !== "gen-vs-decision") return null;
-      if (viz.nodes != null && !Array.isArray(viz.nodes)) return null;
-      var focus = "";
-      if (viz.focus != null && viz.focus !== "") {
-        focus = String(viz.focus);
-        if (!VIZ_FOCUS[focus]) focus = "";
-      }
-      vizNeutral(root);
-      var focusedEl = null;
-      if (focus) {
-        focusedEl = root.querySelector('[data-viz-node="' + focus + '"]');
-        if (focusedEl) {
-          root.classList.add("is-focused");
-          root.setAttribute("data-focus", focus);
-          focusedEl.classList.add("is-focus");
-          focusedEl.setAttribute("aria-current", "true");
-        }
-      }
-      var caption = "";
-      var capEl = root.querySelector(".gdf-cap");
-      if (capEl && typeof viz.caption === "string") {
-        var text = viz.caption.replace(/\s+/g, " ").trim();
-        if (text) {
-          var chars = Array.from(text);
-          if (chars.length > 40) text = chars.slice(0, 40).join("");
-          capEl.textContent = text;
-          capEl.hidden = false;
-          caption = text;
-        }
-      }
-      if (!focusedEl || !VIZ_FOCUS_LABEL[focus]) return null;
-      try { root.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (eScroll) {}
-      return { focus: focus, label: VIZ_FOCUS_LABEL[focus], caption: caption };
+      if (viz.type === "flow") return applyFlowViz(viz);
+      if (viz.type === "calib-curve") return applyCalibViz(viz);
+      return null;
     } catch (eViz) { return null; }
   }
   window.applyTutorViz = applyTutorViz;
 
-  function scrollTutorViz() {
-    var root = document.getElementById("tutorViz");
+  function scrollTutorViz(ev) {
+    var btn = ev && ev.currentTarget;
+    var id = "tutorViz";
+    if (btn && btn.getAttribute) {
+      var marked = btn.getAttribute("data-viz-target");
+      if (marked) id = marked;
+    }
+    var root = document.getElementById(id);
     if (!root) return;
-    try { root.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
+    var el = root;
+    if (id === "tutorCalibViz" && btn && btn.getAttribute) {
+      var focus = btn.getAttribute("data-viz-focus");
+      var node = focus ? root.querySelector('[data-viz-node="' + focus + '"]') : null;
+      if (node) el = node;
+    }
+    try { el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
   }
 
   function clearVizCues() {
@@ -4237,17 +4398,20 @@ footer {
     if (!drawerCue) return;
     drawerCue.hidden = true;
     drawerCue.removeAttribute("data-viz-focus");
+    drawerCue.removeAttribute("data-viz-target");
     while (drawerCue.firstChild) drawerCue.removeChild(drawerCue.firstChild);
   }
 
   function writeVizCue(btn, info) {
+    var chart = info.chart || "双轨图";
     btn.hidden = false;
     btn.setAttribute("data-viz-focus", info.focus);
-    btn.setAttribute("aria-label", "查看双轨图，已标出" + info.label);
+    btn.setAttribute("data-viz-target", info.target || "tutorViz");
+    btn.setAttribute("aria-label", "查看" + chart + "，已标出" + info.label);
     while (btn.firstChild) btn.removeChild(btn.firstChild);
     var lead = document.createElement("span");
     lead.className = "fy-viz-lead";
-    lead.textContent = "双轨图已标出「" + info.label + "」 · 点此查看";
+    lead.textContent = chart + "已标出「" + info.label + "」 · 点此查看";
     btn.appendChild(lead);
     if (info.caption) {
       var cap = document.createElement("span");
@@ -4271,6 +4435,148 @@ footer {
     var drawerCue = document.getElementById("tutorVizCue");
     if (drawerCue) writeVizCue(drawerCue, info);
   }
+
+  function initCalibChart() {
+    var root = document.getElementById("tutorCalibViz");
+    if (!root || root.getAttribute("data-ready") === "1") return;
+    root.setAttribute("data-ready", "1");
+    // Built-in reliability points. Not read from payload.series.
+    var RAW = [[0.1, 0.2], [0.5, 0.55], [0.9, 0.7]];
+    var CAL = [[0.1, 0.12], [0.5, 0.5], [0.9, 0.88]];
+    var LOGITS = [1.6, 0.15, -0.9];
+    var LABS = ["平仓", "持有", "加仓"];
+    // Temperature scaling of a confidence p in (0,1), not a class softmax:
+    // logit = ln(p / (1-p));  p_T = sigmoid(logit / T).
+    // T<1 sharpens toward 0 or 1; T>1 flattens toward 0.5.
+    // Observed frequency y is unchanged, and the calibrated series is never rewritten.
+    function scaleConf(p, T) {
+      var c = Math.min(0.999, Math.max(0.001, p));
+      var logit = Math.log(c / (1 - c));
+      var t = T > 0.05 ? T : 0.05;
+      return 1 / (1 + Math.exp(-logit / t));
+    }
+    function softmax(z, T) {
+      var t = T > 0.05 ? T : 0.05;
+      var scaled = z.map(function (v) { return v / t; });
+      var m = Math.max.apply(null, scaled);
+      var exps = scaled.map(function (v) { return Math.exp(v - m); });
+      var s = exps.reduce(function (a, b) { return a + b; }, 0);
+      return exps.map(function (e) { return e / s; });
+    }
+    function eceOf(pts) {
+      var s = 0;
+      for (var i = 0; i < pts.length; i++) s += Math.abs(pts[i][0] - pts[i][1]);
+      return pts.length ? s / pts.length : 0;
+    }
+    function tempPts(T) {
+      return RAW.map(function (pt) { return [scaleConf(pt[0], T), pt[1]]; });
+    }
+    var svg = document.getElementById("tutorCalibPlot");
+    var barsHost = document.getElementById("tutorCalibBars");
+    var temp = document.getElementById("tutorCalibTemp");
+    var out = document.getElementById("tutorCalibTempOut");
+    var eceEl = document.getElementById("tutorCalibEceTemp");
+    var NS = "http://www.w3.org/2000/svg";
+    function el(name, attrs) {
+      var node = document.createElementNS(NS, name);
+      if (attrs) Object.keys(attrs).forEach(function (k) { node.setAttribute(k, attrs[k]); });
+      return node;
+    }
+    function xy(p, f) { return { x: 40 + p * 240, y: 200 - f * 160 }; }
+    function seriesGroup(pts, color, series) {
+      var g = el("g", {
+        "data-series": series,
+        "data-pts": pts.map(function (p) { return p[0].toFixed(4) + "," + p[1].toFixed(4); }).join(" ")
+      });
+      var d = pts.map(function (p, i) {
+        var q = xy(p[0], p[1]);
+        return (i ? "L" : "M") + q.x.toFixed(2) + "," + q.y.toFixed(2);
+      }).join("");
+      var pathAttrs = {
+        d: d, fill: "none", stroke: color, "stroke-width": "2.4", "stroke-linejoin": "round"
+      };
+      if (series === "tempScaled") pathAttrs["stroke-dasharray"] = "6 3";
+      g.appendChild(el("path", pathAttrs));
+      pts.forEach(function (p) {
+        var q = xy(p[0], p[1]);
+        g.appendChild(el("circle", {
+          cx: q.x.toFixed(2), cy: q.y.toFixed(2), r: "4.5", fill: color
+        }));
+      });
+      return g;
+    }
+    function drawBars(probs) {
+      if (!barsHost) return;
+      barsHost.textContent = "";
+      LABS.forEach(function (lab, i) {
+        var row = document.createElement("div");
+        row.className = "lf-row";
+        var name = document.createElement("span");
+        name.textContent = lab;
+        var meter = document.createElement("div");
+        meter.className = "lf-meter";
+        var fill = document.createElement("i");
+        fill.style.width = Math.round(probs[i] * 100) + "%";
+        fill.style.background = "#fbbf24";
+        meter.appendChild(fill);
+        var num = document.createElement("b");
+        num.textContent = probs[i].toFixed(2);
+        row.appendChild(name);
+        row.appendChild(meter);
+        row.appendChild(num);
+        barsHost.appendChild(row);
+      });
+    }
+    if (svg) {
+      svg.appendChild(el("line", { x1: "40", y1: "200", x2: "300", y2: "200", stroke: "#2d3a4f", "stroke-width": "1.5" }));
+      svg.appendChild(el("line", { x1: "40", y1: "200", x2: "40", y2: "20", stroke: "#2d3a4f", "stroke-width": "1.5" }));
+      var xlab = el("text", { x: "170", y: "232", "text-anchor": "middle", fill: "#8b9cb3", "font-size": "11", "font-family": "system-ui" });
+      xlab.textContent = "预测概率";
+      svg.appendChild(xlab);
+      var ylab = el("text", { x: "14", y: "110", "text-anchor": "middle", fill: "#8b9cb3", "font-size": "11", "font-family": "system-ui", transform: "rotate(-90 14 110)" });
+      ylab.textContent = "实际频率";
+      svg.appendChild(ylab);
+      svg.appendChild(el("line", {
+        x1: "40", y1: "200", x2: "280", y2: "40",
+        stroke: "#a3e635", "stroke-width": "1.5", "stroke-dasharray": "4 3", opacity: "0.85",
+        "data-series": "perfect"
+      }));
+      svg.appendChild(seriesGroup(RAW, "#f87171", "raw"));
+      var holder = el("g", { id: "tutorCalibTempSeries" });
+      svg.appendChild(holder);
+      svg.appendChild(seriesGroup(CAL, "#22d3ee", "calibrated"));
+      [["0", "40", "214"], ["0.5", "160", "214"], ["1", "280", "214"]].forEach(function (tk) {
+        var tick = el("text", { x: tk[1], y: tk[2], "text-anchor": "middle", fill: "#8b9cb3", "font-size": "9", "font-family": "system-ui" });
+        tick.textContent = tk[0];
+        svg.appendChild(tick);
+      });
+      var y0 = el("text", { x: "32", y: "204", "text-anchor": "end", fill: "#8b9cb3", "font-size": "9", "font-family": "system-ui" });
+      y0.textContent = "0";
+      svg.appendChild(y0);
+      var y1 = el("text", { x: "32", y: "44", "text-anchor": "end", fill: "#8b9cb3", "font-size": "9", "font-family": "system-ui" });
+      y1.textContent = "1";
+      svg.appendChild(y1);
+    }
+    function paintTemp(T) {
+      if (out) out.textContent = T.toFixed(2);
+      if (temp) temp.setAttribute("aria-valuenow", String(Math.round(T * 100)));
+      drawBars(softmax(LOGITS, T));
+      var scaled = tempPts(T);
+      if (eceEl) eceEl.textContent = eceOf(scaled).toFixed(2);
+      var holder = document.getElementById("tutorCalibTempSeries");
+      if (!holder) return;
+      while (holder.firstChild) holder.removeChild(holder.firstChild);
+      holder.appendChild(seriesGroup(scaled, "#fbbf24", "tempScaled"));
+    }
+    function readT() {
+      var v = temp ? Number(temp.value) : 50;
+      if (!isFinite(v)) v = 50;
+      return v / 100;
+    }
+    if (temp) temp.addEventListener("input", function () { paintTemp(readT()); });
+    paintTemp(readT());
+  }
+  initCalibChart();
 
   var SUMMARY_KEY = "dm_lesson0_tutor_summaries";
   var LESSON_ID = "lesson-0";
