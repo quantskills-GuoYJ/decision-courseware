@@ -948,11 +948,27 @@ footer {
   width: 100%; margin-top: 0.3rem; background: var(--bg); color: var(--text);
   border: 1px solid var(--border); border-radius: 8px; padding: 0.45rem 0.6rem; font: inherit; font-size: 0.88rem;
 }
-.learn-fb input[type="text"]:focus { outline: none; border-color: var(--cyan); }
+.learn-fb input[type="text"]:focus, .learn-fb textarea:focus { outline: none; border-color: var(--cyan); }
+.learn-fb input.hit, .learn-fb textarea.hit { border-color: var(--ok); box-shadow: 0 0 0 2px rgba(52,211,153,.22); }
+.learn-fb input.miss, .learn-fb textarea.miss { border-color: var(--warn); box-shadow: 0 0 0 2px rgba(251,191,36,.18); }
+.learn-fb input.dup { border-color: var(--danger); box-shadow: 0 0 0 2px rgba(248,113,113,.2); }
+.lf-progress { margin: 0.35rem 0 0.7rem; }
+.lf-progress .lf-bar { height: 8px; background: #0d1117; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; margin-top: 0.3rem; }
+.lf-progress .lf-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--cyan), var(--lime)); transition: width .2s ease; }
+.lf-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 0.75rem; }
+@media (max-width: 640px) { .lf-compare { grid-template-columns: 1fr; } }
+.lf-cons { margin: 0.7rem 0 0; padding-left: 1.15rem; display: grid; gap: 0.45rem; font-size: 0.88rem; }
+.lf-celeb { margin-top: 0.7rem; padding: 0.55rem 0.7rem; border-radius: 8px; background: rgba(52,211,153,.12); border: 1px solid rgba(52,211,153,.4); color: var(--ok); font-weight: 700; }
+.learn-fb textarea {
+  width: 100%; margin-top: 0.3rem; min-height: 58px; resize: vertical;
+  background: var(--bg); color: var(--text); border: 1px solid var(--border);
+  border-radius: 8px; padding: 0.45rem 0.6rem; font: inherit; font-size: 0.88rem;
+}
+.lf-ghost:disabled { opacity: 0.45; cursor: not-allowed; }
 .lf-fb { margin-top: 0.45rem; font-size: 0.82rem; }
 .lf-fb.ok { color: var(--ok); }
 .lf-fb.bad { color: var(--warn); }
-.lf-ghost { margin-top: 0.45rem; background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 0.3rem 0.6rem; font: inherit; font-size: 0.78rem; cursor: pointer; }
+.lf-ghost { margin-top: 0.45rem; margin-right: 0.35rem; background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 0.3rem 0.6rem; font: inherit; font-size: 0.78rem; cursor: pointer; }
 
 /* —— Per-section comments —— */
 .sec-layout {
@@ -1238,9 +1254,9 @@ footer {
       <div><code>吐了个像概率的答案</code> ≠ 决策模型。真正的决策模型硬性要求三件事：<strong>选项钉死</strong>、<strong>校准概率</strong>、<strong>可设门槛</strong>。</div>
     </div>
     <div class="claim-strip" id="claimStrip">
-      <a class="ok" href="#fb-demo">③ 门槛已过</a>
-      <a class="mid" href="#lesson-close">② 契约基本过 · 题型仍开</a>
-      <a class="warn" href="#fb-contrast">① 费曼仍虚</a>
+      <a class="ok" id="claim3" href="#fb-demo">③ 门槛已过</a>
+      <a class="mid" id="claim2" href="#lesson-close">② 契约基本过 · 题型仍开</a>
+      <a class="warn" id="claim1" href="#lesson-close">① 费曼仍虚</a>
       <span class="cg">0.55 &lt; 0.70 拒答 · 0.92 ≥ 0.70 通过 · state「BTC永续，震荡，动量因子0.8」</span>
     </div>
   </header>
@@ -1320,6 +1336,15 @@ footer {
       <p class="lf-note">同一 state：BTC永续，震荡，动量因子 0.8</p>
       <div id="lfPrimBars"></div>
       <p class="lf-note" id="lfPrimOut"></p>
+    </div>
+    <div class="lf-rewrite">
+      <label class="lf-note" for="rw-contrast">你的改写
+        <textarea id="rw-contrast" data-rw="contrast" rows="2" placeholder="先写你的改写"></textarea>
+      </label>
+      <p class="lf-fb" id="rwfb-contrast"></p>
+      <button type="button" class="lf-ghost" id="rwbtn-contrast">核对改写</button>
+      <button type="button" class="lf-ghost" id="rwrty-contrast" hidden>再试一次</button>
+      <p class="lf-note" id="rwfan-contrast" hidden></p>
     </div>
   </div>
 </section>
@@ -1420,6 +1445,15 @@ footer {
         </div>
       </div>
       <p class="lf-note" id="lfLgbmNote">LGBM 的类别头不会跟着换题。</p>
+    </div>
+    <div class="lf-rewrite">
+      <label class="lf-note" for="rw-flow">你的改写
+        <textarea id="rw-flow" data-rw="flow" rows="2" placeholder="先写你的改写"></textarea>
+      </label>
+      <p class="lf-fb" id="rwfb-flow"></p>
+      <button type="button" class="lf-ghost" id="rwbtn-flow">核对改写</button>
+      <button type="button" class="lf-ghost" id="rwrty-flow" hidden>再试一次</button>
+      <p class="lf-note" id="rwfan-flow" hidden></p>
     </div>
   </div>
 </section>
@@ -1522,11 +1556,19 @@ footer {
     <p class="lf-fy">「LLM 输出模糊，再交 DM 校准」易混——不是流水线；DM <strong>一次前向</strong>就输出已校准概率。</p>
     <p class="lf-c"><strong>评论·θ</strong>：按误判成本做 Risk–Coverage 扫描，不是固定 0.9；口诀 <code>p&lt;θ→拒答</code>。</p>
     <div class="lf-viz">
-      <div class="lf-gates" aria-label="13:21 门槛不等式">
-        <div class="lf-gate bad"><b>0.55</b><span>0.55 &lt; θ 0.70</span><em>拒答 / 转人工 ✓</em></div>
-        <div class="lf-gate ok"><b>0.92</b><span>0.92 ≥ θ 0.70</span><em>通过 · 可自动 ✓</em></div>
-      </div>
-      <p class="lf-note">契约 state「BTC永续，震荡，动量因子0.8」，questions「平仓、持有、加仓」。题型 choice 还是 noul 仍开，写在<a href="#lesson-close">页末</a>。</p>
+      <label class="lf-note" for="lfTheta">试 θ <output id="lfThetaOut">0.70</output> · 拖动即时改判</label>
+      <input class="lf-range" type="range" id="lfTheta" min="50" max="95" value="70" step="1" aria-valuemin="50" aria-valuemax="95" aria-valuenow="70">
+      <div class="lf-gates" id="lfLiveGates" aria-label="门槛试算"></div>
+      <p class="lf-note">契约 state「BTC永续，震荡，动量因子0.8」，questions「平仓、持有、加仓」。题型先写在<a href="#lesson-close">页末你的答案</a>。</p>
+    </div>
+    <div class="lf-rewrite">
+      <label class="lf-note" for="rw-demo">你的改写
+        <textarea id="rw-demo" data-rw="demo" rows="2" placeholder="先写你的改写"></textarea>
+      </label>
+      <p class="lf-fb" id="rwfb-demo"></p>
+      <button type="button" class="lf-ghost" id="rwbtn-demo">核对改写</button>
+      <button type="button" class="lf-ghost" id="rwrty-demo" hidden>再试一次</button>
+      <p class="lf-note" id="rwfan-demo" hidden></p>
     </div>
   </div>
 </section>
@@ -1630,6 +1672,15 @@ footer {
       <div id="lfTempBars"></div>
       <p class="lf-note">固定 logits。argmax 始终是 <strong style="color:var(--lime)" id="lfArgmax">平仓</strong>。T 只改尖或平。</p>
     </div>
+    <div class="lf-rewrite">
+      <label class="lf-note" for="rw-calib">你的改写
+        <textarea id="rw-calib" data-rw="calib" rows="2" placeholder="先写你的改写"></textarea>
+      </label>
+      <p class="lf-fb" id="rwfb-calib"></p>
+      <button type="button" class="lf-ghost" id="rwbtn-calib">核对改写</button>
+      <button type="button" class="lf-ghost" id="rwrty-calib" hidden>再试一次</button>
+      <p class="lf-note" id="rwfan-calib" hidden></p>
+    </div>
   </div>
 </section>
 
@@ -1701,6 +1752,15 @@ footer {
   <div class="learn-fb" id="fb-agent" data-fb="agent">
     <div class="lf-h">学习反馈 · agent <span class="lf-match" id="lfm-agent"></span></div>
     <p class="lf-fy">双层方向对。补一句：模型内部门「想清楚了」，App 执行门仍可不自动下单。</p>
+    <div class="lf-rewrite">
+      <label class="lf-note" for="rw-agent">你的改写
+        <textarea id="rw-agent" data-rw="agent" rows="2" placeholder="先写你的改写"></textarea>
+      </label>
+      <p class="lf-fb" id="rwfb-agent"></p>
+      <button type="button" class="lf-ghost" id="rwbtn-agent">核对改写</button>
+      <button type="button" class="lf-ghost" id="rwrty-agent" hidden>再试一次</button>
+      <p class="lf-note" id="rwfan-agent" hidden></p>
+    </div>
   </div>
 </section>
 
@@ -1764,30 +1824,62 @@ footer {
       </div>
       <p class="lf-note" id="lfProdOut">Jev：托管、零样本、长上下文、多选项 → 云 API。</p>
     </div>
+    <div class="lf-rewrite">
+      <label class="lf-note" for="rw-products">你的改写
+        <textarea id="rw-products" data-rw="products" rows="2" placeholder="先写你的改写"></textarea>
+      </label>
+      <p class="lf-fb" id="rwfb-products"></p>
+      <button type="button" class="lf-ghost" id="rwbtn-products">核对改写</button>
+      <button type="button" class="lf-ghost" id="rwrty-products" hidden>再试一次</button>
+      <p class="lf-note" id="rwfan-products" hidden></p>
+    </div>
   </div>
 </section>
 
   <section class="learn-fb" id="lesson-close" style="margin-top:1.5rem">
-    <div class="lf-h">页末收束 · 13:21:46</div>
+    <div class="lf-h">页末收束 · 先写你的答案</div>
+    <div class="lf-progress" id="lfProgress" aria-live="polite">
+      <span id="lfProgText">收束进度 0/2</span>
+      <div class="lf-bar"><i id="lfProgBar"></i></div>
+    </div>
     <p class="lf-fy">① 平仓用 <code>choice</code> 还是三个 <code>noul</code>？为什么？② 三件套填空。</p>
-    <div class="lf-radios" role="radiogroup" aria-label="choice 或 noul">
-      <label><input type="radio" name="lfPrimKind" value="choice"> <span><code>choice</code> · 三选一，一次三路概率</span></label>
-      <label><input type="radio" name="lfPrimKind" value="noul"> <span>三个 <code>noul</code> · 各自「是否」</span></label>
+    <div id="lfChoiceBox">
+      <div class="lf-radios" role="radiogroup" aria-label="choice 或 noul">
+        <label><input type="radio" name="lfPrimKind" value="choice"> <span><code>choice</code> · 三选一，一次三路概率</span></label>
+        <label><input type="radio" name="lfPrimKind" value="noul"> <span>三个 <code>noul</code> · 各自「是否」</span></label>
+      </div>
+      <label class="lf-note" for="lfWhy">为什么
+        <input type="text" id="lfWhy" maxlength="200" placeholder="一句理由" autocomplete="off">
+      </label>
+      <p class="lf-fb" id="lfPrimFb" aria-live="polite"></p>
+      <button type="button" class="lf-ghost" id="lfCheckChoice">核对</button>
+      <button type="button" class="lf-ghost" id="lfRetryChoice" hidden>再试一次</button>
+      <div class="lf-compare" id="lfChoiceResult" hidden>
+        <div class="lf-side"><h4>你的答案</h4><div id="lfChoiceYours"></div></div>
+        <div class="lf-side"><h4>共识</h4><div id="lfChoiceCons"></div></div>
+      </div>
     </div>
-    <label class="lf-note" for="lfWhy">为什么
-      <input type="text" id="lfWhy" maxlength="160" placeholder="一句理由" autocomplete="off">
-    </label>
-    <p class="lf-fb" id="lfPrimFb"></p>
-    <p class="lf-c" style="margin-top:.8rem">决策模型必须同时满足：</p>
-    <div class="lf-blanks">
-      <input type="text" id="lfB1" aria-label="第一空" placeholder="____" autocomplete="off">
-      <input type="text" id="lfB2" aria-label="第二空" placeholder="____" autocomplete="off">
-      <input type="text" id="lfB3" aria-label="第三空" placeholder="____" autocomplete="off">
+    <p class="lf-c" style="margin-top:.9rem">决策模型必须同时满足：</p>
+    <div id="lfTripleBox">
+      <div class="lf-blanks">
+        <input type="text" id="lfB1" aria-label="第一空" placeholder="____" autocomplete="off">
+        <input type="text" id="lfB2" aria-label="第二空" placeholder="____" autocomplete="off">
+        <input type="text" id="lfB3" aria-label="第三空" placeholder="____" autocomplete="off">
+      </div>
+      <p class="lf-fb" id="lfBlankFb" aria-live="polite"></p>
+      <button type="button" class="lf-ghost" id="lfCheckTriple">核对</button>
+      <button type="button" class="lf-ghost" id="lfRetryTriple" hidden>再试一次</button>
+      <div class="lf-compare" id="lfTripleResult" hidden>
+        <div class="lf-side"><h4>你的答案</h4><div id="lfTripleYours"></div></div>
+        <div class="lf-side"><h4>共识</h4><div id="lfTripleCons"></div></div>
+      </div>
     </div>
-    <p class="lf-fb" id="lfBlankFb"></p>
-    <button type="button" class="lf-ghost" id="lfReveal">对照第0课的三句话</button>
-    <p class="lf-note" id="lfThree" hidden>选项钉死、校准概率、可设门槛。顺序不限。</p>
-    <p class="lf-note" id="lfSave">写在本机，不发 webhook。</p>
+    <p class="lf-celeb" id="lfCeleb" hidden>两题都对齐共识。</p>
+    <div id="lfConsensus" hidden>
+      <div class="lf-h">本课共识</div>
+      <ol class="lf-cons" id="lfConsList"></ol>
+    </div>
+    <p class="lf-note" id="lfSave">先作答再核对。共识在锁定之后出现。写在本机，不发 webhook。</p>
   </section>
 
 
@@ -3179,6 +3271,26 @@ footer {
   if (temp) temp.addEventListener("input", showTemp);
   showTemp();
 
+  var thetaEl = document.getElementById("lfTheta");
+  function showTheta() {
+    var th = thetaEl ? Number(thetaEl.value) / 100 : 0.7;
+    var out = document.getElementById("lfThetaOut");
+    if (out) out.textContent = th.toFixed(2);
+    if (thetaEl) thetaEl.setAttribute("aria-valuenow", String(thetaEl.value));
+    var host = document.getElementById("lfLiveGates");
+    if (!host) return;
+    var scenes = [{ name: "模糊", p: 0.55 }, { name: "校准", p: 0.92 }];
+    host.innerHTML = scenes.map(function (s) {
+      var pass = s.p >= th;
+      var op = pass ? "≥" : "&lt;";
+      return '<div class="lf-gate ' + (pass ? "ok" : "bad") + '"><b>' + s.p.toFixed(2) + '</b><span>'
+        + s.p.toFixed(2) + ' ' + op + ' θ ' + th.toFixed(2) + '</span><em>'
+        + (pass ? "p ≥ θ → 才可自动" : "p &lt; θ → 拒答") + '</em></div>';
+    }).join("");
+  }
+  if (thetaEl) thetaEl.addEventListener("input", showTheta);
+  showTheta();
+
   var PROD = {
     jev: "Jev：托管、零样本、长上下文、多选项 → 云 API。",
     laya: "Laya：本地 / 数据不出境、可微调、Apache、低延迟 → 自托管。",
@@ -3196,64 +3308,352 @@ footer {
     try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; }
   }
   function writeStore(d) { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} }
-  var CONCEPTS = [
-    { id: "pin", keys: ["选项钉死", "钉死选项", "选项空间钉死"] },
-    { id: "cal", keys: ["校准概率", "已校准", "概率校准", "校准"] },
-    { id: "thr", keys: ["可设门槛", "执行门槛", "可设阈值", "门槛"] }
-  ];
+  function renderRich(host, str) {
+    if (!host) return;
+    host.textContent = "";
+    String(str || "").split(/(\*\*[^*]+\*\*|`[^`]+`)/).forEach(function (part) {
+      if (!part) return;
+      if (part.slice(0, 2) === "**" && part.slice(-2) === "**") {
+        var b = document.createElement("strong");
+        b.textContent = part.slice(2, -2);
+        host.appendChild(b);
+      } else if (part.charAt(0) === "`" && part.charAt(part.length - 1) === "`") {
+        var c = document.createElement("code");
+        c.textContent = part.slice(1, -1);
+        host.appendChild(c);
+      } else host.appendChild(document.createTextNode(part));
+    });
+  }
+  var CFG = null;
+  var whyEl = document.getElementById("lfWhy");
+  var blanks = [document.getElementById("lfB1"), document.getElementById("lfB2"), document.getElementById("lfB3")];
+  var choicePhase = "open";
+  var triplePhase = "open";
+  var rwPhase = {};
+
+  function parts() { return (CFG && CFG.triple && CFG.triple.parts) || []; }
   function conceptOf(text) {
     var n = norm(text);
     if (!n) return null;
-    for (var i = 0; i < CONCEPTS.length; i++) {
-      for (var k = 0; k < CONCEPTS[i].keys.length; k++) {
-        if (n.indexOf(norm(CONCEPTS[i].keys[k])) >= 0) return CONCEPTS[i].id;
+    var list = parts();
+    for (var i = 0; i < list.length; i++) {
+      var keys = list[i].keys || [];
+      for (var k = 0; k < keys.length; k++) {
+        if (n.indexOf(norm(keys[k])) >= 0) return list[i].id;
       }
     }
     return null;
   }
-  var whyEl = document.getElementById("lfWhy");
-  var blanks = [document.getElementById("lfB1"), document.getElementById("lfB2"), document.getElementById("lfB3")];
-  function paintClose() {
-    var picked = document.querySelector('input[name="lfPrimKind"]:checked');
-    var kind = picked ? picked.value : "";
-    var why = whyEl ? whyEl.value : "";
-    var texts = blanks.map(function (el) { return el ? el.value : ""; });
-    var pfb = document.getElementById("lfPrimFb");
-    if (pfb) {
-      if (kind === "choice") { pfb.className = "lf-fb ok"; pfb.textContent = "对上了：三个互斥动作是一次 choice，三路概率加总为 1。"; }
-      else if (kind === "noul") { pfb.className = "lf-fb bad"; pfb.textContent = "三个 noul 是三个独立的「是」概率，加起来不必为 1。这组动作更贴 choice。"; }
-      else { pfb.className = "lf-fb"; pfb.textContent = ""; }
-    }
+  function conceptHits(text) {
+    var n = norm(text);
     var seen = {};
-    texts.forEach(function (t) { var id = conceptOf(t); if (id) seen[id] = true; });
-    var nHit = Object.keys(seen).length;
-    var bfb = document.getElementById("lfBlankFb");
-    var any = texts.some(function (t) { return String(t).trim(); });
-    if (bfb) {
-      if (!any) { bfb.className = "lf-fb"; bfb.textContent = ""; }
-      else if (nHit === 3) { bfb.className = "lf-fb ok"; bfb.textContent = "三件套齐了。"; }
-      else { bfb.className = "lf-fb bad"; bfb.textContent = "已对上 " + nHit + "/3。"; }
+    parts().forEach(function (p) {
+      (p.keys || []).forEach(function (key) {
+        if (n.indexOf(norm(key)) >= 0) seen[p.id] = true;
+      });
+    });
+    return seen;
+  }
+  function rewriteHit(id, text) {
+    var spec = CFG && CFG.feynman && CFG.feynman[id];
+    var n = norm(text);
+    if (!spec || !n) return false;
+    if (spec.forbid) {
+      for (var i = 0; i < spec.forbid.length; i++) if (n.indexOf(norm(spec.forbid[i])) >= 0) return false;
     }
-    writeStore({ kind: kind, why: why, blanks: texts });
+    if (spec.include) {
+      for (var j = 0; j < spec.include.length; j++) if (n.indexOf(norm(spec.include[j])) < 0) return false;
+    }
+    if (spec.any && spec.any.length) {
+      var anyOk = false;
+      for (var a = 0; a < spec.any.length; a++) if (n.indexOf(norm(spec.any[a])) >= 0) anyOk = true;
+      if (!anyOk) return false;
+    }
+    if (spec.need && spec.need.length) {
+      var hits = conceptHits(text);
+      for (var t = 0; t < spec.need.length; t++) if (!hits[spec.need[t]]) return false;
+    }
+    return true;
+  }
+  function currentKind() {
+    var picked = document.querySelector('input[name="lfPrimKind"]:checked');
+    return picked ? picked.value : "";
+  }
+  function currentBlanks() {
+    return blanks.map(function (el) { return el ? el.value : ""; });
+  }
+  function scoreBlanks(texts, paint) {
+    var used = {};
+    var unique = 0;
+    texts.forEach(function (text, i) {
+      var el = blanks[i];
+      var id = conceptOf(text);
+      if (paint && el) el.classList.remove("hit", "miss", "dup");
+      if (!String(text || "").trim()) return;
+      if (!id) { if (paint && el) el.classList.add("miss"); return; }
+      if (used[id]) { if (paint && el) el.classList.add("dup"); return; }
+      used[id] = true;
+      unique++;
+      if (paint && el) el.classList.add("hit");
+    });
+    return unique;
+  }
+  function choiceOk() {
+    var spec = CFG && CFG.choice;
+    return !!(spec && currentKind() === spec.accept && whyEl && whyEl.value.trim());
+  }
+  function tripleOk() { return scoreBlanks(currentBlanks(), false) === 3; }
+  function lockChoice(on) {
+    document.querySelectorAll('input[name="lfPrimKind"]').forEach(function (el) { el.disabled = on; });
+    if (whyEl) whyEl.disabled = on;
+  }
+  function lockTriple(on) { blanks.forEach(function (el) { if (el) el.disabled = on; }); }
+  function showConsPanel(on) {
+    var panel = document.getElementById("lfConsensus");
+    if (panel) panel.hidden = !on;
+  }
+  function fillConsList() {
+    var list = document.getElementById("lfConsList");
+    if (!list || !CFG || list.childElementCount) return;
+    (CFG.cards || []).forEach(function (card) {
+      var li = document.createElement("li");
+      var strong = document.createElement("strong");
+      strong.textContent = card.title + "：";
+      li.appendChild(strong);
+      var span = document.createElement("span");
+      renderRich(span, card.text);
+      li.appendChild(span);
+      list.appendChild(li);
+    });
+  }
+  function paintProgress() {
+    var n = ((choicePhase === "checked" && choiceOk()) ? 1 : 0) + ((triplePhase === "checked" && tripleOk()) ? 1 : 0);
+    var prog = document.getElementById("lfProgText");
+    var bar = document.getElementById("lfProgBar");
+    if (prog) prog.textContent = "收束进度 " + n + "/2";
+    if (bar) bar.style.width = (n * 50) + "%";
+    var both = n === 2;
+    var celeb = document.getElementById("lfCeleb");
+    if (celeb) celeb.hidden = !both;
+    var c1 = document.getElementById("claim1");
+    var c2 = document.getElementById("claim2");
+    if (c2) {
+      c2.className = both ? "ok" : "mid";
+      c2.textContent = both ? "② 题型已收束 · choice" : "② 契约基本过 · 题型仍开";
+    }
+    if (c1) {
+      c1.className = both ? "ok" : "warn";
+      c1.textContent = both ? "① 三件套已对齐" : "① 费曼仍虚";
+    }
+    showConsPanel(choicePhase === "checked" || triplePhase === "checked");
+  }
+  function persist() {
+    var rewrites = {};
+    document.querySelectorAll("textarea[data-rw]").forEach(function (ta) {
+      rewrites[ta.getAttribute("data-rw")] = ta.value;
+    });
+    writeStore({
+      kind: currentKind(),
+      why: whyEl ? whyEl.value : "",
+      blanks: currentBlanks(),
+      choicePhase: choicePhase,
+      triplePhase: triplePhase,
+      rewrites: rewrites,
+      rwPhase: rwPhase
+    });
     var save = document.getElementById("lfSave");
-    if (save) save.textContent = (kind || why.trim() || any) ? "已写入本机（不发 webhook）" : "写在本机，不发 webhook。";
+    if (save) {
+      var touched = currentKind() || (whyEl && whyEl.value.trim()) || currentBlanks().some(function (t) { return String(t).trim(); });
+      save.textContent = touched ? "已写入本机（不发 webhook）" : "先作答再核对。共识在锁定之后出现。写在本机，不发 webhook。";
+    }
   }
+  function checkChoice() {
+    if (!CFG) return;
+    var kind = currentKind();
+    var why = whyEl ? whyEl.value.trim() : "";
+    var fb = document.getElementById("lfPrimFb");
+    if (!kind) {
+      if (fb) { fb.className = "lf-fb bad"; fb.textContent = "先选择，再核对。"; }
+      return;
+    }
+    choicePhase = "checked";
+    lockChoice(true);
+    var ok = kind === CFG.choice.accept && !!why;
+    if (fb) {
+      fb.className = "lf-fb " + (ok ? "ok" : "bad");
+      fb.textContent = ok ? CFG.choice.coachOk : (kind === CFG.choice.accept ? "选对了题型，补一句为什么再核对。" : CFG.choice.coachBad);
+    }
+    var yours = document.getElementById("lfChoiceYours");
+    var cons = document.getElementById("lfChoiceCons");
+    if (yours) yours.textContent = (kind === "choice" ? "choice" : "三个 noul") + (why ? "。为什么：" + why : "。为什么：（空）");
+    renderRich(cons, CFG.choice.consensus);
+    var box = document.getElementById("lfChoiceResult");
+    if (box) box.hidden = false;
+    var retry = document.getElementById("lfRetryChoice");
+    var check = document.getElementById("lfCheckChoice");
+    if (retry) retry.hidden = ok;
+    if (check) check.hidden = true;
+    fillConsList();
+    paintProgress();
+    persist();
+  }
+  function retryChoice() {
+    choicePhase = "open";
+    lockChoice(false);
+    var box = document.getElementById("lfChoiceResult");
+    if (box) box.hidden = true;
+    var retry = document.getElementById("lfRetryChoice");
+    var check = document.getElementById("lfCheckChoice");
+    if (retry) retry.hidden = true;
+    if (check) check.hidden = false;
+    var fb = document.getElementById("lfPrimFb");
+    if (fb) { fb.className = "lf-fb bad"; fb.textContent = "已解开。改完再点核对，共识会先藏起来。"; }
+    paintProgress();
+    persist();
+  }
+  function checkTriple() {
+    if (!CFG) return;
+    var texts = currentBlanks();
+    var fb = document.getElementById("lfBlankFb");
+    if (!texts.some(function (t) { return String(t).trim(); })) {
+      if (fb) { fb.className = "lf-fb bad"; fb.textContent = "先填空，再核对。"; }
+      return;
+    }
+    triplePhase = "checked";
+    lockTriple(true);
+    var unique = scoreBlanks(texts, true);
+    var ok = unique === 3;
+    if (fb) {
+      fb.className = "lf-fb " + (ok ? "ok" : "bad");
+      fb.textContent = ok ? CFG.triple.coachOk : CFG.triple.coachBad;
+    }
+    var yours = document.getElementById("lfTripleYours");
+    if (yours) yours.textContent = texts.map(function (t) { return t.trim() || "____"; }).join(" · ");
+    renderRich(document.getElementById("lfTripleCons"), CFG.triple.consensus);
+    var box = document.getElementById("lfTripleResult");
+    if (box) box.hidden = false;
+    var retry = document.getElementById("lfRetryTriple");
+    var check = document.getElementById("lfCheckTriple");
+    if (retry) retry.hidden = ok;
+    if (check) check.hidden = true;
+    fillConsList();
+    paintProgress();
+    persist();
+  }
+  function retryTriple() {
+    triplePhase = "open";
+    lockTriple(false);
+    blanks.forEach(function (el) { if (el) el.classList.remove("hit", "miss", "dup"); });
+    var box = document.getElementById("lfTripleResult");
+    if (box) box.hidden = true;
+    var retry = document.getElementById("lfRetryTriple");
+    var check = document.getElementById("lfCheckTriple");
+    if (retry) retry.hidden = true;
+    if (check) check.hidden = false;
+    var fb = document.getElementById("lfBlankFb");
+    if (fb) { fb.className = "lf-fb bad"; fb.textContent = "已解开。改完再点核对。"; }
+    paintProgress();
+    persist();
+  }
+  function checkRewrite(id) {
+    if (!CFG || !CFG.feynman || !CFG.feynman[id]) return;
+    var ta = document.getElementById("rw-" + id);
+    var fb = document.getElementById("rwfb-" + id);
+    var spec = CFG.feynman[id];
+    if (!ta || !ta.value.trim()) {
+      if (fb) { fb.className = "lf-fb bad"; fb.textContent = "先写改写，再核对。"; }
+      return;
+    }
+    rwPhase[id] = "checked";
+    ta.disabled = true;
+    var ok = rewriteHit(id, ta.value);
+    ta.classList.remove("hit", "miss");
+    ta.classList.add(ok ? "hit" : "miss");
+    if (fb) {
+      fb.className = "lf-fb " + (ok ? "ok" : "bad");
+      fb.textContent = ok ? spec.coachOk : spec.coachBad;
+    }
+    var fan = document.getElementById("rwfan-" + id);
+    if (fan) {
+      fan.hidden = false;
+      fan.textContent = "";
+      fan.appendChild(document.createTextNode("范文："));
+      var span = document.createElement("span");
+      renderRich(span, spec.fan);
+      fan.appendChild(span);
+    }
+    var check = document.getElementById("rwbtn-" + id);
+    var retry = document.getElementById("rwrty-" + id);
+    if (check) check.hidden = true;
+    if (retry) retry.hidden = ok;
+    persist();
+  }
+  function retryRewrite(id) {
+    rwPhase[id] = "open";
+    var ta = document.getElementById("rw-" + id);
+    if (ta) { ta.disabled = false; ta.classList.remove("hit", "miss"); }
+    var fan = document.getElementById("rwfan-" + id);
+    if (fan) fan.hidden = true;
+    var check = document.getElementById("rwbtn-" + id);
+    var retry = document.getElementById("rwrty-" + id);
+    if (check) check.hidden = false;
+    if (retry) retry.hidden = true;
+    var fb = document.getElementById("rwfb-" + id);
+    if (fb) { fb.className = "lf-fb bad"; fb.textContent = "已解开。改完再核对，范文先藏起来。"; }
+    persist();
+  }
+  function bind() {
+    var c1 = document.getElementById("lfCheckChoice");
+    var r1 = document.getElementById("lfRetryChoice");
+    var c2 = document.getElementById("lfCheckTriple");
+    var r2 = document.getElementById("lfRetryTriple");
+    if (c1) c1.addEventListener("click", checkChoice);
+    if (r1) r1.addEventListener("click", retryChoice);
+    if (c2) c2.addEventListener("click", checkTriple);
+    if (r2) r2.addEventListener("click", retryTriple);
+    if (whyEl) whyEl.addEventListener("input", persist);
+    document.querySelectorAll('input[name="lfPrimKind"]').forEach(function (el) { el.addEventListener("change", persist); });
+    blanks.forEach(function (el) { if (el) el.addEventListener("input", persist); });
+    document.querySelectorAll("textarea[data-rw]").forEach(function (ta) {
+      var id = ta.getAttribute("data-rw");
+      ta.addEventListener("input", persist);
+      var check = document.getElementById("rwbtn-" + id);
+      var retry = document.getElementById("rwrty-" + id);
+      if (check) check.addEventListener("click", function () { checkRewrite(id); });
+      if (retry) retry.addEventListener("click", function () { retryRewrite(id); });
+    });
+  }
+  function restore(saved) {
+    if (saved.kind) {
+      var radio = document.querySelector('input[name="lfPrimKind"][value="' + saved.kind + '"]');
+      if (radio) radio.checked = true;
+    }
+    if (whyEl && typeof saved.why === "string") whyEl.value = saved.why;
+    if (Array.isArray(saved.blanks)) saved.blanks.forEach(function (v, i) { if (blanks[i] && typeof v === "string") blanks[i].value = v; });
+    if (saved.rewrites) {
+      Object.keys(saved.rewrites).forEach(function (id) {
+        var ta = document.getElementById("rw-" + id);
+        if (ta && typeof saved.rewrites[id] === "string") ta.value = saved.rewrites[id];
+      });
+    }
+    choicePhase = saved.choicePhase === "checked" ? "checked" : "open";
+    triplePhase = saved.triplePhase === "checked" ? "checked" : "open";
+    rwPhase = (saved.rwPhase && typeof saved.rwPhase === "object") ? saved.rwPhase : {};
+    if (choicePhase === "checked") checkChoice();
+    if (triplePhase === "checked") checkTriple();
+    Object.keys(rwPhase).forEach(function (id) { if (rwPhase[id] === "checked") checkRewrite(id); });
+    persist();
+  }
+  bind();
   var saved = readStore();
-  if (saved.kind) {
-    var radio = document.querySelector('input[name="lfPrimKind"][value="' + saved.kind + '"]');
-    if (radio) radio.checked = true;
-  }
-  if (whyEl && typeof saved.why === "string") whyEl.value = saved.why;
-  if (Array.isArray(saved.blanks)) saved.blanks.forEach(function (v, i) { if (blanks[i] && typeof v === "string") blanks[i].value = v; });
-  document.querySelectorAll('input[name="lfPrimKind"]').forEach(function (el) { el.addEventListener("change", paintClose); });
-  if (whyEl) whyEl.addEventListener("input", paintClose);
-  blanks.forEach(function (el) { if (el) el.addEventListener("input", paintClose); });
-  var reveal = document.getElementById("lfReveal");
-  if (reveal) reveal.addEventListener("click", function () {
-    var t = document.getElementById("lfThree");
-    if (t) t.hidden = !t.hidden;
+  fetch("lesson0-consensus.json").then(function (res) { return res.json(); }).then(function (data) {
+    CFG = data;
+    fillConsList();
+    restore(saved);
+  }).catch(function () {
+    var fb = document.getElementById("lfPrimFb");
+    if (fb) { fb.className = "lf-fb bad"; fb.textContent = "共识配置没有载入，核对本课暂时不可用。"; }
   });
-  paintClose();
 })();
 </script>
 </body>
