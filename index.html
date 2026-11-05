@@ -1502,6 +1502,89 @@ footer {
   border-color: rgba(251,191,36,0.4);
 }
 .fy-tutor-inline.hint .fy-inline-lab { color: var(--warn); }
+.gdf {
+  margin: 0.85rem 0 1rem;
+  padding: 0.65rem 0.75rem 0.6rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--cyan);
+  background: var(--bg2);
+}
+.gdf-h {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--cyan);
+  margin-bottom: 0.15rem;
+}
+.gdf-track {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+.gdf-gen {
+  padding-bottom: 0.4rem;
+  border-bottom: 1px dashed rgba(139,156,179,0.4);
+}
+.gdf-k {
+  flex: 0 0 auto;
+  min-width: 3.4rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.gdf-node {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.gdf-gen .gdf-node {
+  border-style: dashed;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0.16rem 0.48rem;
+  font-size: 0.74rem;
+}
+.gdf-side,
+.gdf-arr {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.gdf.is-focused .gdf-node,
+.gdf.is-focused .gdf-arr,
+.gdf.is-focused .gdf-side,
+.gdf.is-focused .gdf-k {
+  opacity: 0.38;
+}
+.gdf.is-focused .gdf-node.is-focus {
+  opacity: 1;
+  color: #042026;
+  border-style: solid;
+  border-color: var(--cyan);
+  background: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(34,211,238,0.28);
+}
+.gdf.is-focused .gdf-gen .gdf-node.is-focus {
+  color: #1c1404;
+  border-color: var(--warn);
+  background: var(--warn);
+  box-shadow: 0 0 0 3px rgba(251,191,36,0.28);
+}
+.gdf-cap {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--lime);
+}
+.gdf-cap[hidden] { display: none !important; }
 @media (max-width: 520px) {
   .tutor-drawer {
     left: 0.55rem;
@@ -1542,6 +1625,26 @@ footer {
     <div class="sec-label">Section 02</div>
     <h2>生成式 LLM vs 决策模型</h2>
     <p class="lead">一个擅长开放生成；一个专门回答「在钉死的选项里，各有多大把握？」</p>
+
+    <div class="gdf" id="tutorViz" data-compare="gen-vs-decision" aria-label="生成 vs 决策">
+      <div class="gdf-h">生成 vs 决策</div>
+      <div class="gdf-track gdf-gen">
+        <span class="gdf-k">上轨</span>
+        <span class="gdf-node" data-viz-node="gen">自由生成</span>
+        <span class="gdf-side">不经过选项钉死 / 打分 / 校准 / 拒答</span>
+      </div>
+      <div class="gdf-track gdf-dec">
+        <span class="gdf-k">下轨</span>
+        <span class="gdf-node" data-viz-node="choice">选项钉死</span>
+        <span class="gdf-arr" aria-hidden="true">→</span>
+        <span class="gdf-node" data-viz-node="score">打分</span>
+        <span class="gdf-arr" aria-hidden="true">→</span>
+        <span class="gdf-node" data-viz-node="calib">校准</span>
+        <span class="gdf-arr" aria-hidden="true">→</span>
+        <span class="gdf-node" data-viz-node="noul">拒答</span>
+      </div>
+      <p class="gdf-cap" hidden></p>
+    </div>
 
     <div class="toggle-bar" role="tablist">
       <button type="button" class="active" data-view="both" aria-selected="true">并排对比</button>
@@ -4019,6 +4122,60 @@ footer {
     return configured || TUTOR_ABSOLUTE;
   }
   var TUTOR_URL = resolveTutorUrl();
+
+  var VIZ_FOCUS = { gen: 1, choice: 1, score: 1, calib: 1, noul: 1 };
+  function vizNeutral(root) {
+    root.classList.remove("is-focused");
+    root.removeAttribute("data-focus");
+    var nodes = root.querySelectorAll("[data-viz-node]");
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].classList.remove("is-focus");
+      nodes[i].removeAttribute("aria-current");
+    }
+    var cap = root.querySelector(".gdf-cap");
+    if (cap) { cap.textContent = ""; cap.hidden = true; }
+  }
+  function applyTutorViz(viz) {
+    var root = document.getElementById("tutorViz");
+    if (!root) return;
+    try {
+      if (viz == null || viz === false) { vizNeutral(root); return; }
+      if (typeof viz !== "object" || Array.isArray(viz)) return;
+      if (viz.type !== "flow") return;
+      if (viz.compare != null && viz.compare !== "" && viz.compare !== "gen-vs-decision") return;
+      if (viz.nodes != null && !Array.isArray(viz.nodes)) return;
+      var focus = "";
+      if (viz.focus != null && viz.focus !== "") {
+        focus = String(viz.focus);
+        if (!VIZ_FOCUS[focus]) focus = "";
+      }
+      vizNeutral(root);
+      if (focus) {
+        var el = root.querySelector('[data-viz-node="' + focus + '"]');
+        if (el) {
+          root.classList.add("is-focused");
+          root.setAttribute("data-focus", focus);
+          el.classList.add("is-focus");
+          el.setAttribute("aria-current", "true");
+        }
+      }
+      var capEl = root.querySelector(".gdf-cap");
+      if (capEl && typeof viz.caption === "string") {
+        var text = viz.caption.replace(/\s+/g, " ").trim();
+        if (text) {
+          var chars = Array.from(text);
+          if (chars.length > 40) text = chars.slice(0, 40).join("");
+          capEl.textContent = text;
+          capEl.hidden = false;
+        }
+      }
+      if (focus) {
+        try { root.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (eScroll) {}
+      }
+    } catch (eViz) {}
+  }
+  window.applyTutorViz = applyTutorViz;
+
   var SUMMARY_KEY = "dm_lesson0_tutor_summaries";
   var LESSON_ID = "lesson-0";
   var MAX_HISTORY = 8;
@@ -4348,6 +4505,10 @@ footer {
       sendBtn.textContent = "发送";
       setStatus("");
       renderThread();
+      try {
+        if (!payload || payload.viz == null) applyTutorViz(null);
+        else applyTutorViz(payload.viz);
+      } catch (eVizDone) {}
       return;
     }
     if (eventName === "error") {
