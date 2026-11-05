@@ -1502,6 +1502,43 @@ footer {
   border-color: rgba(251,191,36,0.4);
 }
 .fy-tutor-inline.hint .fy-inline-lab { color: var(--warn); }
+.fy-viz-cue {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.12rem;
+  width: 100%;
+  margin-top: 0.45rem;
+  padding: 0.42rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid rgba(34,211,238,0.55);
+  background: rgba(34,211,238,0.12);
+  color: var(--cyan);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+}
+.fy-viz-cue[hidden] { display: none !important; }
+.fy-viz-cue:hover,
+.fy-viz-cue:focus-visible {
+  border-color: var(--cyan);
+  background: rgba(34,211,238,0.22);
+  outline: none;
+}
+.fy-viz-lead { display: block; }
+.fy-viz-cap {
+  display: block;
+  font-weight: 600;
+  color: var(--lime);
+}
+.tutor-viz-cue {
+  flex: 0 0 auto;
+  width: auto;
+  margin: 0 0.75rem 0.5rem;
+}
 .gdf {
   margin: 0.85rem 0 1rem;
   padding: 0.65rem 0.75rem 0.6rem;
@@ -2357,6 +2394,7 @@ footer {
   <p class="tutor-help" id="tutorTitle">闭卷题仍由页面规则判定；AI 只追问/批改费曼</p>
   <p class="tutor-source" id="tutorSource" hidden></p>
   <div class="tutor-log" id="tutorLog" role="log" aria-live="polite" aria-relevant="additions"></div>
+  <button type="button" class="fy-viz-cue tutor-viz-cue" id="tutorVizCue" hidden></button>
   <div class="tutor-compose">
     <textarea id="tutorInput" rows="3" placeholder="就这一课追问…" maxlength="4000"></textarea>
     <div class="tutor-actions">
@@ -4124,6 +4162,13 @@ footer {
   var TUTOR_URL = resolveTutorUrl();
 
   var VIZ_FOCUS = { gen: 1, choice: 1, score: 1, calib: 1, noul: 1 };
+  var VIZ_FOCUS_LABEL = {
+    gen: "自由生成",
+    choice: "选项钉死",
+    score: "打分",
+    calib: "校准",
+    noul: "拒答"
+  };
   function vizNeutral(root) {
     root.classList.remove("is-focused");
     root.removeAttribute("data-focus");
@@ -4137,28 +4182,30 @@ footer {
   }
   function applyTutorViz(viz) {
     var root = document.getElementById("tutorViz");
-    if (!root) return;
+    if (!root) return null;
     try {
-      if (viz == null || viz === false) { vizNeutral(root); return; }
-      if (typeof viz !== "object" || Array.isArray(viz)) return;
-      if (viz.type !== "flow") return;
-      if (viz.compare != null && viz.compare !== "" && viz.compare !== "gen-vs-decision") return;
-      if (viz.nodes != null && !Array.isArray(viz.nodes)) return;
+      if (viz == null || viz === false) { vizNeutral(root); return null; }
+      if (typeof viz !== "object" || Array.isArray(viz)) return null;
+      if (viz.type !== "flow") return null;
+      if (viz.compare != null && viz.compare !== "" && viz.compare !== "gen-vs-decision") return null;
+      if (viz.nodes != null && !Array.isArray(viz.nodes)) return null;
       var focus = "";
       if (viz.focus != null && viz.focus !== "") {
         focus = String(viz.focus);
         if (!VIZ_FOCUS[focus]) focus = "";
       }
       vizNeutral(root);
+      var focusedEl = null;
       if (focus) {
-        var el = root.querySelector('[data-viz-node="' + focus + '"]');
-        if (el) {
+        focusedEl = root.querySelector('[data-viz-node="' + focus + '"]');
+        if (focusedEl) {
           root.classList.add("is-focused");
           root.setAttribute("data-focus", focus);
-          el.classList.add("is-focus");
-          el.setAttribute("aria-current", "true");
+          focusedEl.classList.add("is-focus");
+          focusedEl.setAttribute("aria-current", "true");
         }
       }
+      var caption = "";
       var capEl = root.querySelector(".gdf-cap");
       if (capEl && typeof viz.caption === "string") {
         var text = viz.caption.replace(/\s+/g, " ").trim();
@@ -4167,14 +4214,63 @@ footer {
           if (chars.length > 40) text = chars.slice(0, 40).join("");
           capEl.textContent = text;
           capEl.hidden = false;
+          caption = text;
         }
       }
-      if (focus) {
-        try { root.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (eScroll) {}
-      }
-    } catch (eViz) {}
+      if (!focusedEl || !VIZ_FOCUS_LABEL[focus]) return null;
+      try { root.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (eScroll) {}
+      return { focus: focus, label: VIZ_FOCUS_LABEL[focus], caption: caption };
+    } catch (eViz) { return null; }
   }
   window.applyTutorViz = applyTutorViz;
+
+  function scrollTutorViz() {
+    var root = document.getElementById("tutorViz");
+    if (!root) return;
+    try { root.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
+  }
+
+  function clearVizCues() {
+    var inline = document.querySelectorAll(".fy-tutor-inline .fy-viz-cue");
+    for (var i = 0; i < inline.length; i++) inline[i].remove();
+    var drawerCue = document.getElementById("tutorVizCue");
+    if (!drawerCue) return;
+    drawerCue.hidden = true;
+    drawerCue.removeAttribute("data-viz-focus");
+    while (drawerCue.firstChild) drawerCue.removeChild(drawerCue.firstChild);
+  }
+
+  function writeVizCue(btn, info) {
+    btn.hidden = false;
+    btn.setAttribute("data-viz-focus", info.focus);
+    btn.setAttribute("aria-label", "查看双轨图，已标出" + info.label);
+    while (btn.firstChild) btn.removeChild(btn.firstChild);
+    var lead = document.createElement("span");
+    lead.className = "fy-viz-lead";
+    lead.textContent = "双轨图已标出「" + info.label + "」 · 点此查看";
+    btn.appendChild(lead);
+    if (info.caption) {
+      var cap = document.createElement("span");
+      cap.className = "fy-viz-cap";
+      cap.textContent = info.caption;
+      btn.appendChild(cap);
+    }
+  }
+
+  function showVizCue(panel, info) {
+    clearVizCues();
+    if (!info || !info.focus || !info.label) return;
+    if (panel && panel.classList && panel.classList.contains("fy-tutor-inline")) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "fy-viz-cue";
+      btn.addEventListener("click", scrollTutorViz);
+      writeVizCue(btn, info);
+      panel.appendChild(btn);
+    }
+    var drawerCue = document.getElementById("tutorVizCue");
+    if (drawerCue) writeVizCue(drawerCue, info);
+  }
 
   var SUMMARY_KEY = "dm_lesson0_tutor_summaries";
   var LESSON_ID = "lesson-0";
@@ -4487,6 +4583,7 @@ footer {
       return;
     }
     if (eventName === "done") {
+      var gradePanel = live.panel || null;
       var shown = acc || (payload && payload.summary ? String(payload.summary) : "");
       if (!shown) shown = "（学伴没有返回文字）";
       live.el.textContent = shown;
@@ -4505,10 +4602,12 @@ footer {
       sendBtn.textContent = "发送";
       setStatus("");
       renderThread();
+      var vizApplied = null;
       try {
-        if (!payload || payload.viz == null) applyTutorViz(null);
-        else applyTutorViz(payload.viz);
-      } catch (eVizDone) {}
+        if (!payload || payload.viz == null) vizApplied = applyTutorViz(null);
+        else vizApplied = applyTutorViz(payload.viz);
+      } catch (eVizDone) { vizApplied = null; }
+      showVizCue(gradePanel, vizApplied);
       return;
     }
     if (eventName === "error") {
@@ -4529,6 +4628,7 @@ footer {
 
   function beginAssistantBubble(panel) {
     acc = "";
+    clearVizCues();
     var el = bubbleEl("assistant", "", true);
     live = { mode: mode, el: el, panel: panel || null };
     if (panel) paintInline(panel, "正在批改…", "pending");
@@ -4685,6 +4785,9 @@ footer {
     if (streaming) { stopStream(); return; }
     sendMessage(input.value);
   }
+
+  var drawerCue = document.getElementById("tutorVizCue");
+  if (drawerCue) drawerCue.addEventListener("click", scrollTutorViz);
 
   fab.addEventListener("click", toggleDrawer);
   if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
