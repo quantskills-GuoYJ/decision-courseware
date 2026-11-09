@@ -272,6 +272,44 @@ test("no kind displays an accusation the learner did not affirm", () => {
   assert.match(stillNoul, /把 noul 说成拒答/);
 });
 
+test("a correct fitted clause plus an equate clause names the equate", () => {
+  const fitted = {
+    zh: "在留出集上拟合的温度缩放是一种校准方法",
+    en: "Fitted temperature scaling on a held-out set is a calibration method",
+  };
+  const equate = {
+    zh: "校准就是把温度调高",
+    en: "Calibration is just temperature",
+  };
+  const falseHot = "缺口：拟合的温度缩放说对了，但温度越高越准并不成立\n提示：越准说的不是拟合出来的温度\n本轮摘要：越准";
+  for (const lang of ["zh", "en"]) {
+    for (const sep of ["。", "；", "，", "、", ";", ",", " ", ""]) {
+      for (const order of ["fit-first", "equate-first"]) {
+        const text = order === "fit-first" ? fitted[lang] + sep + equate[lang] : equate[lang] + sep + fitted[lang];
+        const out = clampTutorOutput("feynman", falseHot, text, "lesson-0");
+        assert.equal(isCorrectFittedTempScaling(text), false, text);
+        assert.match(out, /把校准说成调温度/, text + "\n" + out);
+        assert.equal(/越高越准并不成立|说成了越准|还不能确定这句里的温度/.test(out), false, text + "\n" + out);
+      }
+    }
+  }
+  for (const text of [
+    "在留出集上拟合的温度缩放是一种校准方法，校准不是把温度调高",
+    "Fitted temperature scaling on a held-out set is a calibration method. Calibration is not just temperature.",
+  ]) {
+    const out = clampTutorOutput("feynman", falseHot, text, "lesson-1");
+    assert.equal(/把校准说成调温度|把随意调温度当成校准|越高越准并不成立/.test(out), false, text + "\n" + out);
+    assert.match(out, /拟合/, out);
+  }
+  for (const text of ["随意的温度就是校准", "滑块温度就是校准"]) {
+    const out = clampTutorOutput("feynman", "缺口：标题复读\n提示：三件套\n本轮摘要：标题复读", text, "lesson-0");
+    assert.match(out, /把随意调温度当成校准/, text + "\n" + out);
+    assert.equal(isCorrectFittedTempScaling(text), false, text);
+  }
+  const bare = clampTutorOutput("feynman", falseHot, "温度就是校准", "lesson-0");
+  assert.equal(/把随意调温度当成校准|把校准说成调温度|越高越准并不成立/.test(bare), false, bare);
+});
+
 test("an unclear temperature sentence is a question, not an invented gap", () => {
   const out = clampTutorOutput(
     "feynman",

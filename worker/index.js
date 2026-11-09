@@ -121,6 +121,8 @@ function assessAccount(um) {
     if (hot.affirmed && !hot.denied && /温度|越高|temperature|\bhotter\b/i.test(clause)) out.hotter = true;
     const equated = polarity(clause, equateClaim);
     if (equated.affirmed && !equated.denied) out.equates = true;
+    const reverseEquate = polarity(clause, /(?:随意|滑块|随便)的?温度就是校准|arbitrary temperature is calibration/i);
+    if (reverseEquate.affirmed && !reverseEquate.denied) out.equates = true;
     if (arbWord.test(clause) && arbNot.test(clause)) out.arbitraryNot = true;
     if (polarity(clause, pYesClaim).affirmed) out.pYes = true;
     const refusal = polarity(clause, refusalClaim);
@@ -178,7 +180,9 @@ function classifyFeynmanKind(um, modelGap) {
   if (a.hasNoul && a.refusalAffirm && !a.pYes) return "noul-mix";
   if (a.hasNoul && a.pYes && a.refusalDeny && !a.refusalAffirm) return "noul-ok";
   if (isGenVsDecisionUtterance(s) || (/输出/.test(s) && /不同|区别/.test(s))) return "gen-output";
-  if (a.fittedOk && (a.hotter || a.equates)) return "calib-partial";
+  if (a.fittedOk && a.equates && a.hotter) return "calib-partial-both";
+  if (a.fittedOk && a.equates) return "calib-partial-equate";
+  if (a.fittedOk && a.hotter) return "calib-partial";
   if (a.equates) return "calib-mix";
   if (a.hotter) return "calib-hot";
   if (a.fittedOk) return "calib-ok";
@@ -197,7 +201,7 @@ function focusFromSignals(um, gapSentence, kind) {
   if (/分数|概率|把握|打分|依据/.test(s)) return "score";
   if (/可靠|ECE|温度|锋利|校准/.test(s)) return "calib";
   if (kind === "missing-score") return "score";
-  if (kind === "calib-mix" || kind === "calib-ok" || kind === "calib-partial" || kind === "calib-hot" || kind === "calib-ask" || kind === "diag-temp") return "calib";
+  if (kind === "calib-mix" || kind === "calib-ok" || kind === "calib-partial" || kind === "calib-partial-equate" || kind === "calib-partial-both" || kind === "calib-hot" || kind === "calib-ask" || kind === "diag-temp") return "calib";
   return "choice"; // title-repeat / gen-output default
 }
 
@@ -213,6 +217,10 @@ function gapSentenceForKind(kind) {
       return "已说明拟合的温度缩放是校准，未把它误当成随意拖的 T";
     case "calib-partial":
       return "拟合的温度缩放说对了，但温度越高越准并不成立";
+    case "calib-partial-equate":
+      return "拟合的温度缩放说对了，但这句又把校准说成调温度";
+    case "calib-partial-both":
+      return "拟合的温度缩放说对了，但这句又把校准说成调温度，同时把温度越高说成越准";
     case "calib-hot":
       return "这句把温度越高说成了越准";
     case "calib-ask":
@@ -247,6 +255,10 @@ function tipForKind(kind) {
       return "留出集上的 ECE 要和拟合集分开报";
     case "calib-partial":
       return "越准说的不是拟合出来的温度";
+    case "calib-partial-equate":
+      return "随意 T 只改锋利度；拟合的温度缩放才是校准";
+    case "calib-partial-both":
+      return "拟合的缩放、随意调温度和越高越准要分开";
     case "calib-hot":
       return "越高并不自动越准";
     case "calib-ask":
@@ -295,7 +307,7 @@ function unsupportedAccusation(text, userMessage) {
     [/把随意调温度当成校准|把校准说成调温度|校准就是(?:把)?温度/, account.equates],
     [/把\s*noul\s*说成拒答|说成了?拒答概率/i, account.refusalAffirm],
     [/标题复读|只复读标题/, false],
-    [/越高越准并不成立|说成了越准/, account.hotter],
+    [/越高越准并不成立|说成了?越准/, account.hotter],
     [/把生成当决策/, isGenVsDecisionUtterance(userMessage)],
   ];
   return checks.some(([re, allowed]) => re.test(text) && !allowed);
@@ -351,7 +363,7 @@ function buildTutorViz(mode, clampedText, userMessage) {
   const gapSentence = isBareGapTag(gapLine) ? gapSentenceForKind(kind) : gapLine;
 
   // Chart2 when temperature and calibration are the topic, including a correct account.
-  if (mode === "feynman" && (kind === "calib-mix" || kind === "calib-ok" || kind === "calib-partial" || kind === "calib-hot" || kind === "calib-ask" || kind === "diag-temp" || isTempVsCalibConfusion(um))) {
+  if (mode === "feynman" && (kind === "calib-mix" || kind === "calib-ok" || kind === "calib-partial" || kind === "calib-partial-equate" || kind === "calib-partial-both" || kind === "calib-hot" || kind === "calib-ask" || kind === "diag-temp" || isTempVsCalibConfusion(um))) {
     return {
       type: "calib-curve",
       nodes: CALIB_CURVE_NODES.slice(),
