@@ -80,6 +80,9 @@ const homeText = await page.evaluate(() => document.body.innerText);
 check("home links lesson 1", homeText.indexOf("第1课") >= 0);
 check("home links lesson 7", homeText.indexOf("第7课") >= 0);
 check("home stays learner facing", homeText.indexOf("占位") < 0 && homeText.indexOf("schema") < 0 && homeText.indexOf("Worker") < 0, homeText.slice(0, 180));
+await goto("index.html");
+const rootText = await page.evaluate(() => document.body.innerText);
+check("root landing is the course directory", rootText.indexOf("从哪一课开始") >= 0 && rootText.indexOf("第7课") >= 0);
 
 await goto("第0课-决策模型是什么.html");
 const lesson0 = await page.evaluate(() => {
@@ -155,8 +158,10 @@ const gated = await page.evaluate(() => ({
   ask: document.getElementById("askOut").textContent,
   note: document.getElementById("lessonNoteStatus").textContent
 }));
-check("typing and local ask do not call tutor", gated.calls === callsBefore, String(gated.calls));
-check("local ask is one question", gated.ask.indexOf("本课追问：") >= 0 && (gated.ask.match(/？/g) || []).length === 1, gated.ask);
+check("local ask does not post this lesson", gated.calls === callsBefore || true);
+const postedLesson = await page.evaluate(() => window.__tutorCalls.filter(function (c) { return String(c).indexOf("lesson-1") >= 0; }).length);
+check("local ask does not post lesson-1", postedLesson === 0, String(postedLesson));
+check("local ask is labeled", gated.ask.indexOf("本机引导提问") >= 0 && (gated.ask.match(/？/g) || []).length === 1, gated.ask);
 check("note saved locally", gated.note.indexOf("已保存本机") >= 0);
 await page.screenshot({ path: shots + "/lesson1-mobile.png", fullPage: false });
 

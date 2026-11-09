@@ -33,6 +33,7 @@
   if (!state.follow || typeof state.follow !== "object") state.follow = {};
   if (!state.feynman || typeof state.feynman !== "object") state.feynman = {};
   if (!state.ask || typeof state.ask !== "object") state.ask = { step: 0, asked: false, draft: "" };
+  if (!state.sectionNotes || typeof state.sectionNotes !== "object") state.sectionNotes = {};
   if (typeof state.note !== "string") state.note = "";
 
   function persist() {
@@ -168,6 +169,42 @@
   bindPhrase("[data-follow]", "follow", "这句里需要的词都在。");
   bindPhrase("[data-feynman]", "feynman", "这句用自己的话碰到了要点。");
 
+  document.querySelectorAll("section[data-q-group]").forEach(function (sec) {
+    var id = sec.getAttribute("data-q-group");
+    if (!id || sec.querySelector("[data-section-note]")) return;
+    var label = document.createElement("label");
+    label.textContent = "本节评论";
+    var area = document.createElement("textarea");
+    area.setAttribute("data-section-note", id);
+    var status = document.createElement("p");
+    status.className = "status";
+    status.setAttribute("data-section-status", id);
+    status.setAttribute("role", "status");
+    sec.appendChild(label);
+    sec.appendChild(area);
+    sec.appendChild(status);
+  });
+
+  document.querySelectorAll("[data-section-note]").forEach(function (area) {
+    var id = area.getAttribute("data-section-note");
+    if (!id) return;
+    if (!area.value && state.sectionNotes[id]) area.value = state.sectionNotes[id];
+    var status = document.querySelector('[data-section-status="' + id + '"]');
+    var timer = null;
+    area.addEventListener("input", function () {
+      if (status) { status.className = "status"; status.textContent = "输入中…"; }
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        state.sectionNotes[id] = area.value;
+        persist();
+        if (status) {
+          status.className = "status ok";
+          status.textContent = area.value.trim() ? "已保存本机" : "";
+        }
+      }, 400);
+    });
+  });
+
   var note = document.getElementById("lessonNote");
   var noteStatus = document.getElementById("lessonNoteStatus");
   if (note) {
@@ -214,8 +251,116 @@
       persist();
     });
   }
+  function tutorUrl() {
+    var configured = "";
+    if (window.COURSE_TUTOR && window.COURSE_TUTOR.url) configured = String(window.COURSE_TUTOR.url).trim();
+    if (!configured) configured = "https://dm-course.vibeniubi.com/api/tutor";
+    var host = "";
+    try { host = String(location.host || "").toLowerCase(); } catch (e) {}
+    if (host === "dm-course.vibeniubi.com" && configured.replace(/\/+$/, "") === "https://dm-course.vibeniubi.com/api/tutor") {
+      return "/api/tutor";
+    }
+    return configured;
+  }
+  function capabilitiesUrl(api) {
+    return String(api || "").replace(/\/api\/tutor\/?$/, "/api/tutor/capabilities");
+  }
+  function localAsk(label) {
+    state.ask.mode = "local";
+    state.ask.asked = true;
+    persist();
+    if (!askOut) return;
+    var step = Math.max(0, Math.min(prompts.length - 1, state.ask.step || 0));
+    askOut.className = "status";
+    askOut.textContent = label + prompts[step];
+  }
+  function readSseText(res, onEvent) {
+    var sse = { buf: "", event: "", data: [] };
+    function dispatch() {
+      if (!sse.event && !sse.data.length) return;
+      var raw = sse.data.join("\n");
+      var name = sse.event || "message";
+      sse.event = "";
+      sse.data = [];
+      var payload = {};
+      if (raw) { try { payload = JSON.parse(raw); } catch (e) { payload = { msg: raw }; } }
+      onEvent(name, payload);
+    }
+    function line(one) {
+      if (one === "") { dispatch(); return; }
+      if (one.indexOf("event:") === 0) { sse.event = one.slice(6).trim(); return; }
+      if (one.indexOf("data:") === 0) {
+        var v = one.slice(5);
+        if (v.charAt(0) === " ") v = v.slice(1);
+        sse.data.push(v);
+      }
+    }
+    function consume(text) {
+      sse.buf += text;
+      var parts = sse.buf.split(/\n/);
+      sse.buf = parts.pop();
+      parts.forEach(line);
+    }
+    if (!res.body || !res.body.getReader) {
+      return res.text().then(function (text) { consume(text); if (sse.buf) line(sse.buf); dispatch(); });
+    }
+    var reader = res.body.getReader();
+    var decoder = new TextDecoder();
+    function pump() {
+      return reader.read().then(function (result) {
+        if (result.done) { if (sse.buf) line(sse.buf); dispatch(); return; }
+        consume(decoder.decode(result.value, { stream: true }));
+        return pump();
+      });
+    }
+    return pump();
+  }
+  function liveAsk(api) {
+    if (state.ask.busy) return;
+    state.ask.busy = true;
+    if (askSend) askSend.textContent = "停止";
+    var acc = "";
+    var stopped = false;
+    var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+    state.ask.abort = function () { stopped = true; if (ctrl) ctrl.abort(); };
+    if (askOut) { askOut.className = "status"; askOut.textContent = "正在问学伴…"; }
+    var history = (state.ask.history || []).slice(-8);
+    var body = {
+      mode: "socratic",
+      lessonId: cfg.id,
+      message: (note && note.value) || (askReply && askReply.value) || "",
+      answers: { note: state.note || "", sectionNotes: state.sectionNotes || {} },
+      history: history,
+      locale: "zh-Hans"
+    };
+    var opts = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
+    if (ctrl) opts.signal = ctrl.signal;
+    fetch(api, opts).then(function (res) {
+      if (!res.ok) throw new Error("http");
+      return readSseText(res, function (name, payload) {
+        if (name === "token") acc += payload && payload.t != null ? String(payload.t) : "";
+        if (name === "error") throw new Error("sse");
+        if (askOut && acc) { askOut.className = "status"; askOut.textContent = "学伴：" + acc; }
+      });
+    }).then(function () {
+      if (stopped) return;
+      state.ask.history = (state.ask.history || []).concat([
+        { role: "user", content: String(body.message || "").slice(0, 2000) },
+        { role: "assistant", content: acc.slice(0, 2000) }
+      ]).slice(-8);
+      state.ask.mode = "live";
+      persist();
+    }).catch(function () {
+      if (stopped) return;
+      localAsk("学伴暂时不可用，已改用本机引导提问：");
+    }).then(function () {
+      state.ask.busy = false;
+      if (askSend) askSend.textContent = "发送并追问";
+    });
+  }
   if (askSend) {
     askSend.addEventListener("click", function () {
+      if (state.ask.busy && state.ask.abort) { state.ask.abort(); state.ask.busy = false; if (askSend) askSend.textContent = "发送并追问"; return; }
       var noteText = note ? String(note.value || "").trim() : "";
       var replyText = askReply ? String(askReply.value || "").trim() : "";
       if (!noteText && !replyText && !state.ask.asked) {
@@ -225,16 +370,26 @@
         }
         return;
       }
-      if (state.ask.asked && replyText) {
+      if (state.ask.asked && replyText && state.ask.mode !== "live") {
         state.ask.step = Math.min(prompts.length - 1, (state.ask.step || 0) + 1);
         state.ask.draft = "";
         if (askReply) askReply.value = "";
       }
-      state.ask.asked = true;
-      persist();
-      paintAsk();
+      var api = tutorUrl();
+      fetch(capabilitiesUrl(api), { cache: "no-store" }).then(function (res) {
+        if (!res.ok) throw new Error("cap");
+        return res.json();
+      }).then(function (cap) {
+        var lessons = cap && Array.isArray(cap.lessons) ? cap.lessons : [];
+        if (lessons.indexOf(cfg.id) >= 0) liveAsk(api);
+        else localAsk("本机引导提问：");
+      }).catch(function () {
+        localAsk("本机引导提问：");
+      });
     });
   }
+  var retryAsk = document.getElementById("askRetry");
+  if (retryAsk) retryAsk.addEventListener("click", function () { if (askSend) askSend.click(); });
   paintAsk();
 
   var exportBtn = document.getElementById("exportLesson");
@@ -247,7 +402,8 @@
         note: state.note || "",
         questions: state.q,
         follow: state.follow,
-        feynman: state.feynman
+        feynman: state.feynman,
+        sectionNotes: state.sectionNotes || {}
       };
       var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       var a = document.createElement("a");

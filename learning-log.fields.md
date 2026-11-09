@@ -1,5 +1,7 @@
 # 第0课学习日志 · 字段一页纸（dm-learnlog-v1 · 已锁定）
 
+第1–7课不使用这个结构。它们的本机导出是另一个信封 `dm-lesson-note-v1`：`v`、`lessonId`、`savedAt`、`note`、`questions`、`follow`、`feynman`、`sectionNotes`。不要把那些字段并进 `dm-learnlog-v1`。
+
 目标：只给 @决策模型学习 诊盲点用的**最小充分信号**，不是按钮流水账。
 
 ## 顶层
