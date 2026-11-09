@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第6课 · 分布变化</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="course-lesson.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到内容</a>
+<div class="wrap">
+<nav class="nav" aria-label="课程">
+  <a href="课程目录.html">课程目录</a>
+  <a href="第5课-期望与代价.html">上一课</a>
+  <a href="第7课-离线决策.html">下一课</a>
+</nav>
+<header>
+  <div class="badge">第6课 · 约 30 分钟 · 先修第4课</div>
+  <h1 id="main">分布变了：旧的可靠性不能自动沿用</h1>
+  <p class="lead">目标：看见温度在一份数据上选好之后，换一批更极端的分数，可靠性要重算。这是监测，不是预测市场。</p>
+</header>
+
+<section data-q-group="q1" data-unlock="#shiftLab">
+  <h2 id="q1-title">先猜</h2>
+  <p>T 是在上午那批示意样本上选的。下午的 logit 整体放大，标签分布也不同。上午的 ECE 还能否直接当成下午的可靠性？</p>
+  <div class="opts" role="group" aria-labelledby="q1-title">
+    <button type="button" class="opt" data-choice="yes" data-correct="false">能。T 一旦拟合，以后都更准。</button>
+    <button type="button" class="opt" data-choice="no" data-correct="true">不能。新的一批要重新算 ECE，再决定信不信任。</button>
+  </div>
+  <p class="hint" data-hint hidden>提示：T 记住的是旧分数有多尖。分数的分布变了，旧 ECE 只描述旧的那一批。</p>
+  <p class="status" data-status role="status"></p>
+  <button type="button" class="act" data-retry hidden>再试一次</button>
+  <div class="explain" data-explain-body hidden>
+    <p>可靠性是「这批预测」对「这批结果」的差距，不是 T 的永久属性。监测要在新窗口上重算，再和当初的留出 ECE 比。</p>
+  </div>
+</section>
+
+<section id="shiftLab" hidden>
+  <h2>实验：同一 T，两批示意样本</h2>
+  <p><span class="tag">示意</span> A 用来选 T。B 的 logit 是另一列数字。页面用 A 上最小 NLL 的 T，再报 A 和 B 的 2 桶 ECE。</p>
+  <button type="button" class="act" id="runShift">计算两批 ECE</button>
+  <p id="shiftOut" class="out" role="status">先提交猜测。揭晓后再计算。</p>
+</section>
+
+<section data-q-group="q2">
+  <h2 id="q2-title">监测时做什么</h2>
+  <p>新窗口的示意 ECE 明显高于当初留出集。下一步更稳妥的是？</p>
+  <div class="opts" role="group" aria-labelledby="q2-title">
+    <button type="button" class="opt" data-choice="trust" data-correct="false">继续自动。T 没有改，所以不用管。</button>
+    <button type="button" class="opt" data-choice="hold" data-correct="true">先不要沿用旧信任：重新评估，或把更多决定交给人。</button>
+  </div>
+  <p class="hint" data-hint hidden>提示：监测的用途是发现「现在不像当时」。发现之后先停自动沿用，而不是解释成模型突然更准。</p>
+  <p class="status" data-status role="status"></p>
+  <button type="button" class="act" data-retry hidden>再试一次</button>
+  <div class="explain" data-explain-body hidden>
+    <p>重新评估可以是：在新窗口上再看 ECE / Brier，必要时重新拟合 T，并仍把选参和报告分开。本课不提供生产监控系统，只给这个判断顺序。</p>
+  </div>
+</section>
+
+<section data-feynman="fy" data-need="重新,可靠">
+  <h2>费曼自检</h2>
+  <label for="fy1">写 1 句，同时出现「重新」和「可靠」。</label>
+  <textarea id="fy1"></textarea>
+  <div class="row">
+    <button type="button" class="act" data-follow-check>核对这句</button>
+    <button type="button" class="act" data-follow-retry hidden>再试一次</button>
+  </div>
+  <p class="status" data-follow-status role="status"></p>
+</section>
+<section data-follow="f1" data-need="窗口">
+  <h2>跟进一句</h2>
+  <label for="follow1">写一句，说明新数据为什么要单独看成一个窗口。要出现「窗口」。</label>
+  <textarea id="follow1"></textarea>
+  <div class="row">
+    <button type="button" class="act" data-follow-check>核对这句</button>
+    <button type="button" class="act" data-follow-retry hidden>再试一次</button>
+  </div>
+  <p class="status" data-follow-status role="status"></p>
+</section>
+<section>
+  <h2>笔记</h2>
+  <label for="lessonNote">只存在这台机器上。</label>
+  <textarea id="lessonNote"></textarea>
+  <p id="lessonNoteStatus" class="status" role="status"></p>
+</section>
+<section id="ask">
+  <h2>接着追问一句</h2>
+  <p>每次只问一个问题。这一问由本课页面提出。</p>
+  <div class="row">
+    <button type="button" class="act" id="askSend">发送并追问</button>
+    <button type="button" class="act" id="exportLesson">导出本课记录</button>
+  </div>
+  <p id="askOut" class="status" role="status"></p>
+  <label for="askReply">你的回答</label>
+  <textarea id="askReply"></textarea>
+  <p id="exportStatus" class="status" role="status"></p>
+</section>
+<footer><p><a href="课程目录.html">回目录</a></p></footer>
+</div>
+<script>
+window.COURSE_LESSON = {
+  id: "lesson-6",
+  storageKey: "dm_lesson6_state",
+  offlinePrompts: ["旧 T 还在时，你会先重算哪一个数，才决定是否继续自动？"]
+};
+</script>
+<script src="course-lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  var A = [[2.2,1],[1.4,1],[0.6,0],[0.3,1],[-0.4,0],[-1.2,0],[-1.8,0],[0.9,1]];
+  var B = [[3.4,1],[2.8,0],[1.6,1],[-2.4,0],[-3.1,1]];
+  function sigmoid(z) { return 1 / (1 + Math.exp(-z)); }
+  function nll(set, T) {
+    var s = 0;
+    set.forEach(function (row) {
+      var p = Math.min(1 - 1e-6, Math.max(1e-6, sigmoid(row[0] / T)));
+      s += -(row[1] * Math.log(p) + (1 - row[1]) * Math.log(1 - p));
+    });
+    return s / set.length;
+  }
+  function ece(set, T) {
+    var bins = [[], []];
+    set.forEach(function (row) {
+      var p = sigmoid(row[0] / T);
+      bins[p < 0.5 ? 0 : 1].push([p, row[1]]);
+    });
+    var e = 0;
+    bins.forEach(function (b) {
+      if (!b.length) return;
+      var conf = b.reduce(function (a, x) { return a + x[0]; }, 0) / b.length;
+      var acc = b.reduce(function (a, x) { return a + x[1]; }, 0) / b.length;
+      e += (b.length / set.length) * Math.abs(acc - conf);
+    });
+    return e;
+  }
+  document.getElementById("runShift").addEventListener("click", function () {
+    var best = null;
+    var t;
+    for (t = 25; t <= 400; t += 5) {
+      var T = t / 100;
+      var v = nll(A, T);
+      if (!best || v < best.v) best = { T: T, v: v };
+    }
+    var ea = ece(A, best.T);
+    var eb = ece(B, best.T);
+    document.getElementById("shiftOut").textContent = [
+      "示意，不是实测监测。",
+      "在 A 上选出的 T = " + best.T.toFixed(2),
+      "A 的 2 桶 ECE = " + ea.toFixed(3),
+      "B 的 2 桶 ECE = " + eb.toFixed(3),
+      eb > ea ? "B 更高：不要把 A 的可靠性直接说成 B 的可靠性。" : "这次 B 没有更高。换一批数据时仍应重算，而不是默认相同。"
+    ].join("\n");
+  });
+})();
+</script>
+</body>
+</html>

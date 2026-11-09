@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第4课 · 证据与泄漏</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="course-lesson.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到内容</a>
+<div class="wrap">
+<nav class="nav" aria-label="课程">
+  <a href="课程目录.html">课程目录</a>
+  <a href="第3课-门槛与代价.html">上一课</a>
+  <a href="第5课-期望与代价.html">下一课</a>
+</nav>
+<header>
+  <div class="badge">第4课 · 约 30 分钟 · 先修第1课</div>
+  <h1 id="main">证据与泄漏：选参数和报成绩要分开</h1>
+  <p class="lead">目标：分清用来选温度的数据和用来报告可靠性的数据。偷看留出标签再报 ECE，成绩会显得好看。下面是列在页面上的示意样本，不是某次实测。</p>
+</header>
+
+<section data-q-group="q1" data-unlock="#leakLab">
+  <h2 id="q1-title">先猜</h2>
+  <p>同一批带标签的样本，既用来挑选 T，又用来报告 ECE。这个 ECE 能当作留出评估吗？</p>
+  <div class="opts" role="group" aria-labelledby="q1-title">
+    <button type="button" class="opt" data-choice="ok" data-correct="false">能。同一批数据更能代表模型自己。</button>
+    <button type="button" class="opt" data-choice="no" data-correct="true">不能。选 T 时已经看过这些标签，报告会偏乐观。</button>
+  </div>
+  <p class="hint" data-hint hidden>提示：选 T 用了标签，这些标签就不能再当「没见过的考试」。先别看两组 ECE 的数字。</p>
+  <p class="status" data-status role="status"></p>
+  <button type="button" class="act" data-retry hidden>再试一次</button>
+  <div class="explain" data-explain-body hidden>
+    <p>这叫泄漏：报告成绩的数据参与了选择。温度缩放要在拟合集上选 T，在另一份留出集上报告 ECE 或 NLL。拟合集自己的损失不能代替留出成绩。</p>
+  </div>
+</section>
+
+<section id="leakLab" hidden>
+  <h2>实验：诚实选择，和偷看留出标签</h2>
+  <p><span class="tag">示意样本</span> 拟合集 8 行，留出集 5 行，和课堂里列出的 logit、y 相同。诚实做法只在拟合集上最小化平均 NLL。偷看做法在留出集上选使 2 桶 ECE 最小的 T，再把这个 ECE 当成成绩。</p>
+  <div class="row">
+    <button type="button" class="act" id="runLeak">比较两种报告</button>
+  </div>
+  <p id="leakOut" class="out" role="status">先提交上面的猜测。揭晓后按按钮，页面会算出两个 ECE。</p>
+</section>
+
+<section data-q-group="q2">
+  <h2 id="q2-title">再判断一句</h2>
+  <p>拟合集上的 NLL 变小了。能不能直接说模型在新数据上更可靠？</p>
+  <div class="opts" role="group" aria-labelledby="q2-title">
+    <button type="button" class="opt" data-choice="yes" data-correct="false">能。拟合损失下降就是校准变好。</button>
+    <button type="button" class="opt" data-choice="no" data-correct="true">不能。可靠性要在没参与选 T 的数据上再算。</button>
+  </div>
+  <p class="hint" data-hint hidden>提示：选 T 的目标和考试用的数据不是同一件事。损失下降只说明拟合集更合这个 T。</p>
+  <p class="status" data-status role="status"></p>
+  <button type="button" class="act" data-retry hidden>再试一次</button>
+  <div class="explain" data-explain-body hidden>
+    <p>NLL 是拟合目标。ECE、Brier 若要拿去决定信不信任，应来自留出数据。第1课的示意里，拟合 NLL 更低的 T 不一定让留出 ECE 更低，所以两份数据都要报。</p>
+  </div>
+</section>
+
+<section data-feynman="fy" data-need="拟合,留出">
+  <h2>费曼自检</h2>
+  <label for="fy1">用自己的话写 1 句，同时出现「拟合」和「留出」。</label>
+  <textarea id="fy1"></textarea>
+  <div class="row">
+    <button type="button" class="act" data-follow-check>核对这句</button>
+    <button type="button" class="act" data-follow-retry hidden>再试一次</button>
+  </div>
+  <p class="status" data-follow-status role="status"></p>
+</section>
+
+<section data-follow="f1" data-need="标签">
+  <h2>跟进一句</h2>
+  <label for="follow1">写一句，说明为什么「看过标签」会影响成绩。要出现「标签」。</label>
+  <textarea id="follow1"></textarea>
+  <div class="row">
+    <button type="button" class="act" data-follow-check>核对这句</button>
+    <button type="button" class="act" data-follow-retry hidden>再试一次</button>
+  </div>
+  <p class="status" data-follow-status role="status"></p>
+</section>
+
+<section>
+  <h2>笔记</h2>
+  <label for="lessonNote">只存在这台机器上。输入不会自动发送。</label>
+  <textarea id="lessonNote"></textarea>
+  <p id="lessonNoteStatus" class="status" role="status"></p>
+</section>
+
+<section id="ask">
+  <h2>接着追问一句</h2>
+  <p>每次只问一个问题。这一问由本课页面提出。判分不依赖网络。</p>
+  <div class="row">
+    <button type="button" class="act" id="askSend">发送并追问</button>
+    <button type="button" class="act" id="exportLesson">导出本课记录</button>
+  </div>
+  <p id="askOut" class="status" role="status"></p>
+  <label for="askReply">你的回答</label>
+  <textarea id="askReply"></textarea>
+  <p id="exportStatus" class="status" role="status"></p>
+</section>
+<footer><p><a href="课程目录.html">回目录</a> · <a href="第5课-期望与代价.html">下一课</a></p></footer>
+</div>
+<script>
+window.COURSE_LESSON = {
+  id: "lesson-4",
+  storageKey: "dm_lesson4_state",
+  offlinePrompts: ["如果只能改一个做法，你会把选 T 和报 ECE 分到哪两份数据上？"]
+};
+</script>
+<script src="course-lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  var FIT = [[2.2,1],[1.4,1],[0.6,0],[0.3,1],[-0.4,0],[-1.2,0],[-1.8,0],[0.9,1]];
+  var EVALS = [[1.8,1],[0.2,0],[-0.8,1],[-1.5,0],[1.1,1]];
+  function sigmoid(z) { return 1 / (1 + Math.exp(-z)); }
+  function nll(set, T) {
+    var s = 0;
+    set.forEach(function (row) {
+      var p = Math.min(1 - 1e-6, Math.max(1e-6, sigmoid(row[0] / T)));
+      s += -(row[1] * Math.log(p) + (1 - row[1]) * Math.log(1 - p));
+    });
+    return s / set.length;
+  }
+  function ece(set, T) {
+    var bins = [[], []];
+    set.forEach(function (row) {
+      var p = sigmoid(row[0] / T);
+      bins[p < 0.5 ? 0 : 1].push([p, row[1]]);
+    });
+    var e = 0;
+    bins.forEach(function (b) {
+      if (!b.length) return;
+      var conf = b.reduce(function (a, x) { return a + x[0]; }, 0) / b.length;
+      var acc = b.reduce(function (a, x) { return a + x[1]; }, 0) / b.length;
+      e += (b.length / set.length) * Math.abs(acc - conf);
+    });
+    return e;
+  }
+  function bestT(set, score) {
+    var best = null;
+    var t;
+    for (t = 25; t <= 400; t += 5) {
+      var T = t / 100;
+      var v = score(set, T);
+      if (!best || v < best.v) best = { T: T, v: v };
+    }
+    return best;
+  }
+  document.getElementById("runLeak").addEventListener("click", function () {
+    var honest = bestT(FIT, nll);
+    var cheat = bestT(EVALS, ece);
+    var honestE = ece(EVALS, honest.T);
+    var cheatE = ece(EVALS, cheat.T);
+    var line = cheatE <= honestE
+      ? "偷看留出标签选出的 T，在同一份留出集上的 ECE 不会更高。这个更低或持平的数字不能当成留出成绩。"
+      : "这次网格上偷看并没有得到更低的 ECE。即便如此，用同一份标签既选 T 又报 ECE，仍然不是留出评估。";
+    document.getElementById("leakOut").textContent = [
+      "示意，不是实测。",
+      "诚实：拟合集最小 NLL 的 T = " + honest.T.toFixed(2) + "，留出 ECE = " + honestE.toFixed(3),
+      "偷看：在留出集上最小 ECE 的 T = " + cheat.T.toFixed(2) + "，同一份留出 ECE = " + cheatE.toFixed(3),
+      line
+    ].join("\n");
+  });
+})();
+</script>
+</body>
+</html>

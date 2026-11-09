@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第0课 · 决策模型是什么</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <style>
 :root {
   --bg: #0d1117;
@@ -21,11 +22,12 @@
   --danger: #f87171;
   --ok: #34d399;
   --radius: 12px;
+  --export-bar-h: 148px;
   --font: "Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --mono: "JetBrains Mono", "SF Mono", "Fira Code", ui-monospace, monospace;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scroll-padding-bottom: calc(var(--export-bar-h, 148px) + 4.5rem); }
 body {
   font-family: var(--font);
   background: var(--bg);
@@ -33,11 +35,12 @@ body {
   line-height: 1.65;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  padding-bottom: 4.5rem;
+  overflow-wrap: break-word;
+  padding-bottom: 0;
 }
 a { color: var(--cyan); text-decoration: none; }
 a:hover { text-decoration: underline; }
-.wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem 9.5rem; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem calc(var(--export-bar-h, 148px) + 5.5rem); }
 
 /* —— Hero —— */
 .hero {
@@ -978,7 +981,7 @@ footer {
   gap: 1rem;
   align-items: start;
 }
-@media (max-width: 860px) {
+@media (max-width: 1100px) {
   .sec-layout { grid-template-columns: 1fr; }
 }
 .sec-main { min-width: 0; }
@@ -991,8 +994,8 @@ footer {
   padding: 0.75rem 0.85rem;
   border-left: 3px solid var(--cyan);
 }
-@media (max-width: 860px) {
-  .sec-comment { position: static; }
+@media (max-width: 1100px) {
+  .sec-comment { position: static; max-width: 100%; }
 }
 .sec-comment .sc-lab {
   display: block;
@@ -1327,7 +1330,44 @@ footer {
   background: var(--bg2);
 }
 
-.toast-learn { bottom: 4.25rem; }
+.toast-learn { bottom: calc(var(--export-bar-h, 148px) + 0.75rem); }
+@media (max-width: 640px) {
+  .wrap { padding-left: 0.75rem; padding-right: 0.75rem; }
+  .sec-comment textarea,
+  .tutor-compose textarea,
+  input, select, button { font-size: 16px; }
+  .export-float {
+    justify-content: stretch;
+    padding: 0.45rem 0.65rem calc(0.45rem + env(safe-area-inset-bottom));
+    gap: 0.4rem;
+  }
+  .export-float .ef-lab,
+  .export-float .ef-meta { flex: 1 1 auto; }
+  .export-float .btn-export-submit,
+  .export-float .btn-export-now,
+  .export-float .btn-export-copy,
+  .export-float a.ef-link {
+    flex: 1 1 calc(50% - 0.4rem);
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .tutor-fab {
+    left: 0.65rem;
+    right: 0.65rem;
+    width: auto;
+    text-align: center;
+    background: #0d1117;
+  }
+  .learn-quiz button.lq-opt,
+  .predict-box button.pb-opt,
+  .sc-ask-send,
+  .fy-tutor-send {
+    min-height: 44px;
+  }
+}
 
 /* —— Page-in tutor drawer —— */
 .tutor-fab {
@@ -1911,7 +1951,7 @@ footer {
   <div class="learn-fb" id="fb-contrast" data-fb="contrast">
     <div class="lf-h">学习反馈 · contrast <span class="lf-match" id="lfm-contrast"></span></div>
     <p class="lf-fy">你写「LLM和决策模型的对比」=标题复读。请改成：决策模型必须同时满足「选项钉死 + 校准概率 + 可设门槛」。</p>
-    <p class="lf-c"><strong>评论·原语</strong>：<code>choice</code> 三选一；<code>score</code> 有序档；<code>noul</code> 是否成立（0–1）。同一 state 可混问。</p>
+    <p class="lf-c"><strong>评论·原语</strong>：<code>choice</code> 只在「已有仓位、下一步只能做一个动作」时才是平仓 / 持有 / 加仓三选一，而且这组不是所有决策的全集；<code>score</code> 有序档；<code>noul</code> 是 P(是)，不是拒答概率。同一 state 可混问。</p>
     <div class="lf-viz">
       <div class="lf-seg" id="lfPrimSeg">
         <button type="button" class="active" data-prim="choice">choice</button>
@@ -2548,12 +2588,12 @@ footer {
   <footer>
     <div class="progress">
       <div class="progress-bar-wrap">
-        <div class="lab"><span>学习进度</span><span><a href="课程目录.html">目录 · 已写 4 课</a></span></div>
+        <div class="lab"><span>学习进度</span><span><a href="课程目录.html">目录 · 8 课</a></span></div>
         <div class="pbar"><div class="pbar-fill"></div></div>
       </div>
       <div class="next-note">
         <strong>盲点已标</strong>：「像概率」≠ 决策模型。<br>
-        下一课：<a href="第1课-校准深挖.html">校准深挖（ECE / Brier / 拟合的温度缩放）</a>。页脚里曾经写的「≈8 课」只是占位，不是大纲。
+        下一课：<a href="第1课-校准深挖.html">校准深挖（ECE / Brier / 拟合的温度缩放）</a>。
       </div>
     </div>
     <div class="refs">

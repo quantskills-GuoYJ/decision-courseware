@@ -1,6 +1,6 @@
 {
   "title": "决策模型互动课件",
-  "note": "仓库中不存在独立的 8 课大纲。第0课页脚旧文案「≈8 课」只是占位，不是承诺清单。本文件只列出仓库里真实存在的路径。",
+  "note": "这是新设计的 8 课顺序，不是从旧大纲恢复的。学习者目录不写维护说明。",
   "home": "课程目录.html",
   "schema": {
     "id": "dm-learnlog-v1",
@@ -47,21 +47,49 @@
       "status": "implemented",
       "path": "第3课-门槛与代价.html",
       "storage": ["dm_lesson3_state"],
-      "ai": "gated-off"
+      "ai": "offline-prompts-only"
+    },
+    {
+      "id": "lesson-4",
+      "title": "证据与泄漏",
+      "status": "implemented",
+      "path": "第4课-证据与泄漏.html",
+      "storage": ["dm_lesson4_state"],
+      "ai": "offline-prompts-only"
+    },
+    {
+      "id": "lesson-5",
+      "title": "期望与代价",
+      "status": "implemented",
+      "path": "第5课-期望与代价.html",
+      "storage": ["dm_lesson5_state"],
+      "ai": "offline-prompts-only"
+    },
+    {
+      "id": "lesson-6",
+      "title": "分布变化",
+      "status": "implemented",
+      "path": "第6课-分布变化.html",
+      "storage": ["dm_lesson6_state"],
+      "ai": "offline-prompts-only"
+    },
+    {
+      "id": "lesson-7",
+      "title": "离线决策",
+      "status": "implemented",
+      "path": "第7课-离线决策.html",
+      "storage": ["dm_lesson7_state"],
+      "ai": "offline-prompts-only"
     }
   ],
   "notImplemented": [
     {
       "id": "rlcd-lab",
-      "reason": "第0课只有方向和外链，没有可核对的训练步骤或指标，因此不单开一课。"
+      "reason": "没有可核对的训练步骤，不单开课。"
     },
     {
-      "id": "lessons-4-to-7",
-      "reason": "没有书面大纲。不把占位的「≈8 课」编成空课。"
-    },
-    {
-      "id": "multi-lesson-tutor",
-      "reason": "需要 Worker 为每一课提供知识。本仓库不改 Worker。"
+      "id": "live-multi-lesson-tutor",
+      "reason": "修正稿在 worker/，未部署。页面不向线上接口发送 lesson-1 至 lesson-7。"
     }
   ],
   "references": [
@@ -90,6 +118,6 @@
   "qa": {
     "command": "python3 -m http.server 8765",
     "then": "node tests/course-journey.mjs",
-    "status": "passed tests/course-journey.mjs on 2026-11-09 against local python http.server"
+    "status": "automated journey includes 390px layout; independent manual 390px, Feynman submit, and log submit are still open. See docs/acceptance-matrix.md"
   }
 }

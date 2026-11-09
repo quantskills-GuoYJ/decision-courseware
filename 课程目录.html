@@ -3,70 +3,91 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>决策模型课件 · 目录</title>
+<title>决策模型课件</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="course-lesson.css">
 </head>
 <body>
-<a class="skip" href="#main">跳到目录</a>
+<a class="skip" href="#main">跳到课程</a>
 <div class="wrap">
 <header>
   <div class="badge">决策模型互动课件</div>
-  <h1 id="main">课程目录</h1>
-  <p class="lead">仓库里没有一份写好的 8 课大纲。第0课页脚曾经的「≈8 课」只是占位。下面每条链接都指向本仓库里的文件。机器可读清单见 <a href="course-manifest.json">course-manifest.json</a>。</p>
+  <h1 id="main">先猜，再看结果</h1>
+  <p class="lead">八节课，每节大约 25–40 分钟。每一节都先做题，错了会给针对这一错法的提示，对了才打开解释和实验。笔记留在这台电脑上。</p>
 </header>
 <section>
-  <h2>已写好的课</h2>
-  <ol id="lessonList">
-    <li><a href="第0课-决策模型是什么.html">第0课 · 决策模型是什么</a> <span id="st0"></span><br>同一份页面也放在 <a href="index.html">index.html</a>，供现有站点根路径使用。</li>
-    <li><a href="第1课-校准深挖.html">第1课 · 校准深挖</a> <span id="st1"></span><br>ECE、Brier、留出集上拟合的温度缩放。示意数字，不是论文表。</li>
-    <li><a href="第2课-原语与拒答.html">第2课 · 原语与拒答</a> <span id="st2"></span><br>choice / score / noul。noul 是 P(是)。拒答是门槛策略。</li>
-    <li><a href="第3课-门槛与代价.html">第3课 · 门槛与代价</a> <span id="st3"></span><br>先猜 0.55 与 0.70，再揭晓。课堂例子，不是实测频率。</li>
+  <h2>从哪一课开始</h2>
+  <ol class="lesson-list">
+    <li>
+      <a href="第0课-决策模型是什么.html">第0课 · 决策模型是什么</a>
+      <p>先修：无。分清开放生成和钉死选项上的概率，并看到含糊的 0.55 如何被门槛挡住。</p>
+      <p class="status" id="st0"></p>
+    </li>
+    <li>
+      <a href="第1课-校准深挖.html">第1课 · 校准深挖</a>
+      <p>先修：第0课。约 30 分钟。分清随意拖动的温度，和在留出数据上拟合的温度缩放。</p>
+      <p class="status" id="st1"></p>
+    </li>
+    <li>
+      <a href="第2课-原语与拒答.html">第2课 · 原语与拒答</a>
+      <p>先修：第0课。约 25 分钟。noul 是「是」的概率。拒答是后面的门槛。</p>
+      <p class="status" id="st2"></p>
+    </li>
+    <li>
+      <a href="第3课-门槛与代价.html">第3课 · 门槛与代价</a>
+      <p>先修：第2课。约 25 分钟。先猜 0.55 和 0.70 谁更大，再打开滑块。</p>
+      <p class="status" id="st3"></p>
+    </li>
+    <li>
+      <a href="第4课-证据与泄漏.html">第4课 · 证据与泄漏</a>
+      <p>先修：第1课。约 30 分钟。选温度的数据和报可靠性的数据要分开。</p>
+      <p class="status" id="st4"></p>
+    </li>
+    <li>
+      <a href="第5课-期望与代价.html">第5课 · 期望与代价</a>
+      <p>先修：第3课。约 30 分钟。代价不对称时，一半不再是门槛。</p>
+      <p class="status" id="st5"></p>
+    </li>
+    <li>
+      <a href="第6课-分布变化.html">第6课 · 分布变化</a>
+      <p>先修：第4课。约 30 分钟。旧的可靠性不能自动套到新的一批数据上。</p>
+      <p class="status" id="st6"></p>
+    </li>
+    <li>
+      <a href="第7课-离线决策.html">第7课 · 离线决策</a>
+      <p>先修：第2、5、6课。约 40 分钟。把概率、代价和分布变化合成一个不自动或自动的决定。没有下单。</p>
+      <p class="status" id="st7"></p>
+    </li>
   </ol>
 </section>
-<section>
-  <h2>这次没有另写的部分</h2>
-  <ul>
-    <li>RLCD 的训练步骤：第0课只保留方向和外链，没有可核对的配方或指标。</li>
-    <li>多课学伴：<code>dm-course.vibeniubi.com/api/tutor</code> 只有第0课知识。第1–3课不调用它。</li>
-    <li>第0课学习日志 schema <code>dm-learnlog-v1</code> 仍只描述第0课，不塞进新课的作答。</li>
-  </ul>
-</section>
-<section>
-  <h2>参考文件</h2>
-  <ul>
-    <li><a href="learning-log.schema.json">learning-log.schema.json</a></li>
-    <li><a href="learning-log.fields.md">learning-log.fields.md</a></li>
-    <li><a href="learning-log.example.json">learning-log.example.json</a></li>
-    <li><a href="lesson0-consensus.json">lesson0-consensus.json</a></li>
-    <li><a href="第0课-诊结与深化可视化.html">第0课-诊结与深化可视化.html</a>（转到第0课反馈）</li>
-    <li><a href="README.md">README.md</a></li>
-  </ul>
-</section>
 <footer>
-  <p>本地预览：在仓库根目录执行 <code>python3 -m http.server 8765</code>，打开 <code>http://127.0.0.1:8765/课程目录.html</code>。</p>
+  <p>建议从 <a href="第0课-决策模型是什么.html">第0课</a> 开始。做完一课再打开下一课。</p>
 </footer>
 </div>
 <script>
 (function () {
   "use strict";
-  var map = [
-    ["st0", "lesson-0"],
-    ["st1", "lesson-1"],
-    ["st2", "lesson-2"],
-    ["st3", "lesson-3"]
+  var rows = [
+    ["st0", "lesson-0", "dm_lesson0_section_notes"],
+    ["st1", "lesson-1", "dm_lesson1_state"],
+    ["st2", "lesson-2", "dm_lesson2_state"],
+    ["st3", "lesson-3", "dm_lesson3_state"],
+    ["st4", "lesson-4", "dm_lesson4_state"],
+    ["st5", "lesson-5", "dm_lesson5_state"],
+    ["st6", "lesson-6", "dm_lesson6_state"],
+    ["st7", "lesson-7", "dm_lesson7_state"]
   ];
   var progress = {};
   try { progress = JSON.parse(localStorage.getItem("dm_course_progress_v1") || "{}") || {}; } catch (e) {}
-  var notes = "";
-  try { notes = localStorage.getItem("dm_lesson0_section_notes") || ""; } catch (e2) {}
-  map.forEach(function (pair) {
-    var el = document.getElementById(pair[0]);
+  rows.forEach(function (row) {
+    var el = document.getElementById(row[0]);
     if (!el) return;
-    if (pair[1] === "lesson-0") {
-      el.textContent = notes && notes !== "{}" ? "· 本机有第0课评论" : "· 第0课进度仍看该页自己的记录";
-      return;
-    }
-    el.textContent = progress[pair[1]] ? "· 本机已完成页面题目" : "· 本机尚未完成";
+    var raw = "";
+    try { raw = localStorage.getItem(row[2]) || ""; } catch (e2) {}
+    var started = raw && raw !== "{}" && raw !== "null";
+    if (row[1] !== "lesson-0" && progress[row[1]]) el.textContent = "题目已完成。可以复习，或打开下一课。";
+    else if (started) el.textContent = "正在学。从上次停下的地方继续。";
+    else el.textContent = "从这里开始。";
   });
 })();
 </script>

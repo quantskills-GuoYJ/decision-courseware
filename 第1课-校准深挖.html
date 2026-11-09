@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>第1课 · 校准深挖</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="course-lesson.css">
 </head>
 <body>
@@ -91,11 +92,28 @@
   <p id="lessonNoteStatus" class="status" role="status"></p>
 </section>
 
-<section id="ai">
-  <h2>学伴</h2>
-  <p>这一课的对错由页面规则判断。现有学伴接口只加载第0课知识，这里不会自动调用它，也不会把第0课的共识当成第1课的分数。</p>
-  <button type="button" class="act" id="aiGateBtn">为什么按钮不到学伴</button>
-  <p id="aiGateText" hidden>Worker <code>dm-course.vibeniubi.com/api/tutor</code> 目前没有第1课知识。要让学伴按本课追问，需要后端另加该课材料。在那之前，请用上面的题目和留出集实验。</p>
+<section data-feynman="fy" data-need="留出,校准">
+  <h2>费曼自检</h2>
+  <label for="fy1">用自己的话写 1 句：拟合的温度缩放算不算校准。要出现「留出」和「校准」。</label>
+  <textarea id="fy1"></textarea>
+  <div class="row">
+    <button type="button" class="act" data-follow-check>核对这句</button>
+    <button type="button" class="act" data-follow-retry hidden>再试一次</button>
+  </div>
+  <p class="status" data-follow-status role="status"></p>
+</section>
+
+<section id="ask">
+  <h2>接着追问一句</h2>
+  <p>每次只问一个问题。这一问由本课页面提出，输入不会自动发出。</p>
+  <div class="row">
+    <button type="button" class="act" id="askSend">发送并追问</button>
+    <button type="button" class="act" id="exportLesson">导出本课记录</button>
+  </div>
+  <p id="askOut" class="status" role="status"></p>
+  <label for="askReply">你的回答</label>
+  <textarea id="askReply"></textarea>
+  <p id="exportStatus" class="status" role="status"></p>
 </section>
 
 <footer>
@@ -103,7 +121,14 @@
 </footer>
 </div>
 <script>
-window.COURSE_LESSON = { id: "lesson-1", storageKey: "dm_lesson1_state" };
+window.COURSE_LESSON = {
+  id: "lesson-1",
+  storageKey: "dm_lesson1_state",
+  offlinePrompts: [
+    "留出集和拟合集，你会把哪一份用来选 T？",
+    "选完 T 之后，ECE 应该报在哪一份上？"
+  ]
+};
 </script>
 <script src="course-lesson.js"></script>
 <script>

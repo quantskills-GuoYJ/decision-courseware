@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>第3课 · 门槛与代价</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="course-lesson.css">
 </head>
 <body>
@@ -12,7 +13,7 @@
 <nav class="nav" aria-label="课程">
   <a href="课程目录.html">课程目录</a>
   <a href="第2课-原语与拒答.html">上一课</a>
-  <a href="第0课-决策模型是什么.html">回第0课的闸门演示</a>
+  <a href="第4课-证据与泄漏.html">下一课</a>
 </nav>
 <header>
   <div class="badge">第3课</div>
@@ -77,16 +78,36 @@
   <p id="lessonNoteStatus" class="status" role="status"></p>
 </section>
 
-<section>
-  <h2>学伴</h2>
-  <p>学伴请求失败或未接入时，上面的猜测、重试和笔记仍然可用。</p>
-  <button type="button" class="act" id="aiGateBtn">为什么按钮不到学伴</button>
-  <p id="aiGateText" hidden>dm-course.vibeniubi.com/api/tutor 只具备第0课知识。本课不发送请求。多课学伴要等后端按课加知识。</p>
+<section data-feynman="fy" data-need="门槛,概率">
+  <h2>费曼自检</h2>
+  <label for="fy1">用自己的话写 1 句，同时出现「门槛」和「概率」。</label>
+  <textarea id="fy1"></textarea>
+  <div class="row">
+    <button type="button" class="act" data-follow-check>核对这句</button>
+    <button type="button" class="act" data-follow-retry hidden>再试一次</button>
+  </div>
+  <p class="status" data-follow-status role="status"></p>
+</section>
+<section id="ask">
+  <h2>接着追问一句</h2>
+  <p>每次只问一个问题。这一问由本课页面提出。题目判分不依赖网络。</p>
+  <div class="row">
+    <button type="button" class="act" id="askSend">发送并追问</button>
+    <button type="button" class="act" id="exportLesson">导出本课记录</button>
+  </div>
+  <p id="askOut" class="status" role="status"></p>
+  <label for="askReply">你的回答</label>
+  <textarea id="askReply"></textarea>
+  <p id="exportStatus" class="status" role="status"></p>
 </section>
 <footer><p><a href="课程目录.html">回目录</a></p></footer>
 </div>
 <script>
-window.COURSE_LESSON = { id: "lesson-3", storageKey: "dm_lesson3_state" };
+window.COURSE_LESSON = {
+  id: "lesson-3",
+  storageKey: "dm_lesson3_state",
+  offlinePrompts: ["p 不变时，只把门槛调低，自动还是不自动会跟着变吗？"]
+};
 </script>
 <script src="course-lesson.js"></script>
 <script>

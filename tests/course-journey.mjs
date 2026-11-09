@@ -78,7 +78,8 @@ await goto("课程目录.html");
 await page.screenshot({ path: shots + "/home-desktop.png" });
 const homeText = await page.evaluate(() => document.body.innerText);
 check("home links lesson 1", homeText.indexOf("第1课") >= 0);
-check("home says 8 is placeholder", homeText.indexOf("占位") >= 0);
+check("home links lesson 7", homeText.indexOf("第7课") >= 0);
+check("home stays learner facing", homeText.indexOf("占位") < 0 && homeText.indexOf("schema") < 0 && homeText.indexOf("Worker") < 0, homeText.slice(0, 180));
 
 await goto("第0课-决策模型是什么.html");
 const lesson0 = await page.evaluate(() => {
@@ -148,14 +149,14 @@ await page.waitForFunction(() => document.querySelector("[data-follow-status]").
 await page.focus("#lessonNote");
 await page.keyboard.type("笔记不发送");
 await new Promise((r) => setTimeout(r, 500));
-await page.click("#aiGateBtn");
+await page.click("#askSend");
 const gated = await page.evaluate(() => ({
   calls: window.__tutorCalls.length,
-  text: document.getElementById("aiGateText").hidden,
+  ask: document.getElementById("askOut").textContent,
   note: document.getElementById("lessonNoteStatus").textContent
 }));
-check("typing and gate do not call tutor", gated.calls === callsBefore, String(gated.calls));
-check("gate text shown", gated.text === false);
+check("typing and local ask do not call tutor", gated.calls === callsBefore, String(gated.calls));
+check("local ask is one question", gated.ask.indexOf("本课追问：") >= 0 && (gated.ask.match(/？/g) || []).length === 1, gated.ask);
 check("note saved locally", gated.note.indexOf("已保存本机") >= 0);
 await page.screenshot({ path: shots + "/lesson1-mobile.png", fullPage: false });
 
@@ -180,6 +181,9 @@ await page.setViewport({ width: 1280, height: 900 });
 await page.screenshot({ path: shots + "/lesson1-desktop.png" });
 
 await goto("第2课-原语与拒答.html");
+const lesson2text = await page.evaluate(() => document.body.innerText);
+check("lesson2 hides maintainer ids", lesson2text.indexOf("机器 id") < 0 && lesson2text.indexOf("data-viz-node") < 0);
+check("choice is not universally exhaustive", lesson2text.indexOf("不是所有决策的全部选项") >= 0);
 check("policy lab hidden", await page.$eval("#policyLab", (el) => el.hidden));
 await page.click("[data-q-group='q1'] button[data-choice='refuse']");
 check("noul wrong has hint", await page.$eval("[data-q-group='q1'] [data-hint]", (el) => !el.hidden && el.textContent.indexOf("P(是)") >= 0));
@@ -189,6 +193,17 @@ await page.click("[data-q-group='q2'] button[data-choice='policy']");
 await page.waitForFunction(() => !document.getElementById("policyLab").hidden);
 const policy = await page.$eval("#policyOut", (el) => el.textContent);
 check("same probability two policies", policy.indexOf("P(是)=0.62") >= 0 && policy.indexOf("不自动") >= 0, policy);
+
+await goto("第4课-证据与泄漏.html");
+check("leak lab hidden first", await page.$eval("#leakLab", (el) => el.hidden));
+await page.click("[data-q-group='q1'] button[data-choice='ok']");
+check("leak hint is specific", await page.$eval("[data-q-group='q1'] [data-hint]", (el) => !el.hidden && el.textContent.indexOf("标签") >= 0));
+await page.click("[data-q-group='q1'] [data-retry]");
+await page.click("[data-q-group='q1'] button[data-choice='no']");
+await page.waitForFunction(() => !document.getElementById("leakLab").hidden);
+await page.click("#runLeak");
+const leak = await page.$eval("#leakOut", (el) => el.textContent);
+check("leak report separates honest and peeked", leak.indexOf("诚实") >= 0 && leak.indexOf("偷看") >= 0, leak);
 
 await goto("第3课-门槛与代价.html");
 check("experiment hidden before guess", await page.$eval("#experiment", (el) => el.hidden));
@@ -210,6 +225,31 @@ const store = await page.evaluate(() => ({
 }));
 check("three stores differ", store.l1 !== store.l2 && store.l2 !== store.l3);
 check("progress records lesson 3", store.progress && store.progress.indexOf("lesson-3") >= 0, store.progress);
+await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
+await goto("第0课-决策模型是什么.html");
+const narrow = await page.evaluate(() => {
+  const layout = document.querySelector(".sec-layout");
+  const cols = getComputedStyle(layout).gridTemplateColumns;
+  const doc = document.documentElement;
+  const bar = document.getElementById("exportFloat").getBoundingClientRect();
+  const pad = parseFloat(getComputedStyle(document.querySelector(".wrap")).paddingBottom);
+  const fab = document.getElementById("tutorFab").getBoundingClientRect();
+  return {
+    cols,
+    overflow: doc.scrollWidth - doc.clientWidth,
+    barH: bar.height,
+    pad,
+    fabInside: fab.left >= 0 && fab.right <= window.innerWidth + 1
+  };
+});
+check("390 stacks sections", narrow.cols.indexOf(" ") < 0, narrow.cols);
+check("390 no horizontal overflow", narrow.overflow <= 2, String(narrow.overflow));
+check("390 content pad clears the fixed bar", narrow.pad >= narrow.barH + 40, JSON.stringify(narrow));
+check("390 fab stays on screen", narrow.fabInside, JSON.stringify(narrow));
+await page.screenshot({ path: shots + "/lesson0-mobile.png" });
+const fav = await page.goto(BASE + "/favicon.svg", { waitUntil: "networkidle0" });
+check("favicon svg exists", fav && (fav.status() === 200 || fav.status() === 304), String(fav && fav.status()));
+
 check("no js errors", errors.filter((e) => e.indexOf("favicon") < 0 && e.indexOf("404") < 0).length === 0, errors.join(" | "));
 
 await browser.close();

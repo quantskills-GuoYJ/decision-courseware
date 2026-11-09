@@ -31,6 +31,8 @@
   var state = readState();
   if (!state.q || typeof state.q !== "object") state.q = {};
   if (!state.follow || typeof state.follow !== "object") state.follow = {};
+  if (!state.feynman || typeof state.feynman !== "object") state.feynman = {};
+  if (!state.ask || typeof state.ask !== "object") state.ask = { step: 0, asked: false, draft: "" };
   if (typeof state.note !== "string") state.note = "";
 
   function persist() {
@@ -110,29 +112,30 @@
     paintQuestion(group);
   });
 
-  document.querySelectorAll("[data-follow]").forEach(function (box) {
-    var id = box.getAttribute("data-follow");
+  function bindPhrase(selector, bagName, okText) {
+  document.querySelectorAll(selector).forEach(function (box) {
+    var id = box.getAttribute("data-follow") || box.getAttribute("data-feynman");
     var area = box.querySelector("textarea");
     var check = box.querySelector("[data-follow-check]");
     var retry = box.querySelector("[data-follow-retry]");
     var status = box.querySelector("[data-follow-status]");
     var need = (box.getAttribute("data-need") || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean);
-    if (!state.follow[id]) state.follow[id] = { phase: "open", text: "" };
-    if (area && !area.value) area.value = state.follow[id].text || "";
+    if (!state[bagName][id]) state[bagName][id] = { phase: "open", text: "" };
+    if (area && !area.value) area.value = state[bagName][id].text || "";
 
     function paint() {
-      var rec = state.follow[id];
+      var rec = state[bagName][id];
       if (status) {
         status.className = "status" + (rec.phase === "ok" ? " ok" : rec.phase === "hint" ? " bad" : "");
-        status.textContent = rec.phase === "ok" ? "这句里需要的词都在。" : rec.phase === "hint" ? ("还缺：" + (rec.missing || "") + "。提示只指出缺什么，不代写。") : "";
+        status.textContent = rec.phase === "ok" ? okText : rec.phase === "hint" ? ("还缺：" + (rec.missing || "") + "。提示只指出缺什么，不代写。") : "";
       }
       if (retry) retry.hidden = rec.phase !== "hint";
       if (area) area.disabled = rec.phase === "ok";
     }
     function saveText() {
-      var phase = state.follow[id].phase;
-      state.follow[id].text = area ? area.value : "";
-      if (phase !== "ok" && phase !== "hint") state.follow[id].phase = "open";
+      var phase = state[bagName][id].phase;
+      state[bagName][id].text = area ? area.value : "";
+      if (phase !== "ok" && phase !== "hint") state[bagName][id].phase = "open";
       persist();
     }
     if (area) area.addEventListener("input", saveText);
@@ -140,18 +143,18 @@
       var text = area ? String(area.value || "") : "";
       var missing = need.filter(function (word) { return text.indexOf(word) < 0; });
       if (!text.trim()) {
-        state.follow[id] = { phase: "hint", text: text, missing: need.join("、") };
+        state[bagName][id] = { phase: "hint", text: text, missing: need.join("、") };
       } else if (missing.length) {
-        state.follow[id] = { phase: "hint", text: text, missing: missing.join("、") };
+        state[bagName][id] = { phase: "hint", text: text, missing: missing.join("、") };
       } else {
-        state.follow[id] = { phase: "ok", text: text, missing: "" };
+        state[bagName][id] = { phase: "ok", text: text, missing: "" };
       }
       persist();
       paint();
     });
     if (retry) retry.addEventListener("click", function () {
-      state.follow[id].phase = "open";
-      state.follow[id].missing = "";
+      state[bagName][id].phase = "open";
+      state[bagName][id].missing = "";
       persist();
       paint();
       if (area) {
@@ -160,7 +163,10 @@
       }
     });
     paint();
-  });
+    });
+  }
+  bindPhrase("[data-follow]", "follow", "这句里需要的词都在。");
+  bindPhrase("[data-feynman]", "feynman", "这句用自己的话碰到了要点。");
 
   var note = document.getElementById("lessonNote");
   var noteStatus = document.getElementById("lessonNoteStatus");
@@ -189,10 +195,73 @@
     });
   }
 
-  var gateBtn = document.getElementById("aiGateBtn");
-  var gateText = document.getElementById("aiGateText");
-  if (gateBtn && gateText) {
-    gateBtn.addEventListener("click", function () { gateText.hidden = false; });
+  var askSend = document.getElementById("askSend");
+  var askOut = document.getElementById("askOut");
+  var askReply = document.getElementById("askReply");
+  var prompts = Array.isArray(cfg.offlinePrompts) && cfg.offlinePrompts.length
+    ? cfg.offlinePrompts
+    : ["你这句里，哪一个词是你最没把握的？只答那一个。"];
+  function paintAsk() {
+    if (!askOut || !state.ask.asked) return;
+    var step = Math.max(0, Math.min(prompts.length - 1, state.ask.step || 0));
+    askOut.className = "status";
+    askOut.textContent = "本课追问：" + prompts[step];
+  }
+  if (askReply && state.ask.draft && !askReply.value) askReply.value = state.ask.draft;
+  if (askReply) {
+    askReply.addEventListener("input", function () {
+      state.ask.draft = askReply.value;
+      persist();
+    });
+  }
+  if (askSend) {
+    askSend.addEventListener("click", function () {
+      var noteText = note ? String(note.value || "").trim() : "";
+      var replyText = askReply ? String(askReply.value || "").trim() : "";
+      if (!noteText && !replyText && !state.ask.asked) {
+        if (askOut) {
+          askOut.className = "status bad";
+          askOut.textContent = "先写一句笔记，再发送并追问。";
+        }
+        return;
+      }
+      if (state.ask.asked && replyText) {
+        state.ask.step = Math.min(prompts.length - 1, (state.ask.step || 0) + 1);
+        state.ask.draft = "";
+        if (askReply) askReply.value = "";
+      }
+      state.ask.asked = true;
+      persist();
+      paintAsk();
+    });
+  }
+  paintAsk();
+
+  var exportBtn = document.getElementById("exportLesson");
+  if (exportBtn) {
+    exportBtn.addEventListener("click", function () {
+      var payload = {
+        v: "dm-lesson-note-v1",
+        lessonId: cfg.id,
+        savedAt: new Date().toISOString(),
+        note: state.note || "",
+        questions: state.q,
+        follow: state.follow,
+        feynman: state.feynman
+      };
+      var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = cfg.id + "-dm-lesson-note-v1.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      var exportStatus = document.getElementById("exportStatus");
+      if (exportStatus) {
+        exportStatus.className = "status ok";
+        exportStatus.textContent = "已下载 dm-lesson-note-v1。这不是第0课的 dm-learnlog-v1。";
+      }
+    });
   }
 
   function refreshProgress() {
@@ -205,6 +274,10 @@
     document.querySelectorAll("[data-follow]").forEach(function (box) {
       var id = box.getAttribute("data-follow");
       if (!state.follow[id] || state.follow[id].phase !== "ok") followOk = false;
+    });
+    document.querySelectorAll("[data-feynman]").forEach(function (box) {
+      var id = box.getAttribute("data-feynman");
+      if (!state.feynman[id] || state.feynman[id].phase !== "ok") followOk = false;
     });
     writeProgress(questionsOk && followOk);
   }
