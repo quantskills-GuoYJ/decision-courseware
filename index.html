@@ -973,7 +973,7 @@ footer {
 /* —— Per-section comments —— */
 .sec-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
+  grid-template-columns: minmax(0, 1fr) minmax(232px, 280px);
   gap: 1rem;
   align-items: start;
 }
@@ -1028,6 +1028,97 @@ footer {
   min-height: 1em;
 }
 .sec-comment .sc-hint.saved { color: var(--ok); }
+.sc-ask { margin-top: 0.45rem; }
+.sc-ask-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+}
+.sc-ask-send {
+  font-family: var(--font);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(34,211,238,0.55);
+  background: rgba(34,211,238,0.12);
+  color: var(--cyan);
+  cursor: pointer;
+}
+.sc-ask-send:hover { border-color: var(--cyan); }
+.sc-ask-send:disabled { opacity: 0.45; cursor: not-allowed; }
+.sc-ask-sent {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--cyan);
+}
+.sc-ask-sent[hidden] { display: none !important; }
+.sc-ask-status {
+  margin-top: 0.28rem;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  color: var(--muted);
+  min-height: 1em;
+}
+.sc-ask-status.bad { color: var(--danger); }
+.sc-ask-retry {
+  margin-top: 0.28rem;
+  font-family: var(--font);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(248,113,113,0.55);
+  background: transparent;
+  color: var(--danger);
+  cursor: pointer;
+}
+.sc-ask-retry[hidden] { display: none !important; }
+.sc-tutor-log {
+  margin-top: 0.45rem;
+  max-height: 240px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-right: 0.1rem;
+}
+.sc-tutor-log[hidden] { display: none !important; }
+.sc-bubble {
+  border-radius: 8px;
+  padding: 0.38rem 0.48rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+.sc-bubble.user { background: rgba(34,211,238,0.08); }
+.sc-bubble.assistant { border-color: rgba(34,211,238,0.35); }
+.sc-bubble.pending { border-color: rgba(163,230,53,0.5); }
+.sc-bubble.error {
+  color: var(--danger);
+  border-color: rgba(248,113,113,0.45);
+  background: rgba(248,113,113,0.08);
+}
+.sc-who {
+  display: block;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--cyan);
+  margin-bottom: 0.12rem;
+}
+.sc-bubble.user .sc-who { color: var(--muted); }
+.sc-bubble-body { white-space: pre-wrap; word-break: break-word; }
+.sc-follow-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.45rem;
+}
+.sc-follow-row[hidden] { display: none !important; }
+.sec-comment textarea.sc-follow { min-height: 64px; }
+.sc-tutor-log .fy-viz-cue { margin-top: 0.15rem; }
 
 
 /* —— Learn instrumentation (dm-learnlog-v1) —— */
@@ -2672,7 +2763,7 @@ footer {
         var val = sectionNotes[meta.id] || "";
         ta.value = val;
         if (hint) {
-          hint.textContent = val ? "已从本机恢复" : "";
+          hint.textContent = val ? "已保存本机" : "";
           hint.className = "sc-hint" + (val ? " saved" : "");
         }
         ta.addEventListener("input", function () {
@@ -2682,7 +2773,7 @@ footer {
           sectionTimers[sid] = setTimeout(function () {
             sectionNotes[sid] = ta.value;
             persistSectionNotes();
-            if (hint) { hint.textContent = "已保存"; hint.className = "sc-hint saved"; }
+            if (hint) { hint.textContent = "已保存本机"; hint.className = "sc-hint saved"; }
           }, 400);
         });
       }
@@ -3518,7 +3609,7 @@ footer {
               if (ta) ta.value = sectionNotes[meta.id] || "";
               if (hint) {
                 var v = sectionNotes[meta.id] || "";
-                hint.textContent = v ? "已从导入恢复" : "";
+                hint.textContent = v ? "已保存本机" : "";
                 hint.className = "sc-hint" + (v ? " saved" : "");
               }
               if (fy) { fy.value = feynmanMap[meta.id] || ""; updateFyStatus(meta.id, fy.value); }
@@ -3532,7 +3623,7 @@ footer {
               if (ta) ta.value = sectionNotes[meta.id] || "";
               if (hint) {
                 var v = sectionNotes[meta.id] || "";
-                hint.textContent = v ? "已从导入恢复" : "";
+                hint.textContent = v ? "已保存本机" : "";
                 hint.className = "sc-hint" + (v ? " saved" : "");
               }
             });
@@ -4296,7 +4387,7 @@ footer {
     if (chars.length > 40) text = chars.slice(0, 40).join("");
     return text;
   }
-  function applyFlowViz(viz) {
+  function applyFlowViz(viz, opts) {
     var root = document.getElementById("tutorViz");
     if (!root) return null;
     if (viz.compare != null && viz.compare !== "" && viz.compare !== "gen-vs-decision") return null;
@@ -4325,10 +4416,12 @@ footer {
       capEl.hidden = false;
     }
     if (!focusedEl || !VIZ_FOCUS_LABEL[focus]) return null;
-    try { root.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (eScroll) {}
+    if (!(opts && opts.scroll === false)) {
+      try { root.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (eScroll) {}
+    }
     return { focus: focus, label: VIZ_FOCUS_LABEL[focus], caption: caption, chart: "双轨图", target: "tutorViz" };
   }
-  function applyCalibViz(viz) {
+  function applyCalibViz(viz, opts) {
     var root = document.getElementById("tutorCalibViz");
     if (!root) return null;
     if (viz.compare != null && viz.compare !== "" && viz.compare !== "temp-vs-calib") return null;
@@ -4355,10 +4448,12 @@ footer {
       capEl.textContent = caption;
       capEl.hidden = false;
     }
-    try { focusedEl.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (eScroll) {}
+    if (!(opts && opts.scroll === false)) {
+      try { focusedEl.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (eScroll) {}
+    }
     return { focus: focus, label: CALIB_FOCUS_LABEL[focus], caption: caption, chart: "校准图", target: "tutorCalibViz" };
   }
-  function applyTutorViz(viz) {
+  function applyTutorViz(viz, opts) {
     try {
       if (viz == null || viz === false) {
         vizNeutral(document.getElementById("tutorViz"));
@@ -4366,8 +4461,8 @@ footer {
         return null;
       }
       if (typeof viz !== "object" || Array.isArray(viz)) return null;
-      if (viz.type === "flow") return applyFlowViz(viz);
-      if (viz.type === "calib-curve") return applyCalibViz(viz);
+      if (viz.type === "flow") return applyFlowViz(viz, opts);
+      if (viz.type === "calib-curve") return applyCalibViz(viz, opts);
       return null;
     } catch (eViz) { return null; }
   }
@@ -4392,7 +4487,7 @@ footer {
   }
 
   function clearVizCues() {
-    var inline = document.querySelectorAll(".fy-tutor-inline .fy-viz-cue");
+    var inline = document.querySelectorAll(".fy-tutor-inline .fy-viz-cue, .sc-tutor-log .fy-viz-cue");
     for (var i = 0; i < inline.length; i++) inline[i].remove();
     var drawerCue = document.getElementById("tutorVizCue");
     if (!drawerCue) return;
@@ -4424,7 +4519,8 @@ footer {
   function showVizCue(panel, info) {
     clearVizCues();
     if (!info || !info.focus || !info.label) return;
-    if (panel && panel.classList && panel.classList.contains("fy-tutor-inline")) {
+    var cueHost = panel && panel.classList && (panel.classList.contains("fy-tutor-inline") || panel.classList.contains("sc-tutor-log"));
+    if (cueHost) {
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "fy-viz-cue";
@@ -5159,6 +5255,491 @@ footer {
     host.insertAdjacentElement("afterend", btn);
     btn.insertAdjacentElement("afterend", panel);
   });
+
+  var ASK_KEY = "dm_lesson0_section_tutor";
+  var ASK_RULE = "追问规则：只针对这一节和我上面的原话。每次只问一个关键问题，先帮我澄清理解缺口，不要先给标准答案。等我回答后再问下一问。我卡住时只给一个具体提示，不要把整段答案倒出来。";
+  var askSessions = {};
+
+  function clipChars(s, n) {
+    var chars = Array.from(String(s || ""));
+    if (chars.length <= n) return chars.join("");
+    return chars.slice(0, n).join("") + "…";
+  }
+  function sectionTitle(sid) {
+    var ta = document.getElementById("secNote-" + sid);
+    var aside = ta && ta.closest ? ta.closest("aside") : null;
+    var label = aside ? (aside.getAttribute("aria-label") || "") : "";
+    var prefix = "本节学习记录：";
+    if (label.indexOf(prefix) === 0) return label.slice(prefix.length);
+    return sid;
+  }
+  function sectionLead(sid) {
+    var sec = document.getElementById(sid);
+    if (!sec) return "";
+    var lead = sec.querySelector(".lead");
+    if (!lead) return "";
+    return clipChars(String(lead.textContent || "").replace(/\s+/g, " ").trim(), 180);
+  }
+  function composeSectionMessage(sid, raw, kind) {
+    var note = String(raw || "").trim();
+    function pack(body) {
+      var lines = ["本节：" + sectionTitle(sid) + "（" + sid + "）"];
+      var lead = sectionLead(sid);
+      if (lead) lines.push("本节要点：" + lead);
+      lines.push(kind === "follow" ? "我的回答：" : "本节评论：");
+      lines.push(body);
+      lines.push(ASK_RULE);
+      return lines.join("\n");
+    }
+    var text = pack(note);
+    if (Array.from(text).length > 4000) {
+      var room = 4000 - Array.from(pack("")).length;
+      if (room < 1) room = 1;
+      text = pack(Array.from(note).slice(0, room).join(""));
+      if (Array.from(text).length > 4000) text = Array.from(text).slice(0, 4000).join("");
+    }
+    return text;
+  }
+  function readAskStore() {
+    try {
+      var v = JSON.parse(localStorage.getItem(ASK_KEY) || "{}");
+      if (!v || typeof v !== "object" || Array.isArray(v)) return {};
+      return v;
+    } catch (e) { return {}; }
+  }
+  function committedMsgs(session) {
+    return session.msgs.filter(function (m) {
+      return !m.pending && (m.role === "user" || m.role === "assistant");
+    });
+  }
+  function historyForAsk(session) {
+    return committedMsgs(session).slice(-MAX_HISTORY).map(function (m) {
+      return { role: m.role, content: String(m.sent || m.content || "").slice(0, 2000) };
+    });
+  }
+  function trimAskMsgs(session) {
+    var keep = session.msgs.filter(function (m) {
+      return m.pending || m.role === "user" || m.role === "assistant";
+    });
+    if (keep.length > 24) keep = keep.slice(keep.length - 24);
+    session.msgs = keep;
+  }
+  function persistAsks() {
+    var out = {};
+    Object.keys(askSessions).forEach(function (id) {
+      var s = askSessions[id];
+      out[id] = {
+        msgs: committedMsgs(s).slice(-24).map(function (m) {
+          return { role: m.role, content: String(m.content || ""), sent: m.sent || "", kind: m.kind || "" };
+        }),
+        follow: s.followEl ? String(s.followEl.value || "") : ""
+      };
+    });
+    try { localStorage.setItem(ASK_KEY, JSON.stringify(out)); } catch (e) {}
+  }
+  function dropPendingAsk(session) {
+    session.msgs = session.msgs.filter(function (m) { return !m.pending; });
+  }
+  function askBubble(m, pending) {
+    var el = document.createElement("div");
+    var role = m.role === "user" ? "user" : (m.role === "error" ? "error" : "assistant");
+    el.className = "sc-bubble " + role + (pending ? " pending" : "");
+    var who = document.createElement("span");
+    who.className = "sc-who";
+    if (role === "user") who.textContent = m.kind === "follow" ? "我的回答" : "本节评论";
+    else if (role === "error") who.textContent = "发送失败";
+    else who.textContent = "学伴追问";
+    var body = document.createElement("div");
+    body.className = "sc-bubble-body";
+    body.textContent = m.content || "";
+    el.appendChild(who);
+    el.appendChild(body);
+    return el;
+  }
+  function paintAskButtons(session) {
+    var stopNote = session.busy && session.active === "note";
+    var stopFollow = session.busy && session.active === "follow";
+    session.noteBtn.textContent = stopNote ? "停止" : "发送并追问";
+    session.followBtn.textContent = stopFollow ? "停止" : "发送并追问";
+    session.noteBtn.disabled = !!(session.busy && !stopNote);
+    session.followBtn.disabled = !!(session.busy && !stopFollow);
+    if (session.followEl) session.followEl.disabled = !!session.busy;
+  }
+  function setAskStatus(session, text, bad) {
+    session.status.textContent = text || "";
+    session.status.className = "sc-ask-status" + (bad ? " bad" : "");
+  }
+  function renderSection(session) {
+    var log = session.log;
+    log.textContent = "";
+    session.msgs.forEach(function (m) { log.appendChild(askBubble(m, !!m.pending)); });
+    if (session.busy) {
+      log.appendChild(askBubble({ role: "assistant", content: session.acc || "正在追问…" }, true));
+    }
+    if (session.err) log.appendChild(askBubble({ role: "error", content: session.err }, false));
+    if (session.cueInfo) {
+      var cue = document.createElement("button");
+      cue.type = "button";
+      cue.className = "fy-viz-cue";
+      cue.addEventListener("click", scrollTutorViz);
+      writeVizCue(cue, session.cueInfo);
+      log.appendChild(cue);
+    }
+    var hasTalk = session.msgs.length || session.busy || session.err;
+    log.hidden = !hasTalk;
+    var asked = committedMsgs(session).some(function (m) { return m.role === "assistant"; });
+    session.followRow.hidden = !asked;
+    var sent = committedMsgs(session).some(function (m) { return m.role === "user"; });
+    session.sentMark.hidden = !sent;
+    if (sent) session.sentMark.textContent = "已发送给学伴";
+    try { log.scrollTop = log.scrollHeight; } catch (e) {}
+  }
+  function failSection(session, gen, msg) {
+    if (session.gen !== gen) return;
+    session.busy = false;
+    session.abort = null;
+    session.acc = "";
+    dropPendingAsk(session);
+    session.err = msg || "学伴连不上。";
+    session.retry.hidden = false;
+    setAskStatus(session, session.err, true);
+    paintAskButtons(session);
+    renderSection(session);
+  }
+  function finishSection(session, gen, payload) {
+    if (session.gen !== gen) return;
+    session.busy = false;
+    session.abort = null;
+    var shown = session.acc || (payload && payload.summary ? String(payload.summary) : "");
+    if (!shown) shown = "（学伴没有返回文字）";
+    session.msgs.forEach(function (m) { if (m.pending) delete m.pending; });
+    session.msgs.push({ role: "assistant", content: shown });
+    trimAskMsgs(session);
+    session.acc = "";
+    session.err = "";
+    session.retry.hidden = true;
+    if (session.lastKind === "follow" && session.followEl) session.followEl.value = "";
+    setAskStatus(session, "", false);
+    var info = null;
+    try {
+      if (payload && payload.viz != null) info = applyTutorViz(payload.viz, { scroll: false });
+    } catch (eViz) { info = null; }
+    if (info) {
+      Object.keys(askSessions).forEach(function (id) {
+        if (askSessions[id] !== session) askSessions[id].cueInfo = null;
+      });
+      session.cueInfo = info;
+      clearVizCues();
+      var drawerCue = document.getElementById("tutorVizCue");
+      if (drawerCue) writeVizCue(drawerCue, info);
+    }
+    paintAskButtons(session);
+    renderSection(session);
+    persistAsks();
+  }
+  function abortSection(session) {
+    if (!session.busy) return;
+    var partial = session.acc;
+    session.gen += 1;
+    if (session.abort) {
+      try { session.abort.abort(); } catch (e) {}
+    }
+    session.abort = null;
+    session.busy = false;
+    session.acc = "";
+    session.err = "";
+    session.retry.hidden = true;
+    if (partial) {
+      session.msgs.forEach(function (m) { if (m.pending) delete m.pending; });
+      session.msgs.push({ role: "assistant", content: partial + "\n（已停止）" });
+      trimAskMsgs(session);
+      if (session.lastKind === "follow" && session.followEl) session.followEl.value = "";
+    } else {
+      dropPendingAsk(session);
+    }
+    setAskStatus(session, "已停止", false);
+    paintAskButtons(session);
+    renderSection(session);
+    persistAsks();
+  }
+  function readSectionSse(res, session, gen) {
+    var sse = { buf: "", event: "", data: [] };
+    function onEvent(eventName, payload) {
+      if (session.gen !== gen) return;
+      if (eventName === "token") {
+        session.acc += payload && payload.t != null ? String(payload.t) : "";
+        renderSection(session);
+        return;
+      }
+      if (eventName === "done") { finishSection(session, gen, payload); return; }
+      if (eventName === "error") {
+        var msg = (payload && payload.msg) ? String(payload.msg) : "学伴出错";
+        failSection(session, gen, msg);
+      }
+    }
+    function dispatch() {
+      if (!sse.event && !sse.data.length) return;
+      var raw = sse.data.join("\n");
+      var eventName = sse.event || "message";
+      sse.event = "";
+      sse.data = [];
+      var payload = {};
+      if (raw) {
+        try { payload = JSON.parse(raw); }
+        catch (e1) { payload = { msg: raw }; }
+      }
+      onEvent(eventName, payload);
+    }
+    function takeLine(line) {
+      if (line === "") { dispatch(); return; }
+      if (line.charAt(0) === ":") return;
+      if (line.indexOf("event:") === 0) { sse.event = line.slice(6).trim(); return; }
+      if (line.indexOf("data:") === 0) {
+        var v = line.slice(5);
+        if (v.charAt(0) === " ") v = v.slice(1);
+        sse.data.push(v);
+      }
+    }
+    function consume(text) {
+      sse.buf += text;
+      var parts = sse.buf.split(/\r?\n/);
+      sse.buf = parts.pop();
+      parts.forEach(takeLine);
+    }
+    function settle() {
+      if (session.gen !== gen) return;
+      if (sse.buf) takeLine(sse.buf);
+      sse.buf = "";
+      dispatch();
+      if (session.gen !== gen || !session.busy) return;
+      if (session.acc) finishSection(session, gen, null);
+      else failSection(session, gen, "学伴流提前结束。");
+    }
+    if (!res.body || !res.body.getReader) {
+      return res.text().then(function (text) {
+        consume(text);
+        settle();
+      });
+    }
+    var reader = res.body.getReader();
+    var decoder = new TextDecoder();
+    function pump() {
+      return reader.read().then(function (result) {
+        if (session.gen !== gen) {
+          try { reader.cancel(); } catch (e2) {}
+          return;
+        }
+        if (result.done) { settle(); return; }
+        consume(decoder.decode(result.value, { stream: true }));
+        return pump();
+      });
+    }
+    return pump();
+  }
+  function sendSection(session, raw, kind) {
+    if (session.busy) return;
+    var text = String(raw || "").trim();
+    if (!text) {
+      setAskStatus(session, kind === "follow" ? "先回答这一问，再发送并追问。" : "先写一句评论，再发送并追问。", true);
+      return;
+    }
+    if (Array.from(text).length > 4000) text = Array.from(text).slice(0, 4000).join("");
+    session.err = "";
+    session.retry.hidden = true;
+    session.lastKind = kind;
+    session.lastRaw = text;
+    var gen = ++session.gen;
+    session.busy = true;
+    session.active = kind;
+    session.acc = "";
+    session.msgs.push({
+      role: "user",
+      content: text,
+      sent: composeSectionMessage(session.id, text, kind),
+      kind: kind,
+      pending: true
+    });
+    paintAskButtons(session);
+    setAskStatus(session, "正在追问…", false);
+    renderSection(session);
+    var body = {
+      mode: "socratic",
+      lessonId: LESSON_ID,
+      message: session.msgs[session.msgs.length - 1].sent,
+      answers: collectAnswers(),
+      history: historyForAsk(session),
+      consensusVersion: consensusVersion(),
+      locale: "zh-Hans"
+    };
+    session.abort = (typeof AbortController !== "undefined") ? new AbortController() : null;
+    var opts = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify(body)
+    };
+    if (session.abort) opts.signal = session.abort.signal;
+    fetch(TUTOR_URL, opts).then(function (res) {
+      if (session.gen !== gen) return;
+      if (!res.ok) {
+        return res.text().then(function (t) {
+          failSection(session, gen, formatHttpError(res, t));
+        }, function () {
+          failSection(session, gen, formatHttpError(res, ""));
+        });
+      }
+      var ctype = (res.headers && res.headers.get && res.headers.get("content-type")) || "";
+      if (ctype.indexOf("application/json") >= 0 && ctype.indexOf("event-stream") < 0) {
+        return res.json().then(function (j) {
+          if (j && (j.msg || j.code)) failSection(session, gen, (j.msg || j.message || "学伴出错"));
+          else failSection(session, gen, "学伴返回了非流式响应。");
+        });
+      }
+      return readSectionSse(res, session, gen);
+    }).catch(function (err) {
+      if (session.gen !== gen) return;
+      if (err && err.name === "AbortError") return;
+      failSection(session, gen, formatTransportError(err));
+    });
+  }
+  function lastNoteText(session) {
+    var text = "";
+    session.msgs.forEach(function (m) {
+      if (!m.pending && m.role === "user" && m.kind !== "follow") text = m.content;
+    });
+    return text;
+  }
+  function mountSectionAsk(ta) {
+    if (!ta || ta.getAttribute("data-ask-hook")) return;
+    var sid = ta.getAttribute("data-section") || "";
+    if (!sid && ta.id.indexOf("secNote-") === 0) sid = ta.id.slice("secNote-".length);
+    if (!sid) return;
+    ta.setAttribute("data-ask-hook", "1");
+    var saved = readAskStore()[sid] || {};
+    var session = {
+      id: sid,
+      noteEl: ta,
+      msgs: [],
+      busy: false,
+      gen: 0,
+      acc: "",
+      err: "",
+      active: "",
+      lastKind: "note",
+      lastRaw: "",
+      cueInfo: null,
+      abort: null
+    };
+    if (Array.isArray(saved.msgs)) {
+      saved.msgs.forEach(function (m) {
+        if (!m || (m.role !== "user" && m.role !== "assistant")) return;
+        if (typeof m.content !== "string") return;
+        session.msgs.push({
+          role: m.role,
+          content: m.content,
+          sent: typeof m.sent === "string" ? m.sent : "",
+          kind: m.kind === "follow" ? "follow" : "note"
+        });
+      });
+    }
+    var hint = document.getElementById("secHint-" + sid);
+    var box = document.createElement("div");
+    box.className = "sc-ask";
+    box.setAttribute("data-ask", sid);
+    var actions = document.createElement("div");
+    actions.className = "sc-ask-actions";
+    var noteBtn = document.createElement("button");
+    noteBtn.type = "button";
+    noteBtn.className = "sc-ask-send";
+    noteBtn.textContent = "发送并追问";
+    noteBtn.title = "把本节评论发给学伴追问。只在点击时发送，不会自动提交学习日志。";
+    var sentMark = document.createElement("span");
+    sentMark.className = "sc-ask-sent";
+    sentMark.hidden = true;
+    actions.appendChild(noteBtn);
+    actions.appendChild(sentMark);
+    var status = document.createElement("div");
+    status.className = "sc-ask-status";
+    var retry = document.createElement("button");
+    retry.type = "button";
+    retry.className = "sc-ask-retry";
+    retry.textContent = "重试";
+    retry.hidden = true;
+    var log = document.createElement("div");
+    log.className = "sc-tutor-log";
+    log.hidden = true;
+    log.setAttribute("role", "log");
+    log.setAttribute("aria-live", "polite");
+    var followRow = document.createElement("div");
+    followRow.className = "sc-follow-row";
+    followRow.hidden = true;
+    var followLab = document.createElement("label");
+    followLab.className = "sc-lab";
+    followLab.textContent = "回答这一问";
+    followLab.setAttribute("for", "secAskFollow-" + sid);
+    var follow = document.createElement("textarea");
+    follow.className = "sc-follow";
+    follow.id = "secAskFollow-" + sid;
+    follow.rows = 2;
+    follow.setAttribute("maxlength", "4000");
+    follow.placeholder = "先回答上面这一问，再点发送并追问";
+    if (typeof saved.follow === "string") follow.value = saved.follow;
+    var followBtn = document.createElement("button");
+    followBtn.type = "button";
+    followBtn.className = "sc-ask-send";
+    followBtn.textContent = "发送并追问";
+    followRow.appendChild(followLab);
+    followRow.appendChild(follow);
+    followRow.appendChild(followBtn);
+    box.appendChild(actions);
+    box.appendChild(status);
+    box.appendChild(retry);
+    box.appendChild(log);
+    box.appendChild(followRow);
+    var anchor = hint || ta;
+    anchor.insertAdjacentElement("afterend", box);
+    session.noteBtn = noteBtn;
+    session.followBtn = followBtn;
+    session.followEl = follow;
+    session.followRow = followRow;
+    session.sentMark = sentMark;
+    session.status = status;
+    session.retry = retry;
+    session.log = log;
+    askSessions[sid] = session;
+    noteBtn.addEventListener("click", function () {
+      if (session.busy && session.active === "note") { abortSection(session); return; }
+      if (session.busy) return;
+      var text = String(ta.value || "").trim();
+      if (!text) {
+        setAskStatus(session, "先写一句评论，再发送并追问。", true);
+        return;
+      }
+      var asked = committedMsgs(session).some(function (m) { return m.role === "assistant"; });
+      if (asked && text === lastNoteText(session) && !String(follow.value || "").trim()) {
+        setAskStatus(session, "先回答这一问，再发送并追问。", true);
+        return;
+      }
+      sendSection(session, text, "note");
+    });
+    followBtn.addEventListener("click", function () {
+      if (session.busy && session.active === "follow") { abortSection(session); return; }
+      if (session.busy) return;
+      sendSection(session, follow.value, "follow");
+    });
+    retry.addEventListener("click", function () {
+      if (session.busy) return;
+      var again = session.lastKind === "follow" ? follow.value : ta.value;
+      sendSection(session, again, session.lastKind || "note");
+    });
+    var followTimer = null;
+    follow.addEventListener("input", function () {
+      clearTimeout(followTimer);
+      followTimer = setTimeout(persistAsks, 400);
+    });
+    renderSection(session);
+  }
+  document.querySelectorAll("textarea[id^='secNote-']").forEach(mountSectionAsk);
 
   setMode("socratic");
   renderThread();
