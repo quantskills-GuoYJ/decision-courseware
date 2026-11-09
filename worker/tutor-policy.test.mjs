@@ -226,6 +226,52 @@ test("generation deadline covers a hung stream and a hung fallback", async () =>
   assert.equal(fallbackCalled, false);
 });
 
+test("no kind displays an accusation the learner did not affirm", () => {
+  const users = [
+    "这里只写了概率",
+    "打分",
+    "依据",
+    "分数",
+    "把握",
+    "输出看一下",
+    "决策模型",
+    "hello",
+    "qzx wpl",
+    "",
+    "???",
+  ];
+  const gaps = [
+    "缺口：把随意调温度当成校准，后面还有很长的一句没有根据的指责\n提示：随意 T 只改锋利度；拟合的温度缩放才是校准\n本轮摘要：把随意调温度当成校准",
+    "缺口：把 noul 说成拒答概率，并且用很长的句子重复这个没有根据的判断\n提示：不会时走 noul 拒答\n本轮摘要：把 noul 说成拒答概率",
+    "@@@\n把随意调温度当成校准\n把 noul 说成拒答概率\n标题复读",
+    "缺口：" + "把随意调温度当成校准".repeat(6) + "\n提示：" + "把 noul 说成拒答概率".repeat(4),
+  ];
+  const accusation = /把随意调温度当成校准|把 noul 说成拒答|标题复读|只复读标题|说成了越准|越高越准并不成立/;
+  for (const user of users) {
+    for (const gap of gaps) {
+      for (const lessonId of ["lesson-0", "lesson-3", "lesson-4", undefined]) {
+        const out = clampTutorOutput("feynman", gap, user, lessonId);
+        assert.equal(accusation.test(out), false, JSON.stringify({ user, lessonId, out }));
+        assert.match(out, /还是|？/, out);
+      }
+    }
+  }
+  const enMixed = "Fitted temperature scaling on a held-out set is a calibration method. Hotter is more accurate.";
+  assert.equal(isCorrectFittedTempScaling(enMixed), false);
+  const mixedOut = clampTutorOutput(
+    "feynman",
+    "缺口：已说明拟合的温度缩放是校准，未把它误当成随意拖的 T\n提示：留出集\n本轮摘要：说对了",
+    enMixed,
+    "lesson-1"
+  );
+  assert.match(mixedOut, /越准/);
+  assert.equal(mixedOut.includes("未把它误当成随意拖的 T"), false, mixedOut);
+  const stillWrong = clampTutorOutput("feynman", gaps[0], "校准就是把温度调高", "lesson-0");
+  assert.match(stillWrong, /把随意调温度当成校准/);
+  const stillNoul = clampTutorOutput("feynman", gaps[1], "noul 就是拒答概率", "lesson-0");
+  assert.match(stillNoul, /把 noul 说成拒答/);
+});
+
 test("an unclear temperature sentence is a question, not an invented gap", () => {
   const out = clampTutorOutput(
     "feynman",

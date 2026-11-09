@@ -118,7 +118,7 @@ function assessAccount(um) {
     const calib = polarity(clause, calibClaim);
     if (fitWord.test(clause) && tempWord.test(clause) && calib.affirmed) out.fittedOk = true;
     const hot = polarity(clause, hotClaim);
-    if (hot.affirmed && !hot.denied && /温度|越高|temperature/i.test(clause)) out.hotter = true;
+    if (hot.affirmed && !hot.denied && /温度|越高|temperature|\bhotter\b/i.test(clause)) out.hotter = true;
     const equated = polarity(clause, equateClaim);
     if (equated.affirmed && !equated.denied) out.equates = true;
     if (arbWord.test(clause) && arbNot.test(clause)) out.arbitraryNot = true;
@@ -206,7 +206,7 @@ function gapSentenceForKind(kind) {
     case "gen-output":
       return "只说了输出不同，没点出选项钉死/校准/门槛";
     case "title-repeat":
-      return "只复读标题，没点出选项钉死这一环";
+      return "这句还看不出在核对选项、温度，还是 noul";
     case "calib-mix":
       return "把随意调温度当成校准，没分开拟合的温度缩放和可靠性";
     case "calib-ok":
@@ -223,7 +223,7 @@ function gapSentenceForKind(kind) {
     case "diag":
       return "还不能确定这句在核对哪一个概念";
     case "missing-score":
-      return "有选项但没点出打分/依据（score）";
+      return "这里的概率或打分，是有序档上的分布，还是另一个问题";
     case "noul-mix":
       return "把 noul 说成拒答概率，noul 是 P(是)";
     case "noul-ok":
@@ -240,7 +240,7 @@ function tipForKind(kind) {
     case "gen-output":
       return "先看 choice：选项是否钉死";
     case "title-repeat":
-      return "补上选项钉死（choice）";
+      return "你想核对的是选项、温度，还是 noul？";
     case "calib-mix":
       return "随意 T 只改锋利度；拟合的温度缩放才是校准";
     case "calib-ok":
@@ -257,7 +257,7 @@ function tipForKind(kind) {
     case "diag":
       return "你想核对的是温度、noul，还是选项？";
     case "missing-score":
-      return "补上 score：打分/依据";
+      return "先说这个数是哪一档的打分？";
     case "noul-mix":
       return "noul 记 P(是)，拒答看门槛";
     case "noul-ok":
@@ -286,6 +286,36 @@ function captionForFocus(focus) {
     default:
       return "先看选项钉死（choice）";
   }
+}
+
+/** Accusations the model may have written. Each is allowed only when the learner's own clause affirms it. */
+function unsupportedAccusation(text, userMessage) {
+  const account = assessAccount(userMessage);
+  const checks = [
+    [/把随意调温度当成校准|把校准说成调温度|校准就是(?:把)?温度/, account.equates],
+    [/把\s*noul\s*说成拒答|说成了?拒答概率/i, account.refusalAffirm],
+    [/标题复读|只复读标题/, false],
+    [/越高越准并不成立|说成了越准/, account.hotter],
+    [/把生成当决策/, isGenVsDecisionUtterance(userMessage)],
+  ];
+  return checks.some(([re, allowed]) => re.test(text) && !allowed);
+}
+
+function neutralFeynman(userMessage) {
+  const account = assessAccount(userMessage);
+  let gap = "还不能确定这句在核对哪一个概念";
+  let tip = "你想核对的是温度、noul，还是选项？";
+  if (/概率|打分|依据|分数|把握/.test(userMessage)) {
+    gap = gapSentenceForKind("missing-score");
+    tip = tipForKind("missing-score");
+  } else if (account.hasNoul || /拒答/.test(userMessage)) {
+    gap = gapSentenceForKind("diag-noul");
+    tip = tipForKind("diag-noul");
+  } else if (account.mentionsTemp || account.mentionsCalib) {
+    gap = gapSentenceForKind("diag-temp");
+    tip = tipForKind("diag-temp");
+  }
+  return "缺口：" + gap + "\n提示：" + tip + "\n本轮摘要：" + gap.slice(0, 40);
 }
 
 function isBareGapTag(s) {
@@ -372,37 +402,15 @@ function clampTutorOutput(mode, text, userMessage, lessonId) {
     t = "追问：" + question + "\n本轮摘要：" + abs;
   } else if (mode === "feynman") {
     const gapRaw = (t.match(/缺口[:：]\s*([^\n]+)/) || [, ""])[1].trim();
-    const tipRaw = (t.match(/提示[:：]\s*([^\n]+)/) || [, ""])[1].trim();
-    const absRaw = (t.match(/本轮摘要[:：]\s*(.+)/) || [, ""])[1].trim();
     const kind = classifyFeynmanKind(um, gapRaw);
-    const lessonKey = lessonId || "lesson-0";
-    const calibLesson = lessonKey === "lesson-0" || lessonKey === "lesson-1";
-    const noulLesson = lessonKey === "lesson-0" || lessonKey === "lesson-2" || lessonKey === "lesson-7";
-    const diagnostic = kind === "diag" || kind === "diag-temp" || kind === "diag-noul" || kind === "calib-ask";
-    const owned =
-      diagnostic ||
-      kind === "calib-hot" ||
-      (calibLesson && (kind === "calib-ok" || kind === "calib-partial" || kind === "calib-mix")) ||
-      (noulLesson && (kind === "noul-ok" || kind === "noul-partial" || kind === "noul-mix")) ||
-      kind === "gen-output" ||
-      kind === "title-repeat";
-    let gapSentence = gapRaw;
-    if (owned || isBareGapTag(gapSentence) || (isGenVsDecisionUtterance(um) && /概念易混|标题复读|缺因果|把生成当决策/.test(gapSentence))) {
-      gapSentence = gapSentenceForKind(kind);
-    }
-    gapSentence = gapSentence.replace(/[。！？.!?]+$/, "").slice(0, 48);
-    let tipClean = tipRaw.replace(/[。！？.!?].*$/, "").trim().slice(0, 36);
-    const tipBad =
-      owned ||
-      !tipClean ||
-      /大模型|llm|用于做出决策|用来做决策|做出决策|三件套|^概念易混$/i.test(tipClean) ||
-      !hasLessonWords(tipClean);
-    if (tipBad) tipClean = tipForKind(kind);
-    let absClean = absRaw.slice(0, 40);
-    if (!absClean || isBareGapTag(absClean) || /概念易混|标题复读|缺因果|三件套/.test(absClean)) {
-      absClean = gapSentence.slice(0, 40);
-    }
-    t = "缺口：" + gapSentence + "\n提示：" + tipClean + "\n本轮摘要：" + absClean;
+    const gapSentence = gapSentenceForKind(kind).replace(/[。！？.!?]+$/, "").slice(0, 80);
+    const tipClean = tipForKind(kind);
+    t = "缺口：" + gapSentence + "\n提示：" + tipClean + "\n本轮摘要：" + gapSentence.slice(0, 40);
+  }
+  if (unsupportedAccusation(t, um)) {
+    t = mode === "socratic"
+      ? "追问：" + neutralFeynman(um).match(/提示：([^\n]+)/)[1] + "\n本轮摘要：先问清这一句"
+      : neutralFeynman(um);
   }
   if (!t.trim()) {
     t =
