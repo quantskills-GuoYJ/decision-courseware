@@ -133,7 +133,9 @@ window.COURSE_LESSON = {
     out.textContent = th.toFixed(2);
     input.setAttribute("aria-valuenow", String(input.value));
     var pass = p >= th;
-    box.textContent = "课堂例子 p=" + p.toFixed(2) + (pass ? " ≥ " : " < ") + "θ " + th.toFixed(2) + (pass ? " → 可以自动。" : " → 不自动，转人工。");
+    var gateText = "课堂例子 p=" + p.toFixed(2) + (pass ? " ≥ " : " < ") + "θ " + th.toFixed(2) + (pass ? " → 可以自动。" : " → 不自动，转人工。");
+    box.textContent = gateText;
+    if (window.__dmLessonState) window.__dmLessonState.setLab("gateText", gateText);
   }
   input.addEventListener("input", paint);
   paint();
@@ -150,7 +152,9 @@ window.COURSE_LESSON = {
     fp.setAttribute("aria-valuenow", String(cFp));
     fn.setAttribute("aria-valuenow", String(cFn));
     var star = cFp / (cFp + cFn);
-    costOut.textContent = "假设只比较误自动代价 " + cFp + " 和漏自动代价 " + cFn + "。分界 ≈ " + star.toFixed(2) + "。课堂 p=0.55 " + (0.55 >= star ? "不低于这个分界。" : "低于这个分界，先不自动。") + " 不是对所有情形都最优。";
+    var costText = "假设只比较误自动代价 " + cFp + " 和漏自动代价 " + cFn + "。分界 ≈ " + star.toFixed(2) + "。打平才与中性备选相同，严格更好要高于分界。本课平局沿用 p ≥ 分界。课堂 p=0.55 " + (0.55 >= star ? "不低于这个分界。" : "低于这个分界，先不自动。") + " 不是对所有情形都最优。";
+    costOut.textContent = costText;
+    if (window.__dmLessonState) window.__dmLessonState.setLab("costText", costText);
   }
   fp.addEventListener("input", paintCost);
   fn.addEventListener("input", paintCost);

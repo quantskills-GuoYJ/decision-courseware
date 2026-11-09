@@ -25,7 +25,7 @@ body {
 }
 p, li, td, code { overflow-wrap: anywhere; }
 a { color: var(--cyan); }
-a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, summary:focus-visible {
   outline: 2px solid var(--cyan);
   outline-offset: 2px;
 }
@@ -121,8 +121,11 @@ textarea {
   padding: 0.55rem 0.65rem;
 }
 table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.85rem; }
+caption { caption-side: top; text-align: left; font-family: var(--font); font-weight: 700; padding: 0.35rem 0; }
 th, td { border-bottom: 1px solid var(--border); text-align: right; padding: 0.3rem 0.4rem; }
 th:first-child, td:first-child { text-align: left; }
+details { margin: 0.6rem 0; }
+summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; }
 .out {
   font-family: var(--mono);
   background: var(--bg);

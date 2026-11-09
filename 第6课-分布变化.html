@@ -18,7 +18,7 @@
 <header>
   <div class="badge">第6课 · 约 30 分钟 · 先修第4课</div>
   <h1 id="main">分布变了：旧的可靠性不能自动沿用</h1>
-  <p class="lead">目标：看见温度在一份数据上选好之后，换一批更极端的分数，可靠性要重算。这是监测，不是预测市场。</p>
+  <p class="lead">目标：把选 T、报告可靠性、再看新窗口分成三份数据。拟合集自己的 ECE 是样本内。新窗口只有几行时，两个 ECE 点不能单独证明漂移。这不是预测市场，也没有 p 值。</p>
 </header>
 
 <section data-q-group="q1" data-unlock="#shiftLab">
@@ -32,29 +32,55 @@
   <p class="status" data-status role="status"></p>
   <button type="button" class="act" data-retry hidden>再试一次</button>
   <div class="explain" data-explain-body hidden>
-    <p>可靠性是「这批预测」对「这批结果」的差距，不是 T 的永久属性。监测要在新窗口上重算，再和当初的留出 ECE 比。</p>
+    <p>可靠性是「这批预测」对「这批结果」的差距，不是 T 的永久属性。新窗口要单独重算，对照的是没参与选 T 的留出 ECE，不是拟合集上的样本内 ECE。重算之后仍要看样本有多少。两个点估计本身不能证明漂移。</p>
   </div>
 </section>
 
 <section id="shiftLab" hidden>
-  <h2>实验：同一 T，两批示意样本</h2>
-  <p><span class="tag">示意</span> A 用来选 T。B 的 logit 是另一列数字。页面用 A 上最小 NLL 的 T，再报 A 和 B 的 2 桶 ECE。</p>
-  <button type="button" class="act" id="runShift">计算两批 ECE</button>
+  <h2>实验：拟合、留出、新窗口分开</h2>
+  <p><span class="tag">示意</span> T 只在拟合集上按平均 NLL 选择。留出集不参与选 T。新窗口有两份：一份只把留出集的 logit 乘 1.6，标签不变；另一份分数和标签一起换了。公式与第4课相同：两个等宽桶，ECE = Σ (n_b / n) |命中率 − 平均 p|。空桶不加。</p>
+  <table>
+    <caption>拟合集 n=8。只选 T。它的 ECE 若出现，会标明样本内，不能当对照。</caption>
+    <thead><tr><th>logit</th><th>y</th></tr></thead>
+    <tbody id="fitRows"></tbody>
+  </table>
+  <table>
+    <caption>留出集 n=5。不参与选 T。可靠性的对照报在这里。</caption>
+    <thead><tr><th>logit</th><th>y</th></tr></thead>
+    <tbody id="heldRows"></tbody>
+  </table>
+  <table>
+    <caption>新窗口 · 只改分数 n=5。logit 为留出集的 1.6 倍，标签相同。</caption>
+    <thead><tr><th>logit</th><th>y</th></tr></thead>
+    <tbody id="logitRows"></tbody>
+  </table>
+  <table>
+    <caption>新窗口 · 分数和标签一起改 n=5。不能据此分辨原因。</caption>
+    <thead><tr><th>logit</th><th>y</th></tr></thead>
+    <tbody id="bothRows"></tbody>
+  </table>
+  <div class="row">
+    <button type="button" class="act" id="runShift">计算 ECE 和重抽样区间</button>
+  </div>
   <p id="shiftOut" class="out" role="status">先提交猜测。揭晓后再计算。</p>
+  <details>
+    <summary>区间怎么复算</summary>
+    <p>种子是 20261109。生成器从种子 a 开始：a = a + 0x6D2B79F5（32 位整数），再做两次乘法混合，得到 0 到 1 之间的数。有放回抽取 400 次，每次行数等于原表。T 固定为拟合集选出的那个，重抽样时不重选 T。把 400 个 ECE 从小到大排序，端点下标是 floor(0.025×399) 和 floor(0.975×399)。这不是 p 值。行被当成互相独立；如果它们来自一段时间、相邻误差相关，区间会偏窄。</p>
+  </details>
 </section>
 
 <section data-q-group="q2">
   <h2 id="q2-title">监测时做什么</h2>
-  <p>新窗口的示意 ECE 明显高于当初留出集。下一步更稳妥的是？</p>
+  <p>新窗口的点估计 ECE 可以高于留出集的点估计。只凭这两个数，可以宣布可靠性已经变了吗？</p>
   <div class="opts" role="group" aria-labelledby="q2-title">
-    <button type="button" class="opt" data-choice="trust" data-correct="false">继续自动。T 没有改，所以不用管。</button>
-    <button type="button" class="opt" data-choice="hold" data-correct="true">先不要沿用旧信任：重新评估，或把更多决定交给人。</button>
+    <button type="button" class="opt" data-choice="trust" data-correct="false">可以。更高的那个点估计就是漂移。</button>
+    <button type="button" class="opt" data-choice="hold" data-correct="true">不可以。样本很小，还要看不确定性；分数和标签一起变时，也分不清原因。</button>
   </div>
-  <p class="hint" data-hint hidden>提示：监测的用途是发现「现在不像当时」。发现之后先停自动沿用，而不是解释成模型突然更准。</p>
+  <p class="hint" data-hint hidden>提示：n=5 的 ECE 跳得很大。点估计更高，不等于已经证实变化。先别把样本内 ECE 拿来对照。</p>
   <p class="status" data-status role="status"></p>
   <button type="button" class="act" data-retry hidden>再试一次</button>
   <div class="explain" data-explain-body hidden>
-    <p>重新评估可以是：在新窗口上再看 ECE / Brier，必要时重新拟合 T，并仍把选参和报告分开。本课不提供生产监控系统，只给这个判断顺序。</p>
+    <p>实验里的重抽样区间叠在一起，所以两个点估计不能说成已经证实的漂移。这里没有 p 值。转人工可以是课堂政策，不是校准好的检测器。分数和标签一起改的那一份，也不能指出是哪一个造成的。若行在时间上相关，把它们当独立样本会把区间算得偏窄。</p>
   </div>
 </section>
 
@@ -110,8 +136,10 @@ window.COURSE_LESSON = {
 <script>
 (function () {
   "use strict";
-  var A = [[2.2,1],[1.4,1],[0.6,0],[0.3,1],[-0.4,0],[-1.2,0],[-1.8,0],[0.9,1]];
-  var B = [[3.4,1],[2.8,0],[1.6,1],[-2.4,0],[-3.1,1]];
+  var FIT = [[2.2,1],[1.4,1],[0.6,0],[0.3,1],[-0.4,0],[-1.2,0],[-1.8,0],[0.9,1]];
+  var HELD = [[1.8,1],[0.2,0],[-0.8,1],[-1.5,0],[1.1,1]];
+  var LOGITS = HELD.map(function (row) { return [Math.round(row[0] * 1.6 * 100) / 100, row[1]]; });
+  var BOTH = [[3.4,1],[2.8,0],[1.6,1],[-2.4,0],[-3.1,1]];
   function sigmoid(z) { return 1 / (1 + Math.exp(-z)); }
   function nll(set, T) {
     var s = 0;
@@ -136,24 +164,78 @@ window.COURSE_LESSON = {
     });
     return e;
   }
+  function fill(id, rows) {
+    var body = document.getElementById(id);
+    rows.forEach(function (row) {
+      var tr = document.createElement("tr");
+      var a = document.createElement("td");
+      var b = document.createElement("td");
+      a.textContent = Number(row[0]).toFixed(2);
+      b.textContent = String(row[1]);
+      tr.appendChild(a);
+      tr.appendChild(b);
+      body.appendChild(tr);
+    });
+  }
+  fill("fitRows", FIT);
+  fill("heldRows", HELD);
+  fill("logitRows", LOGITS);
+  fill("bothRows", BOTH);
+  function mulberry32(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function band(set, T, seed) {
+    var rnd = mulberry32(seed);
+    var vals = [];
+    var i;
+    var j;
+    for (i = 0; i < 400; i++) {
+      var sample = [];
+      for (j = 0; j < set.length; j++) sample.push(set[Math.floor(rnd() * set.length)]);
+      vals.push(ece(sample, T));
+    }
+    vals.sort(function (x, y) { return x - y; });
+    function at(p) { return vals[Math.min(vals.length - 1, Math.floor(p * (vals.length - 1)))]; }
+    return at(0.025).toFixed(3) + " 到 " + at(0.975).toFixed(3);
+  }
+  function publish(text) {
+    document.getElementById("shiftOut").textContent = text;
+    if (window.__dmLessonState) window.__dmLessonState.setLab("shiftText", text);
+  }
   document.getElementById("runShift").addEventListener("click", function () {
     var best = null;
     var t;
     for (t = 25; t <= 400; t += 5) {
       var T = t / 100;
-      var v = nll(A, T);
+      var v = nll(FIT, T);
       if (!best || v < best.v) best = { T: T, v: v };
     }
-    var ea = ece(A, best.T);
-    var eb = ece(B, best.T);
-    document.getElementById("shiftOut").textContent = [
-      "示意，不是实测监测。",
-      "在 A 上选出的 T = " + best.T.toFixed(2),
-      "A 的 2 桶 ECE = " + ea.toFixed(3),
-      "B 的 2 桶 ECE = " + eb.toFixed(3),
-      eb > ea ? "B 更高：不要把 A 的可靠性直接说成 B 的可靠性。" : "这次 B 没有更高。换一批数据时仍应重算，而不是默认相同。"
+    var repeated = [];
+    var k;
+    for (k = 0; k < 8; k++) repeated = repeated.concat(HELD);
+    var text = [
+      "示意，不是实测监测，也没有 p 值。",
+      "T 只在拟合集上按平均 NLL 选出，T = " + best.T.toFixed(2) + "。留出集和新窗口都没有参与选择。",
+      "拟合集 2 桶 ECE = " + ece(FIT, best.T).toFixed(3) + "。这是样本内：T 就是用这 8 行选的。不能把它放在留出 ECE 旁边当成对照。",
+      "留出集 n=5，ECE = " + ece(HELD, best.T).toFixed(3) + "。种子 20261109，有放回 400 次，重抽样区间 " + band(HELD, best.T, 20261109) + "。",
+      "只改分数、标签与留出集相同，n=5，ECE = " + ece(LOGITS, best.T).toFixed(3) + "。这份差距只能来自分数。",
+      "分数和标签一起改，n=5，ECE = " + ece(BOTH, best.T).toFixed(3) + "。重抽样区间 " + band(BOTH, best.T, 20261109) + "。不能分辨是分数还是标签造成的。",
+      "留出和新窗口的区间叠在一起。不能根据这两个点估计说已经发生漂移。",
+      "重抽样把每一行当成独立。若窗口是一段时间、相邻误差相关，区间会偏窄。",
+      "样本量示意：把留出集 5 行原样重复 8 次，n=40，点估计仍是 " + ece(repeated, best.T).toFixed(3) + "，区间 " + band(repeated, best.T, 20261109) + "。原样重复假装它们是新的独立观测，更窄的区间不能当成真实精度。"
     ].join("\n");
+    publish(text);
   });
+  if (window.__dmLessonState) {
+    var saved = window.__dmLessonState.getLab("shiftText", "");
+    if (saved) document.getElementById("shiftOut").textContent = saved;
+  }
 })();
 </script>
 </body>

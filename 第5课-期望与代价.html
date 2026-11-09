@@ -18,12 +18,12 @@
 <header>
   <div class="badge">第5课 · 约 30 分钟 · 先修第3课</div>
   <h1 id="main">期望效用：代价不对称时，一半不是门槛</h1>
-  <p class="lead">目标：用收益和损失算出值得自动的最低概率。数字是假设的课堂代价，不是交易盈亏，也不建议据此下单。</p>
+  <p class="lead">目标：在写明的事件和收益下，算出自动的期望。不自动的收益是 0。数字是课堂假设，不是交易盈亏，也不是对所有代价都最优的规则。</p>
 </header>
 
 <section data-q-group="q1" data-unlock="#euLab">
   <h2 id="q1-title">先猜</h2>
-  <p>假设自动做对得到 1，自动做错付出 3。现在 P(做对这件事) = 0.55。期望效用是正的吗？公式是 p×1 − (1−p)×3。先心算，再提交。</p>
+  <p>事件：自动之后，这件事「做成」或「没做成」，二者只发生一个。做成的收益是 +1，没做成的收益是 −3。不自动的收益固定为 0，这是中性备选。现在 P(做成) = 0.55。自动的期望是 p×1 + (1−p)×(−3)。它是严格为正，还是低于 0？先心算，再提交。打平点留到揭晓：期望恰好为 0 的 p，还不是严格为正。本课平局规则与前面的 p ≥ θ 一致，恰好打平时仍自动。这只在这两种结果、这两种收益下成立。</p>
   <div class="opts" role="group" aria-labelledby="q1-title">
     <button type="button" class="opt" data-choice="pos" data-correct="false">是正的。0.55 已经超过一半，应该自动。</button>
     <button type="button" class="opt" data-choice="neg" data-correct="true">是负的。错一次的代价是对一次的 3 倍。</button>
@@ -32,13 +32,13 @@
   <p class="status" data-status role="status"></p>
   <button type="button" class="act" data-retry hidden>再试一次</button>
   <div class="explain" data-explain-body hidden>
-    <p>0.55×1 − 0.45×3 = 0.55 − 1.35 = −0.80。期望是负的，按这个假设代价不应自动。使期望从负变正的最低概率是 3/(1+3) = 0.75，不是 0.50。</p>
+    <p>不自动的收益是 0。0.55×1 + 0.45×(−3) = 0.55 − 1.35 = −0.80，低于中性备选。打平点 p* = 3/(1+3) = 0.75，这时期望等于 0，与不自动无差异，还不是严格为正。严格为正要 p &gt; 0.75。本课平局规则：p ≥ p* 才自动，和前面课的 p ≥ θ 一样。恰好 0.75 时按这条规则自动，不是因为期望已经为正。这不是对所有代价都最优。</p>
   </div>
 </section>
 
 <section id="euLab" hidden>
   <h2>实验：改代价，看门槛跟着变</h2>
-  <p>收益 B 固定为 1。拖动做错的代价 C。门槛 p* = C / (1+C)。P 固定为 0.55（课堂例子）。</p>
+  <p>收益 B 固定为 +1，做错是 −C。不自动的收益保持为 0。拖动 C。打平点 p* = C / (1+C)，这是期望等于 0 的点。P 固定为 0.55。平局规则：p ≥ p* 自动；p &gt; p* 时期望才严格为正。</p>
   <label for="cost">做错的代价 C <output id="costOut">3</output></label>
   <input id="cost" data-persist="cost" type="range" min="1" max="9" value="3" step="1" aria-valuemin="1" aria-valuemax="9" aria-valuenow="3">
   <p id="euOut" class="out" role="status"></p>
@@ -51,11 +51,11 @@
     <button type="button" class="opt" data-choice="neg" data-correct="false">仍是负的。概率没变。</button>
     <button type="button" class="opt" data-choice="pos" data-correct="true">是正的。0.55×1 − 0.45×1 = 0.10。</button>
   </div>
-  <p class="hint" data-hint hidden>提示：代价对称时，门槛回到 0.50。0.55 比 0.50 大一截。</p>
+  <p class="hint" data-hint hidden>提示：代价都是 1 时，打平点是 0.50。0.55 比它高，期望严格为正。平局规则仍是 p ≥ p*。</p>
   <p class="status" data-status role="status"></p>
   <button type="button" class="act" data-retry hidden>再试一次</button>
   <div class="explain" data-explain-body hidden>
-    <p>代价变了，门槛就变了。所以「超过一半」只在收益和损失一样大时才是分界。这仍是假设数字，不是市场报价。</p>
+    <p>代价变了，打平点就变了。「超过一半」只在收益和损失一样大时才是打平点。0.55×1 − 0.45×1 = 0.10，严格为正。这仍是这两种结果下的假设，不是对所有代价都最优，也不是市场报价。</p>
   </div>
 </section>
 
@@ -122,12 +122,20 @@ window.COURSE_LESSON = {
     input.setAttribute("aria-valuenow", String(c));
     var eu = p * benefit - (1 - p) * c;
     var star = c / (benefit + c);
-    box.textContent = [
-      "假设代价，不是交易结果。",
-      "期望 = " + p.toFixed(2) + "×" + benefit + " − " + (1 - p).toFixed(2) + "×" + c + " = " + eu.toFixed(2),
-      "最低可自动概率 p* = " + c + "/(" + benefit + "+" + c + ") = " + star.toFixed(2),
-      eu >= 0 ? "按这个假设，期望非负。" : "按这个假设，期望为负，先不自动。"
+    var tie = Math.abs(eu) < 1e-9;
+    var verdict = tie
+      ? "期望为 0，与不自动打平。平局规则：p ≥ p*，仍自动。这不是严格为正。"
+      : eu > 0
+        ? "期望严格为正（p > p*）。按 p ≥ p* 自动。"
+        : "期望为负，低于中性备选 0，先不自动。";
+    var text = [
+      "不自动的收益是 0。只比较做成 +1 和没做成 −" + c + "，不是普遍最优。",
+      "期望 = " + p.toFixed(2) + "×1 + " + (1 - p).toFixed(2) + "×(−" + c + ") = " + eu.toFixed(2),
+      "打平点 p* = " + c + "/(1+" + c + ") = " + star.toFixed(2) + "。严格为正要 p > p*。",
+      verdict
     ].join("\n");
+    box.textContent = text;
+    if (window.__dmLessonState) window.__dmLessonState.setLab("euText", text);
   }
   input.addEventListener("input", paint);
   paint();

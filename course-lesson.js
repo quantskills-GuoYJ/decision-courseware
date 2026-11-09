@@ -563,12 +563,16 @@
     });
     writeProgress(questionsOk && followOk);
   }
+  var filledDefault = false;
   document.querySelectorAll("[data-persist]").forEach(function (el) {
     var key = el.getAttribute("data-persist");
     if (!key) return;
     if (state.lab[key] != null) {
       if (el.type === "checkbox") el.checked = !!state.lab[key];
       else el.value = String(state.lab[key]);
+    } else {
+      state.lab[key] = el.type === "checkbox" ? !!el.checked : el.value;
+      filledDefault = true;
     }
     function saveLab() {
       state.lab[key] = el.type === "checkbox" ? el.checked : el.value;
@@ -577,6 +581,7 @@
     el.addEventListener("input", saveLab);
     el.addEventListener("change", saveLab);
   });
+  if (filledDefault) persist();
   window.__dmLessonState = {
     getLab: function (key, fallback) { return state.lab[key] == null ? fallback : state.lab[key]; },
     setLab: function (key, value) { state.lab[key] = value; persist(); },

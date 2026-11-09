@@ -150,13 +150,23 @@ window.COURSE_LESSON = {
     out.textContent = th.toFixed(2);
     input.setAttribute("aria-valuenow", String(input.value));
     var pass = p >= th;
-    box.textContent = "noul 仍是 P(是)=" + p.toFixed(2) + "。策略：" + p.toFixed(2) + (pass ? " ≥ " : " < ") + th.toFixed(2) + (pass ? " → 可以自动。" : " → 不自动，转人工。") + " 概率头没有变成拒答头。";
+    var text = "noul 仍是 P(是)=" + p.toFixed(2) + "。策略：" + p.toFixed(2) + (pass ? " ≥ " : " < ") + th.toFixed(2) + (pass ? " → 可以自动。" : " → 不自动，转人工。") + " 概率头没有变成拒答头。";
+    box.textContent = text;
+    if (window.__dmLessonState) window.__dmLessonState.setLab("policyText", text);
   }
   input.addEventListener("input", paint);
   paint();
+  function showNorm(text) {
+    document.getElementById("normOut").textContent = text;
+    if (window.__dmLessonState) window.__dmLessonState.setLab("normText", text);
+  }
   document.getElementById("normBtn").addEventListener("click", function () {
-    document.getElementById("normOut").textContent = "设定下三者互斥且必须做一件。2/4=0.50，1/4=0.25，1/4=0.25，加总为 1。若问题允许同时减仓又加仓，这组选项就不该再用一个 choice。";
+    showNorm("设定下三者互斥且必须做一件。2/4=0.50，1/4=0.25，1/4=0.25，加总为 1。若问题允许同时减仓又加仓，这组选项就不该再用一个 choice。");
   });
+  if (window.__dmLessonState) {
+    var savedNorm = window.__dmLessonState.getLab("normText", "");
+    if (savedNorm) document.getElementById("normOut").textContent = savedNorm;
+  }
   var mass = document.getElementById("scoreMass");
   var massOut = document.getElementById("scoreOut");
   var scoreLine = document.getElementById("scoreLine");
@@ -167,7 +177,9 @@ window.COURSE_LESSON = {
     var rest = (1 - mid) / 4;
     var probs = [rest, rest, mid, rest, rest];
     var ev = probs.reduce(function (sum, p, i) { return sum + (i + 1) * p; }, 0);
-    scoreLine.textContent = "P = " + probs.map(function (p) { return p.toFixed(2); }).join("，") + "。期望分 = " + ev.toFixed(2) + "。这是有序档，不是三选一。";
+    var scoreText = "P = " + probs.map(function (p) { return p.toFixed(2); }).join("，") + "。期望分 = " + ev.toFixed(2) + "。这是有序档，不是三选一。";
+    scoreLine.textContent = scoreText;
+    if (window.__dmLessonState) window.__dmLessonState.setLab("scoreText", scoreText);
   }
   mass.addEventListener("input", paintScore);
   paintScore();

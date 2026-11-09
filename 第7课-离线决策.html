@@ -18,15 +18,17 @@
 <header>
   <div class="badge">第7课 · 约 40 分钟 · 先修第2、5、6课</div>
   <h1 id="main">收束：一条离线的决定政策</h1>
-  <p class="lead">目标：在不连接任何交易接口的前提下，把概率、代价门槛和「分布是否还像当时」合成一个自动或转人工的决定。数字仍是课堂假设。</p>
+  <p class="lead">目标：先写清模型被问的事件，再把 P(是) 映射到动作收益，并加上一条课堂政策开关。不连接任何交易接口。数字仍是课堂假设，不是普遍最优。</p>
 </header>
 
 <section>
   <h2>这一题的已知条件</h2>
   <ul>
-    <li>noul 给出 P(是) = 0.62。这不是拒答概率。</li>
-    <li>假设做对收益 1，做错代价 3。最低可自动概率 p* = 3/4 = 0.75。</li>
-    <li>最近一个示意窗口的 ECE 高于当初留出集。分布标志 = 开。</li>
+    <li>事件「是」：模型被问的是否问题是「这条课堂样本，按事先钉死的标签，算不算『是』？」noul 回答的是这件事的概率。它不是拒答概率，也不是收益本身。</li>
+    <li>本课把这个概率定成 P(是) = 0.62。于是 P(否) = 0.38。</li>
+    <li>动作「自动按是行动」：结果为是，收益 +1；结果为否，收益 −3。动作「不自动」：无论是或否，收益都是 0。这是中性备选。</li>
+    <li>期望 = 0.62×1 + 0.38×(−3) = −0.52。打平点 p* = 3/(1+3) = 0.75，是期望等于 0 的点。严格为正要 p &gt; 0.75。平局规则与第5课相同：p ≥ p* 才允许自动。0.62 &lt; 0.75，单看代价也不自动。</li>
+    <li>另有一个课堂开关：「先别沿用旧可靠性」。它是这条练习里的政策，不是校准好的漂移检测器。第6课已经说明，两个小样本 ECE 点不能单独证明漂移；时间上相关的误差还会让区间偏窄。本课不计算 p 值。</li>
   </ul>
 </section>
 
@@ -35,22 +37,22 @@
   <p>在看见开关之前，这条离线政策应该怎么做？</p>
   <div class="opts" role="group" aria-labelledby="q1-title">
     <button type="button" class="opt" data-choice="auto" data-correct="false">自动。0.62 已经超过 0.50。</button>
-    <button type="button" class="opt" data-choice="hold" data-correct="true">先不自动。0.62 低于代价门槛 0.75，而且最近的可靠性变了。</button>
+    <button type="button" class="opt" data-choice="hold" data-correct="true">先不自动。0.62 低于打平点 0.75，而且课堂政策把「先别沿用旧可靠性」拨开了。</button>
   </div>
-  <p class="hint" data-hint hidden>提示：先比 0.62 和 0.75，再看分布标志。超过一半只在代价对称时才够。</p>
+  <p class="hint" data-hint hidden>提示：先比 0.62 和打平点 0.75。开关是课堂政策，不是已经证实的漂移。超过一半只在收益和损失一样大时才是打平点。</p>
   <p class="status" data-status role="status"></p>
   <button type="button" class="act" data-retry hidden>再试一次</button>
   <div class="explain" data-explain-body hidden>
-    <p>两个理由都指向先不自动：概率没有达到不对称代价下的门槛，而且监测说现在不像拟合时那样。转人工或先重新评估，都比直接自动更符合这门课的规则。这里没有下单，也没有真实账户。</p>
+    <p>事件是模型被问的「是」。自动按是行动的期望是 −0.52，低于中性备选 0。0.75 只是打平，严格为正要更高，而平局规则 p ≥ p* 在 0.62 这里也不满足。开关开着只表示这条课堂政策要求先别沿用旧可靠性，并不表示已经测出漂移。这里没有下单，也没有真实账户。</p>
   </div>
 </section>
 
 <section id="policyLab" hidden>
   <h2>实验：拨开三个开关</h2>
-  <p>P(是) 固定 0.62。可以改代价，也可以关掉分布警报。政策只在页面上变化。</p>
-  <label for="cost">做错代价 C <output id="costOut">3</output></label>
+  <p>事件仍是上面的「是」。P(是) 固定 0.62。可以改「否」时的损失，也可以关掉课堂政策开关。政策只在页面上变化。</p>
+  <label for="cost">结果为否时的损失 C <output id="costOut">3</output></label>
   <input id="cost" data-persist="cost" type="range" min="1" max="9" value="3" step="1" aria-valuemin="1" aria-valuemax="9" aria-valuenow="3">
-  <label><input type="checkbox" id="shift" data-persist="shift" checked> 最近窗口的可靠性变差</label>
+  <label><input type="checkbox" id="shift" data-persist="shift" checked> 课堂政策：先别沿用旧可靠性</label>
   <p id="policyOut" class="out" role="status"></p>
 </section>
 
@@ -99,7 +101,7 @@
 window.COURSE_LESSON = {
   id: "lesson-7",
   storageKey: "dm_lesson7_state",
-  offlinePrompts: ["如果代价改成 1，但分布警报仍开着，你还会自动吗？为什么？"]
+  offlinePrompts: ["如果损失改成 1，但「先别沿用旧可靠性」仍开着，你还会自动吗？为什么？"]
 };
 </script>
 <script src="course-lesson.js"></script>
@@ -116,16 +118,25 @@ window.COURSE_LESSON = {
     costOut.textContent = String(c);
     cost.setAttribute("aria-valuenow", String(c));
     var star = c / (1 + c);
+    var eu = p * 1 - (1 - p) * c;
+    var tie = Math.abs(p - star) < 1e-9;
     var costOk = p >= star;
     var shifted = shift.checked;
     var auto = costOk && !shifted;
-    box.textContent = [
-      "课堂假设，不是交易指令。",
-      "P(是) = 0.62，仍不是拒答概率。",
-      "p* = " + c + "/(1+" + c + ") = " + star.toFixed(2) + (costOk ? "，概率达到门槛。" : "，概率低于门槛。"),
-      shifted ? "分布警报开着：旧可靠性不能直接沿用。" : "分布警报关着：这只表示你在这个实验里关掉了它。",
-      auto ? "政策：可以自动（仅限这个假设）。" : "政策：不自动。转人工，或先重新评估。"
+    var costLine = tie
+      ? "p = p*，期望为 0。平局规则 p ≥ p* 允许自动，但期望不是严格为正。"
+      : costOk
+        ? "p > p*，期望严格为正。"
+        : "p < p*，期望低于中性备选 0。";
+    var text = [
+      "事件「是」的概率是 0.62。自动：是则 +1，否则 −" + c + "。不自动的收益是 0。",
+      "期望 = " + eu.toFixed(2) + "。打平点 p* = " + c + "/(1+" + c + ") = " + star.toFixed(2) + "。",
+      costLine,
+      shifted ? "开关开着：这是转人工的课堂政策，不是校准好的漂移检测。" : "开关关着：只表示这个实验没有启用那条政策，并不表示已经证明没有变化。",
+      auto ? "政策：可以自动。仅限这个事件、这对收益，以及开关关闭。" : "政策：不自动。没有下单。"
     ].join("\n");
+    box.textContent = text;
+    if (window.__dmLessonState) window.__dmLessonState.setLab("policyText", text);
   }
   cost.addEventListener("input", paint);
   shift.addEventListener("change", paint);

@@ -18,7 +18,7 @@
 <header>
   <div class="badge">第4课 · 约 30 分钟 · 先修第1课</div>
   <h1 id="main">证据与泄漏：选参数和报成绩要分开</h1>
-  <p class="lead">目标：分清用来选温度的数据和用来报告可靠性的数据。偷看留出标签再报 ECE，成绩会显得好看。下面是列在页面上的示意样本，不是某次实测。</p>
+  <p class="lead">目标：分清用来选温度的数据和用来报告可靠性的数据。在拟合集上按平均 NLL 选 T，和在留出集上选使 ECE 最小的 T，是两件不同的事。后者偷看了留出标签。下面的行就是计算用的示意样本，不是某次实测。</p>
 </header>
 
 <section data-q-group="q1" data-unlock="#leakLab">
@@ -38,11 +38,26 @@
 
 <section id="leakLab" hidden>
   <h2>实验：诚实选择，和偷看留出标签</h2>
-  <p><span class="tag">示意样本</span> 拟合集 8 行，留出集 5 行，和课堂里列出的 logit、y 相同。诚实做法只在拟合集上最小化平均 NLL。偷看做法在留出集上选使 2 桶 ECE 最小的 T，再把这个 ECE 当成成绩。</p>
+  <p><span class="tag">示意样本</span> 拟合集 8 行，留出集 5 行。和第1课是同一份数字，这里直接列出来，不必回上一课才能复算。</p>
+  <table>
+    <caption>拟合集 n=8。只用来按平均 NLL 选 T。</caption>
+    <thead><tr><th>logit</th><th>y</th></tr></thead>
+    <tbody id="fitRows"></tbody>
+  </table>
+  <table>
+    <caption>留出集 n=5。不参与诚实选择。偷看做法会用这 5 个标签挑 T。</caption>
+    <thead><tr><th>logit</th><th>y</th></tr></thead>
+    <tbody id="evalRows"></tbody>
+  </table>
+  <p>p = 1 / (1 + exp(−logit / T))。平均 NLL = −(1/n) Σ [y log p + (1−y) log(1−p)]，p 夹在 1e-6 和 1−1e-6 之间。两个等宽桶：p &lt; 0.5，以及 p ≥ 0.5。ECE = Σ (n_b / n) |桶内命中率 − 桶内平均 p|。空桶不加。T 从 0.25 到 4.00，步长 0.05；并列时留下更小的 T。</p>
   <div class="row">
     <button type="button" class="act" id="runLeak">比较两种报告</button>
   </div>
   <p id="leakOut" class="out" role="status">先提交上面的猜测。揭晓后按按钮，页面会算出两个 ECE。</p>
+  <details>
+    <summary>每一行的 p 和两个桶</summary>
+    <p id="leakDetail" class="out">按按钮之后，这里列出每一行的 p，以及每个桶的行数、命中率和平均 p。</p>
+  </details>
 </section>
 
 <section data-q-group="q2">
@@ -56,7 +71,7 @@
   <p class="status" data-status role="status"></p>
   <button type="button" class="act" data-retry hidden>再试一次</button>
   <div class="explain" data-explain-body hidden>
-    <p>NLL 是拟合目标。ECE、Brier 若要拿去决定信不信任，应来自留出数据。第1课的示意里，拟合 NLL 更低的 T 不一定让留出 ECE 更低，所以两份数据都要报。</p>
+    <p>NLL 是拟合目标。ECE、Brier 若要拿去决定信不信任，应来自没参与选 T 的数据。拟合 NLL 更低的 T，不一定让留出 ECE 更低。在留出集上直接挑选 ECE 最小的 T，再报这个 ECE，就是泄漏。</p>
   </div>
 </section>
 
@@ -151,21 +166,73 @@ window.COURSE_LESSON = {
     }
     return best;
   }
+  function fill(id, rows) {
+    var body = document.getElementById(id);
+    rows.forEach(function (row) {
+      var tr = document.createElement("tr");
+      var a = document.createElement("td");
+      var b = document.createElement("td");
+      a.textContent = row[0].toFixed(1);
+      b.textContent = String(row[1]);
+      tr.appendChild(a);
+      tr.appendChild(b);
+      body.appendChild(tr);
+    });
+  }
+  fill("fitRows", FIT);
+  fill("evalRows", EVALS);
+  function binsOf(set, T) {
+    var bins = [[], []];
+    var rows = set.map(function (row) {
+      var p = sigmoid(row[0] / T);
+      bins[p < 0.5 ? 0 : 1].push(p);
+      return { z: row[0], y: row[1], p: p };
+    });
+    return { bins: bins, rows: rows };
+  }
+  function binLine(name, set, T) {
+    var packed = binsOf(set, T);
+    return packed.bins.map(function (probs, i) {
+      if (!probs.length) return name + "，p" + (i ? "≥" : "<") + "0.5：n=0";
+      var conf = probs.reduce(function (a, x) { return a + x; }, 0) / probs.length;
+      var accRows = set.filter(function (row) { var p = sigmoid(row[0] / T); return (p < 0.5 ? 0 : 1) === i; });
+      var acc = accRows.reduce(function (a, row) { return a + row[1]; }, 0) / accRows.length;
+      return name + "，p" + (i ? "≥" : "<") + "0.5：n=" + probs.length + "，命中率 " + acc.toFixed(3) + "，平均 p " + conf.toFixed(3);
+    }).concat(packed.rows.map(function (row) {
+      return name + "行：logit " + row.z.toFixed(1) + "，y " + row.y + "，p=" + row.p.toFixed(3);
+    }));
+  }
+  function publish(summary, detail) {
+    document.getElementById("leakOut").textContent = summary;
+    document.getElementById("leakDetail").textContent = detail;
+    if (window.__dmLessonState) {
+      window.__dmLessonState.setLab("leakText", summary);
+      window.__dmLessonState.setLab("leakDetail", detail);
+    }
+  }
   document.getElementById("runLeak").addEventListener("click", function () {
     var honest = bestT(FIT, nll);
     var cheat = bestT(EVALS, ece);
     var honestE = ece(EVALS, honest.T);
     var cheatE = ece(EVALS, cheat.T);
-    var line = cheatE <= honestE
-      ? "偷看留出标签选出的 T，在同一份留出集上的 ECE 不会更高。这个更低或持平的数字不能当成留出成绩。"
-      : "这次网格上偷看并没有得到更低的 ECE。即便如此，用同一份标签既选 T 又报 ECE，仍然不是留出评估。";
-    document.getElementById("leakOut").textContent = [
+    var e1 = ece(EVALS, 1);
+    var line = cheatE <= honestE + 1e-12
+      ? "偷看是在留出集上选择 ECE 最小的 T，再把同一份 ECE 当成成绩。这个更低或持平的数字用过留出标签，不能称为留出评估。"
+      : "这次网格上，偷看没有得到更低的 ECE。即便如此，用同一份标签既选 T 又报 ECE，仍然不是留出评估。";
+    publish([
       "示意，不是实测。",
-      "诚实：拟合集最小 NLL 的 T = " + honest.T.toFixed(2) + "，留出 ECE = " + honestE.toFixed(3),
-      "偷看：在留出集上最小 ECE 的 T = " + cheat.T.toFixed(2) + "，同一份留出 ECE = " + cheatE.toFixed(3),
+      "诚实：只在拟合集上最小化平均 NLL。T = " + honest.T.toFixed(2) + "，拟合 NLL = " + nll(FIT, honest.T).toFixed(3) + "，留出 ECE = " + honestE.toFixed(3) + "。",
+      "偷看：在留出集上最小化 ECE。T = " + cheat.T.toFixed(2) + "，同一份留出 ECE = " + cheatE.toFixed(3) + "。这不是留出成绩。",
+      "对照：T=1 时留出 ECE = " + e1.toFixed(3) + "。拟合 NLL 更低，不保证留出 ECE 更低。",
       line
-    ].join("\n");
+    ].join("\n"), binLine("留出", EVALS, honest.T).concat(binLine("拟合", FIT, honest.T)).join("\n"));
   });
+  if (window.__dmLessonState) {
+    var saved = window.__dmLessonState.getLab("leakText", "");
+    var savedDetail = window.__dmLessonState.getLab("leakDetail", "");
+    if (saved) document.getElementById("leakOut").textContent = saved;
+    if (savedDetail) document.getElementById("leakDetail").textContent = savedDetail;
+  }
 })();
 </script>
 </body>
