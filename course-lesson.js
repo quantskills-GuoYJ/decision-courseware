@@ -37,6 +37,7 @@
   delete state.ask.abort;
   var askBusy = false;
   var askAbort = null;
+  var turnStopped = false;
   if (!state.sectionNotes || typeof state.sectionNotes !== "object") state.sectionNotes = {};
   if (!state.lab || typeof state.lab !== "object" || Array.isArray(state.lab)) state.lab = {};
   if (cfg.id === "lesson-1" && state.lab.fitText == null) {
@@ -448,13 +449,10 @@
     askAbort = null;
     if (askSend) askSend.textContent = "发送回答";
   }
-  function liveAsk(api, message, modeName) {
+  function liveAsk(api, message, modeName, ctrl) {
     askBusy = true;
     if (askSend) askSend.textContent = "停止";
     var acc = "";
-    var stopped = false;
-    var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
-    askAbort = function () { stopped = true; if (ctrl) ctrl.abort(); };
     if (askOut) { askOut.className = "status"; askOut.textContent = "正在问学伴…"; }
     var history = state.ask.turns.filter(function (turn) {
       return turn.role === "user" || turn.role === "assistant";
@@ -472,20 +470,25 @@
     var opts = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
     if (ctrl) opts.signal = ctrl.signal;
     fetch(api, opts).then(function (res) {
+      if (turnStopped) throw new Error("aborted");
       if (!res.ok) throw new Error("http");
       return readSseText(res, function (name, payload) {
+        if (turnStopped) throw new Error("aborted");
         if (name === "token") acc += payload && payload.t != null ? String(payload.t) : "";
         if (name === "error") throw new Error("sse");
       });
     }).then(function () {
-      if (stopped) return;
+      if (turnStopped) { finishAsk(); return; }
       pushTurn("assistant", acc || "（学伴没有返回文字）", "live");
       state.ask.mode = "live";
       finishAsk();
       persist();
       renderThread();
-    }).catch(function () {
-      if (stopped) return;
+    }).catch(function (err) {
+      if (turnStopped || (err && err.name === "AbortError") || (err && err.message === "aborted")) {
+        finishAsk();
+        return;
+      }
       finishAsk();
       localContinue("学伴暂时不可用，已改用本机引导提问。");
     });
@@ -494,19 +497,35 @@
     if (askBusy) return false;
     var api = tutorUrl();
     askBusy = true;
+    turnStopped = false;
+    var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+    askAbort = function () {
+      turnStopped = true;
+      if (ctrl) {
+        try { ctrl.abort(); } catch (eAbort) {}
+      }
+    };
     if (askSend) askSend.textContent = "停止";
-    fetch(capabilitiesUrl(api), { cache: "no-store" }).then(function (res) {
+    var capOpts = { cache: "no-store" };
+    if (ctrl) capOpts.signal = ctrl.signal;
+    fetch(capabilitiesUrl(api), capOpts).then(function (res) {
+      if (turnStopped) throw new Error("aborted");
       if (!res.ok) throw new Error("cap");
       return res.json();
     }).then(function (cap) {
+      if (turnStopped) { finishAsk(); return; }
       var lessons = cap && Array.isArray(cap.lessons) ? cap.lessons : [];
       if (lessons.indexOf(cfg.id) >= 0) {
-        liveAsk(api, message, "socratic");
+        liveAsk(api, message, "socratic", ctrl);
       } else {
         finishAsk();
         localContinue("");
       }
-    }).catch(function () {
+    }).catch(function (err) {
+      if (turnStopped || (err && err.name === "AbortError") || (err && err.message === "aborted")) {
+        finishAsk();
+        return;
+      }
       finishAsk();
       localContinue("");
     });
@@ -520,6 +539,7 @@
     }
     pushTurn("user", raw, state.ask.mode || "local");
     persist();
+    renderThread();
     routeAsk(raw);
   }
   document.querySelectorAll("[data-section-note]").forEach(function (area) {
@@ -552,6 +572,7 @@
       state.ask.draft = "";
       if (askReply) askReply.value = "";
       persist();
+      renderThread();
       if (!routeAsk(replyText) && askReply) askReply.value = replyText;
     });
   }

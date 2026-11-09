@@ -69,7 +69,7 @@ function isGenVsDecisionUtterance(um) {
 
 function clausesOf(text) {
   return String(text || "")
-    .split(/[。！？；;\n.!?]+/)
+    .split(/[。！？；;，,、\n.!?]+/)
     .map((part) => part.trim())
     .filter(Boolean);
 }
@@ -85,7 +85,7 @@ function polarity(clause, re) {
   while ((found = r.exec(clause))) {
     matched = true;
     const window = clause.slice(Math.max(0, found.index - 18), found.index + found[0].length);
-    const neg = /不是|不能|并非|不要|别把|不把|勿|没有|没把|\bnot\b|\bn't\b|\bnever\b/i.test(window);
+    const neg = /不是|不会|并不|不能|并非|不要|别把|不把|勿|没有|没把|\bnot\b|\bn't\b|\bnever\b/i.test(window);
     if (neg && window.indexOf(found[0]) > 0) denied = true;
     else affirmed = true;
     if (found.index === r.lastIndex) r.lastIndex += 1;
@@ -98,8 +98,8 @@ function assessAccount(um) {
   const tempWord = /温度|temperature/i;
   const fitWord = /拟合|留出|校准集|验证集|独立数据|held-?out|calibration set/i;
   const calibClaim = /是一种校准|属于校准|校准方法|后处理校准|是校准|is a calibration method|is calibration/i;
-  const hotClaim = /越准|更准|更准确|才准|就准|变准|温度越高|more accurate|hotter/i;
-  const equateClaim = /校准就是[^。；，]{0,16}温度|校准只是锋利|校准等于调温度|把校准说成调温度|calibration is (?:just )?temperature/i;
+  const hotClaim = /越准|更准|更准确|more accurate/i;
+  const equateClaim = /校准就是[^。；，,、]{0,16}温度|校准只是锋利|校准等于调温度|把校准说成调温度|calibration is (?:just )?temperature/i;
   const arbWord = /随意|滑块|随便|arbitrary/i;
   const arbNot = /不是校准|不是这个方法|not calibration|只是锋利|only sharpness/i;
   const pYesClaim = /P\(\s*是\s*\)|P\(\s*yes\s*\)|是的概率|「是」的概率|probability of yes/i;
@@ -116,9 +116,9 @@ function assessAccount(um) {
   };
   for (const clause of clausesOf(text)) {
     const calib = polarity(clause, calibClaim);
-    if (fitWord.test(clause) && tempWord.test(clause) && calib.affirmed && !calib.denied) out.fittedOk = true;
+    if (fitWord.test(clause) && tempWord.test(clause) && calib.affirmed) out.fittedOk = true;
     const hot = polarity(clause, hotClaim);
-    if (hot.affirmed && !hot.denied) out.hotter = true;
+    if (hot.affirmed && !hot.denied && /温度|越高|temperature/i.test(clause)) out.hotter = true;
     const equated = polarity(clause, equateClaim);
     if (equated.affirmed && !equated.denied) out.equates = true;
     if (arbWord.test(clause) && arbNot.test(clause)) out.arbitraryNot = true;
@@ -164,38 +164,40 @@ function isNoulAsRefusal(um) {
  * Internal kind for templates (not shown bare to user).
  * gen-output | title-repeat | calib-mix | missing-score | refuse
  */
+function diagnosticKind(account, text) {
+  if (account.hasNoul || /拒答/.test(text)) return "diag-noul";
+  if (account.mentionsTemp || account.mentionsCalib) return "diag-temp";
+  return "diag";
+}
+
 function classifyFeynmanKind(um, modelGap) {
   const s = String(um || "");
-  const g = String(modelGap || "");
   const a = assessAccount(s);
+  void modelGap;
   if (a.hasNoul && a.pYes && a.refusalAffirm) return "noul-partial";
-  if (isNoulAsRefusal(s)) return "noul-mix";
-  if (isCorrectNoulAccount(s)) return "noul-ok";
-  // Chart1 blind spot first — keep flow/choice even if 概率 appears
+  if (a.hasNoul && a.refusalAffirm && !a.pYes) return "noul-mix";
+  if (a.hasNoul && a.pYes && a.refusalDeny && !a.refusalAffirm) return "noul-ok";
   if (isGenVsDecisionUtterance(s) || (/输出/.test(s) && /不同|区别/.test(s))) return "gen-output";
   if (a.fittedOk && (a.hotter || a.equates)) return "calib-partial";
-  if (isCorrectFittedTempScaling(s)) return "calib-ok";
-  if (isTempVsCalibConfusion(s)) return "calib-mix";
-  if (a.mentionsTemp && a.mentionsCalib && !a.fittedOk && !a.hotter && !a.equates && !a.arbitraryNot) return "calib-ask";
-  if (/把校准说成调温度|校准当成调温度|概念易混/.test(g)) return "calib-mix";
-  if (/标题复读/.test(g) || (/决策模型/.test(s) && s.length < 24 && !/选项|校准|打分|拒答|输出|温度/.test(s)))
-    return "title-repeat";
-  if (/分数|概率|把握|打分|依据/.test(s) || /缺因果|打分|依据/.test(g)) return "missing-score";
-  if (/把生成当决策|生成/.test(g)) return "gen-output";
-  if (/标题复读/.test(g)) return "title-repeat";
-  if (/缺因果/.test(g)) return "missing-score";
-  return "title-repeat";
+  if (a.equates) return "calib-mix";
+  if (a.hotter) return "calib-hot";
+  if (a.fittedOk) return "calib-ok";
+  const asking = /[？?]|吗/.test(s);
+  if (asking || a.hasNoul || a.mentionsTemp || a.mentionsCalib || /拒答/.test(s)) return diagnosticKind(a, s);
+  if (/决策模型/.test(s) && s.length < 24 && !/选项|校准|打分|拒答|输出|温度|noul/i.test(s)) return "title-repeat";
+  if (/分数|概率|把握|打分|依据/.test(s)) return "missing-score";
+  return "diag";
 }
 
 /** focus priority: 输出/选项/钉死→choice; 分数/概率/把握→score; 可靠/ECE/温度→calib; noul 词本身→noul. 拒答 alone is a policy, not the noul node. */
 function focusFromSignals(um, gapSentence, kind) {
   const s = String(um || "") + " " + String(gapSentence || "");
-    if (kind === "noul-mix" || kind === "noul-ok" || kind === "noul-partial" || /noul/i.test(s)) return "noul";
+    if (kind === "noul-mix" || kind === "noul-ok" || kind === "noul-partial" || kind === "diag-noul" || /noul/i.test(s)) return "noul";
   if (/输出|选项|钉死/.test(s)) return "choice";
   if (/分数|概率|把握|打分|依据/.test(s)) return "score";
   if (/可靠|ECE|温度|锋利|校准/.test(s)) return "calib";
   if (kind === "missing-score") return "score";
-  if (kind === "calib-mix" || kind === "calib-ok" || kind === "calib-partial" || kind === "calib-ask") return "calib";
+  if (kind === "calib-mix" || kind === "calib-ok" || kind === "calib-partial" || kind === "calib-hot" || kind === "calib-ask" || kind === "diag-temp") return "calib";
   return "choice"; // title-repeat / gen-output default
 }
 
@@ -211,8 +213,15 @@ function gapSentenceForKind(kind) {
       return "已说明拟合的温度缩放是校准，未把它误当成随意拖的 T";
     case "calib-partial":
       return "拟合的温度缩放说对了，但温度越高越准并不成立";
+    case "calib-hot":
+      return "这句把温度越高说成了越准";
     case "calib-ask":
+    case "diag-temp":
       return "还不能确定这句里的温度是拟合出来的，还是随意指定的";
+    case "diag-noul":
+      return "还不能从这句确定 noul 指的是哪一个数";
+    case "diag":
+      return "还不能确定这句在核对哪一个概念";
     case "missing-score":
       return "有选项但没点出打分/依据（score）";
     case "noul-mix":
@@ -238,8 +247,15 @@ function tipForKind(kind) {
       return "留出集上的 ECE 要和拟合集分开报";
     case "calib-partial":
       return "越准说的不是拟合出来的温度";
+    case "calib-hot":
+      return "越高并不自动越准";
     case "calib-ask":
+    case "diag-temp":
       return "你说的温度，是留出集上拟合的，还是随意指定的？";
+    case "diag-noul":
+      return "你说的 noul，是 P(是)，还是后面的拒答？";
+    case "diag":
+      return "你想核对的是温度、noul，还是选项？";
     case "missing-score":
       return "补上 score：打分/依据";
     case "noul-mix":
@@ -305,7 +321,7 @@ function buildTutorViz(mode, clampedText, userMessage) {
   const gapSentence = isBareGapTag(gapLine) ? gapSentenceForKind(kind) : gapLine;
 
   // Chart2 when temperature and calibration are the topic, including a correct account.
-  if (mode === "feynman" && (kind === "calib-mix" || kind === "calib-ok" || kind === "calib-partial" || kind === "calib-ask" || isTempVsCalibConfusion(um))) {
+  if (mode === "feynman" && (kind === "calib-mix" || kind === "calib-ok" || kind === "calib-partial" || kind === "calib-hot" || kind === "calib-ask" || kind === "diag-temp" || isTempVsCalibConfusion(um))) {
     return {
       type: "calib-curve",
       nodes: CALIB_CURVE_NODES.slice(),
@@ -362,10 +378,14 @@ function clampTutorOutput(mode, text, userMessage, lessonId) {
     const lessonKey = lessonId || "lesson-0";
     const calibLesson = lessonKey === "lesson-0" || lessonKey === "lesson-1";
     const noulLesson = lessonKey === "lesson-0" || lessonKey === "lesson-2" || lessonKey === "lesson-7";
+    const diagnostic = kind === "diag" || kind === "diag-temp" || kind === "diag-noul" || kind === "calib-ask";
     const owned =
-      (calibLesson && (kind === "calib-ok" || kind === "calib-partial" || kind === "calib-ask" || kind === "calib-mix")) ||
+      diagnostic ||
+      kind === "calib-hot" ||
+      (calibLesson && (kind === "calib-ok" || kind === "calib-partial" || kind === "calib-mix")) ||
       (noulLesson && (kind === "noul-ok" || kind === "noul-partial" || kind === "noul-mix")) ||
-      kind === "gen-output";
+      kind === "gen-output" ||
+      kind === "title-repeat";
     let gapSentence = gapRaw;
     if (owned || isBareGapTag(gapSentence) || (isGenVsDecisionUtterance(um) && /概念易混|标题复读|缺因果|把生成当决策/.test(gapSentence))) {
       gapSentence = gapSentenceForKind(kind);
@@ -405,9 +425,57 @@ function sseEncode(event, data) {
 function withTimeout(promise, ms) {
   let timer;
   const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error("ai_timeout")), ms);
+    timer = setTimeout(() => reject(new Error("ai_timeout")), Math.max(1, ms));
   });
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+/** Read a model stream and, if it is empty, the non-stream fallback. One deadline covers both, and the stream is closed on timeout. */
+export async function driveGeneration(startStream, fallback, deadlineMs, onChunk) {
+  const deadlineAt = Date.now() + deadlineMs;
+  const budget = () => {
+    const ms = deadlineAt - Date.now();
+    if (ms <= 0) throw new Error("ai_timeout");
+    return ms;
+  };
+  let iterator = null;
+  let reader = null;
+  let produced = false;
+  async function emit(value) {
+    const text = await onChunk(value);
+    if (text && String(text).trim()) produced = true;
+  }
+  try {
+    const aiStream = await withTimeout(Promise.resolve().then(startStream), budget());
+    if (aiStream && typeof aiStream[Symbol.asyncIterator] === "function") {
+      iterator = aiStream[Symbol.asyncIterator]();
+      while (true) {
+        const step = await withTimeout(iterator.next(), budget());
+        if (step.done) break;
+        if (step.value != null) await emit(step.value);
+      }
+    } else if (aiStream && typeof aiStream.getReader === "function") {
+      reader = aiStream.getReader();
+      while (true) {
+        const step = await withTimeout(reader.read(), budget());
+        if (step.done) break;
+        if (step.value != null) await emit(step.value);
+      }
+    } else if (aiStream != null && aiStream !== "") {
+      await emit(aiStream);
+    }
+    if (!produced && typeof fallback === "function") {
+      const once = await withTimeout(Promise.resolve().then(fallback), budget());
+      if (once != null && once !== "") await emit(once);
+    }
+  } finally {
+    if (iterator && typeof iterator.return === "function") {
+      try { await iterator.return(); } catch (e) { /* already closed */ }
+    }
+    if (reader) {
+      try { await reader.cancel(); } catch (e) { /* already closed */ }
+    }
+  }
 }
 
 /** Live lesson-0 consensus is optional. Old text must not replace the embedded correction. */
@@ -634,13 +702,6 @@ async function handleTutor(request, env, cors) {
     let full = "";
     try {
 
-      const aiStream = await withTimeout(env.AI.run(MODEL, {
-        messages,
-        stream: true,
-        max_tokens: 256,
-        temperature: 0.2,
-      }), 20000);
-
       const dec = new TextDecoder();
       let buf = "";
 
@@ -705,34 +766,30 @@ async function handleTutor(request, env, cors) {
         }
       }
 
-      if (aiStream && typeof aiStream[Symbol.asyncIterator] === "function") {
-        for await (const chunk of aiStream) {
-          await consumeValue(chunk);
-        }
-        if (buf.trim()) await consumeTextChunk("\n");
-      } else if (aiStream && typeof aiStream.getReader === "function") {
-        const r = aiStream.getReader();
-        while (true) {
-          const { done, value } = await r.read();
-          if (done) break;
-          await consumeValue(value);
-        }
-        if (buf.trim()) await consumeTextChunk("\n");
-      } else if (aiStream && typeof aiStream === "object" && aiStream.response) {
-        full = String(aiStream.response);
-      }
-
-      if (!full.trim()) {
-        const once = await env.AI.run(MODEL, {
+      await driveGeneration(
+        () => env.AI.run(MODEL, {
           messages,
+          stream: true,
           max_tokens: 256,
           temperature: 0.2,
-        });
-        full = String((once && (once.response || once.result || once.text)) || "");
-        if (!full && once && once.choices) {
-          full = String((once.choices[0] && (once.choices[0].message && once.choices[0].message.content || once.choices[0].text)) || "");
+        }),
+        async () => {
+          const once = await env.AI.run(MODEL, {
+            messages,
+            max_tokens: 256,
+            temperature: 0.2,
+          });
+          return String((once && (once.response || once.result || once.text)) || "") ||
+            String((once && once.choices && once.choices[0] && ((once.choices[0].message && once.choices[0].message.content) || once.choices[0].text)) || "");
+        },
+        20000,
+        async (value) => {
+          const before = full.length;
+          await consumeValue(value);
+          return full.slice(before);
         }
-      }
+      );
+      if (buf.trim()) await consumeTextChunk("\n");
 
       full = clampTutorOutput(mode, full, body.message, resolved.id);
       // emit clamped final as SSE tokens (chunked for UX)

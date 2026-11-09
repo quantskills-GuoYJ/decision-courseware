@@ -10,6 +10,7 @@ import {
   pickCorsOrigin,
   capabilitiesPayload,
   collectTutorEvents,
+  driveGeneration,
 } from "./index.js";
 
 const fittedOk =
@@ -135,6 +136,94 @@ test("negated noul refusal is not rewritten into the accusation", () => {
   }
   const garbage = clampTutorOutput("feynman", "@@@\n不是三行", D, "lesson-2");
   assert.equal(garbage.includes("把 noul 说成拒答概率"), false, garbage);
+});
+
+test("punctuation and negation do not invent an accusation", () => {
+  const accusing = [
+    "缺口：把随意调温度当成校准，没分开拟合的温度缩放和可靠性\n提示：随意 T 只改锋利度\n本轮摘要：随意T不是校准",
+    "缺口：把 noul 说成拒答概率，noul 是 P(是)\n提示：随意 T 只改锋利度\n本轮摘要：标题复读",
+    "缺口：标题复读\n提示：三件套\n本轮摘要：标题复读",
+  ];
+  const fitted = "在留出集上拟合的温度缩放是一种校准方法";
+  const arbitrary = "随意指定的温度不是校准";
+  for (const sep of ["。", "；", "，", "、", ";", ",", "但"]) {
+    const text = fitted + sep + arbitrary;
+    for (const gap of accusing) {
+      const out = clampTutorOutput("feynman", gap, text, "lesson-0");
+      assert.equal(out.includes("把随意调温度当成校准"), false, sep + "\n" + out);
+      assert.equal(out.includes("标题复读"), false, out);
+      assert.match(out, /拟合/, out);
+    }
+  }
+  const softened = ["温度越高并不会更准", "温度越高，不会更准", "不会更准", "温度越高并不是更准"];
+  const unclear = ["noul 和拒答都要分清", "noul 到底是什么？", "温度和校准都要看。"];
+  for (const text of softened.concat(unclear)) {
+    for (const gap of accusing) {
+      const out = clampTutorOutput("feynman", gap, text, "lesson-0");
+      assert.equal(out.includes("把随意调温度当成校准"), false, text + "\n" + out);
+      assert.equal(out.includes("把 noul 说成拒答概率"), false, text + "\n" + out);
+      assert.equal(out.includes("标题复读"), false, text + "\n" + out);
+      assert.equal(out.includes("并不成立"), false, text + "\n" + out);
+      assert.match(out, /还是/, text + "\n" + out);
+    }
+  }
+});
+
+test("generation deadline covers a hung stream and a hung fallback", async () => {
+  let streamClosed = false;
+  const hanging = {
+    [Symbol.asyncIterator]() {
+      return {
+        next() { return new Promise(() => {}); },
+        return() { streamClosed = true; return Promise.resolve({ done: true }); },
+      };
+    },
+  };
+  await assert.rejects(
+    driveGeneration(() => hanging, null, 40, async (value) => String(value || "")),
+    /ai_timeout/
+  );
+  assert.equal(streamClosed, true);
+
+  let fallbackStarted = false;
+  const empty = {
+    [Symbol.asyncIterator]() {
+      return { next() { return Promise.resolve({ done: true }); } };
+    },
+  };
+  await assert.rejects(
+    driveGeneration(
+      () => empty,
+      () => { fallbackStarted = true; return new Promise(() => {}); },
+      40,
+      async (value) => String(value || "")
+    ),
+    /ai_timeout/
+  );
+  assert.equal(fallbackStarted, true);
+
+  const fast = {
+    [Symbol.asyncIterator]() {
+      let n = 0;
+      return {
+        next() {
+          n += 1;
+          if (n === 1) return Promise.resolve({ value: "一句", done: false });
+          return Promise.resolve({ done: true });
+        },
+      };
+    },
+  };
+  let fallbackCalled = false;
+  let got = "";
+  await driveGeneration(
+    () => fast,
+    () => { fallbackCalled = true; return "不应调用"; },
+    500,
+    async (value) => { got += String(value || ""); return String(value || ""); }
+  );
+  assert.equal(got, "一句");
+  assert.equal(fallbackCalled, false);
 });
 
 test("an unclear temperature sentence is a question, not an invented gap", () => {
