@@ -65,7 +65,7 @@
   <p id="shiftOut" class="out" role="status">先提交猜测。揭晓后再计算。</p>
   <details>
     <summary>区间怎么复算</summary>
-    <p>种子是 20261109。生成器从种子 a 开始：a = a + 0x6D2B79F5（32 位整数），再做两次乘法混合，得到 0 到 1 之间的数。有放回抽取 400 次，每次行数等于原表。T 固定为拟合集选出的那个，重抽样时不重选 T。把 400 个 ECE 从小到大排序，端点下标是 floor(0.025×399) 和 floor(0.975×399)。这不是 p 值。行被当成互相独立；如果它们来自一段时间、相邻误差相关，区间会偏窄。</p>
+    <p id="shiftMethod">种子是 20261109。生成器从种子 a 开始：a = a + 0x6D2B79F5（32 位整数），再做两次乘法混合，得到 0 到 1 之间的数。有放回抽取 400 次，每次行数等于原表。T 固定为拟合集选出的那个，重抽样时不重选 T。把 400 个 ECE 从小到大排序，端点下标是 floor(0.025×399) 和 floor(0.975×399)。这不是 p 值，也不是相等检验。行被当成互相独立；如果它们来自一段时间、相邻误差相关，区间会偏窄。同一份行、桶人数和区间写在导出的 lab.shiftData 里。</p>
   </details>
 </section>
 
@@ -80,7 +80,7 @@
   <p class="status" data-status role="status"></p>
   <button type="button" class="act" data-retry hidden>再试一次</button>
   <div class="explain" data-explain-body hidden>
-    <p>实验里的重抽样区间叠在一起，所以两个点估计不能说成已经证实的漂移。这里没有 p 值。转人工可以是课堂政策，不是校准好的检测器。分数和标签一起改的那一份，也不能指出是哪一个造成的。若行在时间上相关，把它们当独立样本会把区间算得偏窄。</p>
+    <p>留出集的重抽样区间，要和「只改分数」的区间、以及和「分数和标签一起改」的区间分开看。区间重叠不是相等检验，也不能单独证明没有漂移。这里没有 p 值。转人工可以是课堂政策，不是校准好的检测器。一起改的那一份也不能指出是哪一个造成的。若行在时间上相关，把它们当独立样本会把区间算得偏窄。</p>
   </div>
 </section>
 
@@ -204,9 +204,39 @@ window.COURSE_LESSON = {
     function at(p) { return vals[Math.min(vals.length - 1, Math.floor(p * (vals.length - 1)))]; }
     return at(0.025).toFixed(3) + " 到 " + at(0.975).toFixed(3);
   }
-  function publish(text) {
+  function pack(set, T, seed) {
+    var bins = [[], []];
+    set.forEach(function (row) {
+      var p = sigmoid(row[0] / T);
+      bins[p < 0.5 ? 0 : 1].push([p, row[1]]);
+    });
+    var described = bins.map(function (b, i) {
+      var item = { edge: i ? "p>=0.5" : "p<0.5", n: b.length };
+      if (!b.length) return item;
+      item.acc = b.reduce(function (a, x) { return a + x[1]; }, 0) / b.length;
+      item.conf = b.reduce(function (a, x) { return a + x[0]; }, 0) / b.length;
+      return item;
+    });
+    var line = described.map(function (item) {
+      var text = "p" + (item.edge === "p>=0.5" ? "≥" : "<") + "0.5：n=" + item.n;
+      if (!item.n) return text + "（空桶）";
+      return text + "，命中率 " + item.acc.toFixed(3) + "，平均 p " + item.conf.toFixed(3);
+    }).join("；");
+    return {
+      n: set.length,
+      rows: set.map(function (row) { return { logit: row[0], y: row[1] }; }),
+      ece: Number(ece(set, T).toFixed(6)),
+      bins: described,
+      binLine: line,
+      interval: seed == null ? "" : band(set, T, seed)
+    };
+  }
+  function publish(text, data) {
     document.getElementById("shiftOut").textContent = text;
-    if (window.__dmLessonState) window.__dmLessonState.setLab("shiftText", text);
+    if (window.__dmLessonState) {
+      window.__dmLessonState.setLab("shiftText", text);
+      window.__dmLessonState.setLab("shiftData", data);
+    }
   }
   document.getElementById("runShift").addEventListener("click", function () {
     var best = null;
@@ -219,18 +249,37 @@ window.COURSE_LESSON = {
     var repeated = [];
     var k;
     for (k = 0; k < 8; k++) repeated = repeated.concat(HELD);
+    var fit = pack(FIT, best.T, null);
+    var held = pack(HELD, best.T, 20261109);
+    var logits = pack(LOGITS, best.T, 20261109);
+    var both = pack(BOTH, best.T, 20261109);
+    var repeatPack = pack(repeated, best.T, 20261109);
+    var data = {
+      seed: 20261109,
+      resamples: 400,
+      generator: "mulberry32",
+      mix: "a = a + 0x6D2B79F5; two imul mixes; unit interval",
+      percentile: "floor(0.025*(B-1)) and floor(0.975*(B-1))",
+      t: best.T,
+      tSelectedOn: "fit NLL only",
+      fit: fit,
+      held: held,
+      logitsOnly: logits,
+      bothChanged: both,
+      repeatedHeld: repeatPack
+    };
     var text = [
-      "示意，不是实测监测，也没有 p 值。",
-      "T 只在拟合集上按平均 NLL 选出，T = " + best.T.toFixed(2) + "。留出集和新窗口都没有参与选择。",
-      "拟合集 2 桶 ECE = " + ece(FIT, best.T).toFixed(3) + "。这是样本内：T 就是用这 8 行选的。不能把它放在留出 ECE 旁边当成对照。",
-      "留出集 n=5，ECE = " + ece(HELD, best.T).toFixed(3) + "。种子 20261109，有放回 400 次，重抽样区间 " + band(HELD, best.T, 20261109) + "。",
-      "只改分数、标签与留出集相同，n=5，ECE = " + ece(LOGITS, best.T).toFixed(3) + "。这份差距只能来自分数。",
-      "分数和标签一起改，n=5，ECE = " + ece(BOTH, best.T).toFixed(3) + "。重抽样区间 " + band(BOTH, best.T, 20261109) + "。不能分辨是分数还是标签造成的。",
-      "留出和新窗口的区间叠在一起。不能根据这两个点估计说已经发生漂移。",
+      "示意，不是实测监测，也没有 p 值。复算步骤在「区间怎么复算」。",
+      "T 只在拟合集上按平均 NLL 选出，T = " + best.T.toFixed(2) + "。留出集和两个新窗口都没有参与选择。",
+      "拟合集 n=" + fit.n + "，2 桶 ECE = " + ece(FIT, best.T).toFixed(3) + "。桶：" + fit.binLine + "。这是样本内：T 就是用这 8 行选的。不能把它放在留出 ECE 旁边当成对照。拟合集的重抽样区间没有当成对照来算。",
+      "留出集 n=" + held.n + "，ECE = " + ece(HELD, best.T).toFixed(3) + "。桶：" + held.binLine + "。留出集的重抽样区间 " + held.interval + "。",
+      "只改分数的新窗口 n=" + logits.n + "，标签与留出集相同，ECE = " + ece(LOGITS, best.T).toFixed(3) + "。桶：" + logits.binLine + "。只改分数的重抽样区间 " + logits.interval + "。这份差距只能来自分数。",
+      "分数和标签一起改的新窗口 n=" + both.n + "，ECE = " + ece(BOTH, best.T).toFixed(3) + "。桶：" + both.binLine + "。一起改的重抽样区间 " + both.interval + "。不能分辨是分数还是标签造成的。",
+      "留出集区间与只改分数的区间重叠；留出集区间与一起改的区间也重叠。区间重叠不是相等检验，也不能单独证明没有漂移。",
       "重抽样把每一行当成独立。若窗口是一段时间、相邻误差相关，区间会偏窄。",
-      "样本量示意：把留出集 5 行原样重复 8 次，n=40，点估计仍是 " + ece(repeated, best.T).toFixed(3) + "，区间 " + band(repeated, best.T, 20261109) + "。原样重复假装它们是新的独立观测，更窄的区间不能当成真实精度。"
+      "样本量示意：把留出集 5 行原样重复 8 次，n=40，点估计仍是 " + ece(repeated, best.T).toFixed(3) + "，原样重复的重抽样区间 " + repeatPack.interval + "。原样重复假装它们是新的独立观测，更窄的区间不能当成真实精度。"
     ].join("\n");
-    publish(text);
+    publish(text, data);
   });
   if (window.__dmLessonState) {
     var saved = window.__dmLessonState.getLab("shiftText", "");

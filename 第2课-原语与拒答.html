@@ -40,9 +40,10 @@
 
 <section>
   <h2>动手：score 的期望分</h2>
-  <p>设定：有序档 1 到 5。把中间档的概率质量拖高或拖低，期望分是 Σ 档位×概率。概率始终加总为 1。</p>
-  <label for="scoreMass">中间档（3 分）的质量 <output id="scoreOut">0.40</output></label>
-  <input id="scoreMass" data-persist="scoreMass" type="range" min="0" max="80" value="40" step="1" aria-valuemin="0" aria-valuemax="80" aria-valuenow="40">
+  <p>设定：有序档 1 到 5。滑块是最高档（5 分）的概率，剩下的质量平均分到 1–4 分。期望分 = Σ 档位×概率，所以质量移到 5 分时期望分上升。若把剩下的质量对称地分在中间档两侧，期望分会停在 3，滑块看起来没有反应。</p>
+  <label for="scoreMass">最高档（5 分）的概率 <output id="scoreOut">0.20</output></label>
+  <input id="scoreMass" data-persist="scoreHigh" type="range" min="0" max="80" value="20" step="1" aria-valuemin="0" aria-valuemax="80" aria-valuenow="20">
+  <div id="scoreBars" class="score-bars" aria-hidden="true"></div>
   <p id="scoreLine" class="out" role="status"></p>
 </section>
 
@@ -170,14 +171,49 @@ window.COURSE_LESSON = {
   var mass = document.getElementById("scoreMass");
   var massOut = document.getElementById("scoreOut");
   var scoreLine = document.getElementById("scoreLine");
+  var scoreBars = document.getElementById("scoreBars");
   function paintScore() {
-    var mid = Number(mass.value) / 100;
-    massOut.textContent = mid.toFixed(2);
-    mass.setAttribute("aria-valuenow", String(mass.value));
-    var rest = (1 - mid) / 4;
-    var probs = [rest, rest, mid, rest, rest];
+    var highPct = Number(mass.value);
+    var high = highPct / 100;
+    var rest = (100 - highPct) / 400;
+    massOut.textContent = high.toFixed(2);
+    mass.setAttribute("aria-valuenow", String(highPct));
+    var probs = [rest, rest, rest, rest, high];
     var ev = probs.reduce(function (sum, p, i) { return sum + (i + 1) * p; }, 0);
-    var scoreText = "P = " + probs.map(function (p) { return p.toFixed(2); }).join("，") + "。期望分 = " + ev.toFixed(2) + "。这是有序档，不是三选一。";
+    function dec(p, digits) {
+      var scale = Math.pow(10, digits);
+      var n = Math.round(p * scale);
+      var neg = n < 0;
+      var s = String(Math.abs(n)).padStart(digits + 1, "0");
+      return (neg ? "-" : "") + s.slice(0, s.length - digits) + "." + s.slice(-digits);
+    }
+    var exact = probs.map(function (p) { return dec(p, 4); });
+    var shown = probs.map(function (p) { return Math.round(p * 100) / 100; });
+    var shownSum = shown.reduce(function (a, b) { return a + b; }, 0);
+    if (scoreBars) {
+      scoreBars.textContent = "";
+      probs.forEach(function (p, i) {
+        var row = document.createElement("div");
+        var name = document.createElement("span");
+        name.textContent = String(i + 1) + " 分";
+        var meter = document.createElement("span");
+        var fill = document.createElement("i");
+        fill.style.width = (Math.round(p * 1000) / 10) + "%";
+        meter.appendChild(fill);
+        var num = document.createElement("b");
+        num.textContent = exact[i];
+        row.appendChild(name);
+        row.appendChild(meter);
+        row.appendChild(num);
+        scoreBars.appendChild(row);
+      });
+    }
+    var scoreText = [
+      "精确概率：" + exact.join("，") + "。和 = " + dec(probs.reduce(function (a, b) { return a + b; }, 0), 4) + "。",
+      "只保留两位会显示 " + shown.map(function (p) { return p.toFixed(2); }).join("，") + "，加起来是 " + shownSum.toFixed(2) + "。差出来的是四舍五入，概率本身仍然加总为 1。条形用的是精确值。",
+      "期望分 = " + probs.map(function (p, i) { return (i + 1) + "×" + exact[i]; }).join(" + ") + " = " + dec(ev, 3) + "。",
+      "最高档越重，期望分越高。这是有序档，不是三选一。"
+    ].join("\n");
     scoreLine.textContent = scoreText;
     if (window.__dmLessonState) window.__dmLessonState.setLab("scoreText", scoreText);
   }

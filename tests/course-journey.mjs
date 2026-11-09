@@ -232,27 +232,67 @@ const store = await page.evaluate(() => ({
 }));
 check("three stores differ", store.l1 !== store.l2 && store.l2 !== store.l3);
 check("progress records lesson 3", store.progress && store.progress.indexOf("lesson-3") >= 0, store.progress);
-await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
+await page.setViewport({ width: 390, height: 985, deviceScaleFactor: 2 });
 await goto("第0课-决策模型是什么.html");
 const narrow = await page.evaluate(() => {
   const layout = document.querySelector(".sec-layout");
   const cols = getComputedStyle(layout).gridTemplateColumns;
   const doc = document.documentElement;
-  const bar = document.getElementById("exportFloat").getBoundingClientRect();
-  const pad = parseFloat(getComputedStyle(document.querySelector(".wrap")).paddingBottom);
   const fab = document.getElementById("tutorFab").getBoundingClientRect();
   return {
     cols,
     overflow: doc.scrollWidth - doc.clientWidth,
-    barH: bar.height,
-    pad,
+    barPosition: getComputedStyle(document.getElementById("exportFloat")).position,
+    fabPosition: getComputedStyle(document.getElementById("tutorFab")).position,
     fabInside: fab.left >= 0 && fab.right <= window.innerWidth + 1
   };
 });
+const focused = [];
+for (const id of ["threshold", "tutorCalibTemp", "secFeynman-products"]) {
+  await page.$eval("#" + id, (el) => {
+    document.documentElement.style.scrollBehavior = "auto";
+    const y = el.getBoundingClientRect().top + window.scrollY - (window.innerHeight - el.getBoundingClientRect().height) / 2;
+    window.scrollTo(0, Math.max(0, y));
+  });
+  await page.focus("#" + id);
+  focused.push(await page.evaluate((sel) => {
+    const el = document.querySelector(sel);
+    const a = el.getBoundingClientRect();
+    function covers(other) {
+      if (!other) return false;
+      const pos = getComputedStyle(other).position;
+      if (pos !== "fixed" && pos !== "sticky") return false;
+      const b = other.getBoundingClientRect();
+      if (b.bottom < 0 || b.top > window.innerHeight || b.height < 1) return false;
+      return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+    }
+    return {
+      id: sel,
+      covered: covers(document.getElementById("exportFloat")) || covers(document.getElementById("tutorFab")),
+      top: a.top,
+      bottom: a.bottom,
+      vh: window.innerHeight
+    };
+  }, "#" + id));
+}
 check("390 stacks sections", narrow.cols.indexOf(" ") < 0, narrow.cols);
 check("390 no horizontal overflow", narrow.overflow <= 2, String(narrow.overflow));
-check("390 content pad clears the fixed bar", narrow.pad >= narrow.barH + 40, JSON.stringify(narrow));
+check("390 bar is in normal flow", narrow.barPosition === "static" && narrow.fabPosition === "static", JSON.stringify(narrow));
+check("390 focused controls are not covered", focused.every((p) => p.covered === false && p.bottom <= p.vh + 1 && p.top >= -1), JSON.stringify(focused));
 check("390 fab stays on screen", narrow.fabInside, JSON.stringify(narrow));
+const historical = await page.evaluate(() => {
+  const box = document.getElementById("fb-contrast");
+  const field = document.getElementById("secFeynman-contrast");
+  field.value = "一段和样本无关的新句子";
+  field.dispatchEvent(new Event("input", { bubbles: true }));
+  const panel = field.parentElement.querySelector(".fy-inline-lab");
+  return {
+    text: box.innerText,
+    current: panel ? panel.textContent : ""
+  };
+});
+check("13:21 sample stays historical", historical.text.indexOf("历史样本") >= 0 && historical.text.indexOf("13:21") >= 0 && historical.text.indexOf("LLM和决策模型的对比") >= 0 && historical.text.indexOf("不是本次") >= 0 && historical.text.indexOf("一段和样本无关的新句子") < 0, historical.text);
+check("current grading label is separate", historical.current === "本次批改", historical.current);
 await page.screenshot({ path: shots + "/lesson0-mobile.png" });
 const fav = await page.goto(BASE + "/favicon.svg", { waitUntil: "networkidle0" });
 check("favicon svg exists", fav && (fav.status() === 200 || fav.status() === 304), String(fav && fav.status()));

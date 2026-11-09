@@ -286,9 +286,18 @@
   var askSend = document.getElementById("askSend");
   var askOut = document.getElementById("askOut");
   var askReply = document.getElementById("askReply");
-  var prompts = Array.isArray(cfg.offlinePrompts) && cfg.offlinePrompts.length
+  var promptSource = Array.isArray(cfg.offlinePrompts) && cfg.offlinePrompts.length
     ? cfg.offlinePrompts
     : ["你这句里，哪一个词是你最没把握的？只答那一个。"];
+  var prompts = [];
+  var seenPrompt = {};
+  promptSource.forEach(function (item) {
+    var text = String(item || "").trim();
+    if (!text || seenPrompt[text]) return;
+    seenPrompt[text] = true;
+    prompts.push(text);
+  });
+  var LOCAL_DONE = "本机写好的问题已经问完。这不是自适应学伴。可以改本节评论后再发送，或在学伴接入后点重试。";
   if (!Array.isArray(state.ask.turns)) state.ask.turns = [];
   if (state.ask.asked && !state.ask.turns.length) {
     state.ask.mode = state.ask.mode || "local";
@@ -354,15 +363,24 @@
     state.ask.turns.push({ role: role, text: String(text || "").slice(0, 2000), source: source });
     if (state.ask.turns.length > 24) state.ask.turns = state.ask.turns.slice(-24);
   }
+  function askedLocal(text) {
+    return state.ask.turns.some(function (turn) {
+      return turn.role === "assistant" && turn.text === text;
+    });
+  }
   function nextLocalQuestion() {
-    var step = state.ask.step || 0;
-    if (step >= prompts.length) {
-      pushTurn("assistant", "本机写好的问题已经问完。这不是自适应学伴。可以改本节评论后再发送，或在学伴接入后点重试。", "local");
-      state.ask.done = true;
-      return;
+    var i;
+    for (i = 0; i < prompts.length; i++) {
+      if (!askedLocal(prompts[i])) {
+        pushTurn("assistant", prompts[i], "local");
+        state.ask.step = i + 1;
+        state.ask.done = false;
+        return;
+      }
     }
-    pushTurn("assistant", prompts[step], "local");
-    state.ask.step = step + 1;
+    state.ask.step = prompts.length;
+    state.ask.done = true;
+    if (!askedLocal(LOCAL_DONE)) pushTurn("assistant", LOCAL_DONE, "local");
   }
   function localContinue(preface) {
     state.ask.mode = "local";
@@ -475,8 +493,6 @@
       return;
     }
     pushTurn("user", raw, state.ask.mode || "local");
-    state.ask.step = 0;
-    state.ask.done = false;
     routeAsk(raw);
   }
   document.querySelectorAll("[data-section-note]").forEach(function (area) {

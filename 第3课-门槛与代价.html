@@ -38,32 +38,36 @@
 
 <section id="experiment" hidden>
   <h2>揭晓之后再实验</h2>
-  <p>现在可以改 θ。p 固定为 0.55（课堂例子）。</p>
-  <label for="theta">θ <output id="thetaOut">0.70</output></label>
+  <p>下面有两套互不自动跟随的规则。手选门槛是你拨的 θ，不是从代价算出来的。代价分界只在「误自动、漏自动」这两种错的假设下算出一个数。两套可以同时给出不同结论，那是规则不同，不是算错。</p>
+  <h3>手选门槛</h3>
+  <p>p 固定为 0.55（课堂例子）。这一条只比较 p 和你拨的 θ。</p>
+  <label for="theta">手选 θ <output id="thetaOut">0.70</output></label>
   <input id="theta" data-persist="theta" type="range" min="0" max="100" value="70" step="1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70">
   <p id="gateOut" class="out" role="status"></p>
-  <h3>误自动和漏自动，代价可以不一样</h3>
-  <p>假设只比较两种错：不该自动时自动了（误自动），以及该自动时没有自动（漏自动）。这里不说这个门槛对所有市场都最优。同一套比值的推导在 <a href="第5课-期望与代价.html">第5课</a>：把「做对的收益」看成避免漏自动的好处。</p>
+  <h3>代价分界</h3>
+  <p>假设只比较两种错：不该自动时自动了（误自动），以及该自动时没有自动（漏自动）。分界不改写上面的手选 θ。同一套比值的推导在 <a href="第5课-期望与代价.html">第5课</a>。这里不说这个分界对所有市场都最优。</p>
   <label for="fpCost">误自动代价 <output id="fpOut">4</output></label>
   <input id="fpCost" data-persist="fpCost" type="range" min="1" max="9" value="4" step="1" aria-valuemin="1" aria-valuemax="9" aria-valuenow="4">
   <label for="fnCost">漏自动代价 <output id="fnOut">1</output></label>
   <input id="fnCost" data-persist="fnCost" type="range" min="1" max="9" value="1" step="1" aria-valuemin="1" aria-valuemax="9" aria-valuenow="1">
   <p id="costOut" class="out" role="status"></p>
+  <p id="policyCompare" class="out" role="status"></p>
+  <button type="button" class="act" id="syncTheta">把手选 θ 调到代价分界</button>
 </section>
 
 <section data-q-group="q2">
   <h2 id="q2-title">实验之后再答</h2>
-  <p>若把 θ 降到 0.50，p 仍是 0.55，按同一条规则会怎样？</p>
+  <p>若把手选 θ 降到 0.50，p 仍是 0.55。这一问只看手选门槛，不看代价分界。会怎样？</p>
   <div class="opts" role="group" aria-labelledby="q2-title">
     <button type="button" class="opt" data-choice="still" data-correct="false">仍然不自动。概率没变，门槛就无所谓。</button>
     <button type="button" class="opt" data-choice="auto" data-correct="true">可以自动。因为 0.55 ≥ 0.50。</button>
   </div>
-  <p class="hint" data-hint hidden>提示：概率没变，变的是策略。把 0.55 和 0.50 比一次大小。</p>
+  <p class="hint" data-hint hidden>提示：这一问只比 0.55 和手选 θ 0.50。代价分界是旁边的另一套假设。</p>
   <p class="status" data-status role="status"></p>
   <button type="button" class="act" data-retry hidden>再试一次</button>
   <div class="explain" data-explain-body hidden>
-    <p>同一概率，门槛下降以后可以由不自动变成自动。所以门槛是代价和覆盖之间的选择，不是模型头里写死的拒答。</p>
-    <p>若误自动比漏自动更贵，分界会高于 0.5。这是在「只比较这两种错」的假设下，不是对所有交易都最优。具体算法见第5课，本课不给真实资金损失。</p>
+    <p>这一问只看手选门槛。θ 降到 0.50 以后，0.55 ≥ 0.50，按手选规则可以自动。代价分界是另一套假设，不会跟着这只滑块改写。默认误自动更贵时，分界高于 0.55，按那套会先不自动。两句可以同时成立，因为它们不是同一个决定。</p>
+    <p>若误自动比漏自动更贵，代价分界会高于 0.5。这只比较这两种错，不是对所有交易都最优。具体算法见第5课，本课不给真实资金损失。</p>
   </div>
 </section>
 
@@ -133,12 +137,12 @@ window.COURSE_LESSON = {
     out.textContent = th.toFixed(2);
     input.setAttribute("aria-valuenow", String(input.value));
     var pass = p >= th;
-    var gateText = "课堂例子 p=" + p.toFixed(2) + (pass ? " ≥ " : " < ") + "θ " + th.toFixed(2) + (pass ? " → 可以自动。" : " → 不自动，转人工。");
+    var gateText = "手选门槛：θ 是你拨的策略，不是代价算出来的。课堂 p=" + p.toFixed(2) + (pass ? " ≥ " : " < ") + "θ " + th.toFixed(2) + (pass ? "。按手选门槛，可以自动。" : "。按手选门槛，不自动，转人工。");
     box.textContent = gateText;
     if (window.__dmLessonState) window.__dmLessonState.setLab("gateText", gateText);
+    return { th: th, pass: pass };
   }
-  input.addEventListener("input", paint);
-  paint();
+  input.addEventListener("input", function () { paintAll(); });
   var fp = document.getElementById("fpCost");
   var fn = document.getElementById("fnCost");
   var fpOut = document.getElementById("fpOut");
@@ -152,13 +156,32 @@ window.COURSE_LESSON = {
     fp.setAttribute("aria-valuenow", String(cFp));
     fn.setAttribute("aria-valuenow", String(cFn));
     var star = cFp / (cFp + cFn);
-    var costText = "假设只比较误自动代价 " + cFp + " 和漏自动代价 " + cFn + "。分界 ≈ " + star.toFixed(2) + "。打平才与中性备选相同，严格更好要高于分界。本课平局沿用 p ≥ 分界。课堂 p=0.55 " + (0.55 >= star ? "不低于这个分界。" : "低于这个分界，先不自动。") + " 不是对所有情形都最优。";
+    var costPass = 0.55 >= star;
+    var costText = "代价分界：只比较误自动代价 " + cFp + " 和漏自动代价 " + cFn + "。分界 = " + star.toFixed(2) + "。这不是手选 θ。打平才与中性备选相同，严格更好要高于分界。平局沿用 p ≥ 分界。课堂 p=0.55 " + (costPass ? "不低于这个分界。按代价分界，可以自动。" : "低于这个分界。按代价分界，先不自动。") + " 不是对所有情形都最优。";
     costOut.textContent = costText;
     if (window.__dmLessonState) window.__dmLessonState.setLab("costText", costText);
+    return { star: star, costPass: costPass };
   }
-  fp.addEventListener("input", paintCost);
-  fn.addEventListener("input", paintCost);
-  paintCost();
+  var compare = document.getElementById("policyCompare");
+  function paintAll() {
+    var gate = paint();
+    var cost = paintCost();
+    var same = gate.pass === cost.costPass;
+    var text = same
+      ? "两套规则现在一致：都" + (gate.pass ? "允许自动。" : "先不自动。") + " 手选 θ 恰好落在代价分界的同一侧。"
+      : "两套规则现在不一致。手选门槛" + (gate.pass ? "允许自动" : "先不自动") + "，代价分界" + (cost.costPass ? "允许自动" : "先不自动") + "。这不是算错。手选 θ 没有跟着代价走。";
+    if (compare) compare.textContent = text;
+    if (window.__dmLessonState) window.__dmLessonState.setLab("policyCompare", text);
+  }
+  fp.addEventListener("input", paintAll);
+  fn.addEventListener("input", paintAll);
+  var sync = document.getElementById("syncTheta");
+  if (sync) sync.addEventListener("click", function () {
+    var star = Number(fp.value) / (Number(fp.value) + Number(fn.value));
+    input.value = String(Math.round(star * 100));
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  paintAll();
 })();
 </script>
 </body>

@@ -26,10 +26,24 @@ const ALLOWED_ORIGINS = new Set([
   "https://decision-course-submit.abgyja.workers.dev",
 ]);
 
-function pickCorsOrigin(request, env) {
+export function devOrigins(env) {
+  const raw = env && env.DEV_ALLOW_ORIGINS != null ? String(env.DEV_ALLOW_ORIGINS) : "";
+  return raw.split(",").map((item) => item.trim()).filter(Boolean);
+}
+
+export function pickCorsOrigin(request, env) {
   const reqOrigin = request.headers.get("Origin") || "";
-  if (reqOrigin && ALLOWED_ORIGINS.has(reqOrigin)) return reqOrigin;
-  return env.ALLOW_ORIGIN || "https://quantskills-guoyj.github.io";
+  if (reqOrigin && (ALLOWED_ORIGINS.has(reqOrigin) || devOrigins(env).includes(reqOrigin))) return reqOrigin;
+  return (env && env.ALLOW_ORIGIN) || "https://quantskills-guoyj.github.io";
+}
+
+export function capabilitiesPayload(env) {
+  return {
+    ok: true,
+    tutorVersion: TUTOR_VERSION,
+    lessons: lessonIds(),
+    devOriginConfigured: devOrigins(env).length > 0,
+  };
 }
 
 function corsHeaders(origin) {
@@ -749,10 +763,7 @@ export default {
       if (!webhookKey && env.WEBHOOK_KEY) webhookKey = String(env.WEBHOOK_KEY);
 
       if (request.method === "GET" && u.pathname === "/api/tutor/capabilities") {
-        return Response.json(
-          { ok: true, tutorVersion: TUTOR_VERSION, lessons: lessonIds() },
-          { headers: cors }
-        );
+        return Response.json(capabilitiesPayload(env), { headers: cors });
       }
 
       if (request.method === "GET" && u.pathname === "/health") {
@@ -765,6 +776,7 @@ export default {
             tutor: true,
             tutorVersion: TUTOR_VERSION,
             lessons: lessonIds(),
+            devOriginConfigured: devOrigins(env).length > 0,
           },
           { headers: cors }
         );

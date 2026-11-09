@@ -67,6 +67,16 @@ await page.waitForFunction(() => document.getElementById("askLog").innerText.ind
 const done = await page.$eval("#askLog", (el) => el.innerText);
 check("finite local questions say they are finished", done.indexOf("不是自适应学伴") >= 0, done);
 check("lesson 2 did not post", await page.evaluate(() => window.__posts.length) === 0);
+await page.$eval("#scoreMass", (el) => { el.value = "0"; el.dispatchEvent(new Event("input", { bubbles: true })); });
+const lowScore = await page.$eval("#scoreLine", (el) => el.textContent);
+await page.$eval("#scoreMass", (el) => { el.value = "41"; el.dispatchEvent(new Event("input", { bubbles: true })); });
+const highScore = await page.evaluate(() => ({
+  text: document.getElementById("scoreLine").textContent,
+  widths: Array.from(document.querySelectorAll("#scoreBars i")).map((el) => el.style.width)
+}));
+check("score at 0.41 shows exact probabilities and the rounding gap", highScore.text.indexOf("0.1475") >= 0 && highScore.text.indexOf("1.0000") >= 0 && highScore.text.indexOf("1.01") >= 0 && highScore.text.indexOf("四舍五入") >= 0, highScore.text);
+check("expected score moves when mass moves to the top bin", highScore.text.indexOf("3.525") >= 0 && lowScore.indexOf("2.500") >= 0 && highScore.text !== lowScore, highScore.text);
+check("bars use the exact mass", highScore.widths[4] === "41%" && highScore.widths[0] !== highScore.widths[4], highScore.widths.join(","));
 
 await open("第1课-校准深挖.html");
 await page.$eval("[data-section-note='q1']", (el) => { el.value = "本节评论已保存"; el.dispatchEvent(new Event("input", { bubbles: true })); });
@@ -114,7 +124,10 @@ check("revisions are kept", revisions >= 3, String(revisions));
 await page.click("[data-q-group='q1'] button[data-choice='block']");
 await page.waitForFunction(() => !document.getElementById("experiment").hidden);
 const cost = await page.$eval("#costOut", (el) => el.textContent);
-check("fp fn comparison is concrete", cost.indexOf("误自动") >= 0 && cost.indexOf("漏自动") >= 0 && cost.indexOf("分界") >= 0, cost);
+const gate = await page.$eval("#gateOut", (el) => el.textContent);
+const compared = await page.$eval("#policyCompare", (el) => el.textContent);
+check("fp fn comparison is concrete", cost.indexOf("误自动") >= 0 && cost.indexOf("漏自动") >= 0 && cost.indexOf("代价分界") >= 0, cost);
+check("hand threshold and cost boundary are different rules", gate.indexOf("手选门槛") >= 0 && gate.indexOf("可以自动") >= 0 && compared.indexOf("不一致") >= 0 && compared.indexOf("不是算错") >= 0, gate + "\n" + compared);
 
 await browser.close();
 if (failures.length) {

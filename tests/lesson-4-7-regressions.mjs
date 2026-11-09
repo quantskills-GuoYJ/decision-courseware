@@ -4,6 +4,7 @@
  */
 import { createRequire } from "module";
 import { pathToFileURL } from "url";
+import fs from "fs";
 
 function loadPuppeteer() {
   const file = "/tmp/viztest/node_modules/puppeteer-core/package.json";
@@ -15,6 +16,25 @@ const BASE = process.env.COURSE_BASE || "http://127.0.0.1:8765";
 const failures = [];
 function check(name, cond, detail) {
   if (!cond) failures.push(name + (detail ? " :: " + String(detail).slice(0, 500) : ""));
+}
+
+const promptFiles = [
+  "第1课-校准深挖.html",
+  "第2课-原语与拒答.html",
+  "第3课-门槛与代价.html",
+  "第4课-证据与泄漏.html",
+  "第5课-期望与代价.html",
+  "第6课-分布变化.html",
+  "第7课-离线决策.html"
+];
+for (const file of promptFiles) {
+  const html = fs.readFileSync(new URL("../" + file, import.meta.url), "utf8");
+  const block = html.match(/offlinePrompts:\s*\[([\s\S]*?)\]/);
+  check(file + " has a local question list", !!block, file);
+  if (!block) continue;
+  const questions = Array.from(block[1].matchAll(/"([^"]+)"/g)).map((item) => item[1]);
+  const unique = new Set(questions);
+  check(file + " local questions are distinct", questions.length === unique.size, questions.join(" | "));
 }
 
 const browser = await puppeteer.launch({
@@ -98,6 +118,17 @@ const euKept = await page.evaluate(() => ({
   lab: window.__dmLessonState.snapshot().lab
 }));
 check("lesson 5 cost and comparison survive reload", euKept.cost === "1" && euKept.text.indexOf("0.50") >= 0 && euKept.text.indexOf("严格为正") >= 0 && euKept.lab.euText.indexOf("0.50") >= 0 && euKept.lab.cost === "1", euKept.text);
+await page.$eval("[data-section-note='q1']", (el) => { el.value = "代价怎么算"; });
+await page.evaluate(() => document.querySelector("[data-section-note='q1']").nextElementSibling.click());
+await page.waitForFunction(() => document.getElementById("askLog").innerText.indexOf("门槛为什么不再是 0.75") >= 0);
+await page.$eval("#askReply", (el) => { el.value = "因为收益变了"; });
+await page.click("#askSend");
+await page.waitForFunction(() => document.getElementById("askLog").innerText.indexOf("已经问完") >= 0);
+await page.$eval("#askReply", (el) => { el.value = "再答一次"; });
+await page.click("#askSend");
+await page.waitForFunction(() => document.getElementById("askLog").innerText.indexOf("再答一次") >= 0);
+const lesson5log = await page.$eval("#askLog", (el) => el.innerText);
+check("lesson 5 asks its one local question once", (lesson5log.match(/门槛为什么不再是 0\.75/g) || []).length === 1, lesson5log);
 
 await open("第6课-分布变化.html");
 const shiftRows = await page.evaluate(() => ({
@@ -112,12 +143,16 @@ await page.click("#runShift");
 const shift = await page.$eval("#shiftOut", (el) => el.textContent);
 check("in-sample ECE is labeled and is not the baseline", shift.indexOf("样本内") >= 0 && shift.indexOf("不能把它放在留出 ECE 旁边") >= 0, shift);
 check("held-out is the reference", shift.indexOf("留出集 n=5") >= 0 && shift.indexOf("T = 0.45") >= 0, shift);
-check("bootstrap interval is reproducible and does not claim drift", shift.indexOf("20261109") >= 0 && shift.indexOf("0.043 到 0.628") >= 0 && shift.indexOf("不能根据这两个点估计说已经发生漂移") >= 0 && shift.indexOf("没有 p 值") >= 0, shift);
+check("each window names its own interval", shift.indexOf("留出集的重抽样区间 0.043 到 0.628") >= 0 && /只改分数的重抽样区间 \d\.\d\d\d 到 \d\.\d\d\d/.test(shift) && shift.indexOf("一起改的重抽样区间") >= 0, shift);
+check("overlap is not an equality test", shift.indexOf("不是相等检验") >= 0 && shift.indexOf("也不能单独证明没有漂移") >= 0 && shift.indexOf("没有 p 值") >= 0, shift);
+check("bin counts are on the report", (shift.match(/n=\d/g) || []).length >= 4, shift);
 check("joint change cannot isolate a cause", shift.indexOf("只能来自分数") >= 0 && shift.indexOf("不能分辨是分数还是标签") >= 0, shift);
 check("dependence and sample size are stated", shift.indexOf("相邻误差相关") >= 0 && shift.indexOf("原样重复") >= 0 && shift.indexOf("n=40") >= 0, shift);
 await page.reload({ waitUntil: "networkidle0" });
 const shiftKept = await page.evaluate(() => window.__dmLessonState.snapshot());
-check("shift report is in the export after reload", shiftKept.lab.shiftText.indexOf("样本内") >= 0 && shiftKept.lab.shiftText.indexOf("20261109") >= 0 && shiftKept.v === "dm-lesson-note-v1", shiftKept.lab.shiftText);
+const method = await page.$eval("#shiftMethod", (el) => el.textContent);
+check("seed and generator stay in the expandable method", method.indexOf("20261109") >= 0 && method.indexOf("0x6D2B79F5") >= 0, method);
+check("shift report is in the export after reload", shiftKept.lab.shiftText.indexOf("样本内") >= 0 && shiftKept.lab.shiftData.seed === 20261109 && shiftKept.lab.shiftData.held.rows.length === 5 && shiftKept.lab.shiftData.logitsOnly.bins.length === 2 && shiftKept.lab.shiftData.logitsOnly.interval.indexOf("到") >= 0 && shiftKept.v === "dm-lesson-note-v1", JSON.stringify(shiftKept.lab.shiftData));
 
 await open("第7课-离线决策.html");
 const known = await page.evaluate(() => document.body.innerText);

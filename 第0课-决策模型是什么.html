@@ -918,6 +918,7 @@ footer {
 .learn-fb .lf-match { color: var(--muted); font-weight: 600; letter-spacing: 0; }
 .learn-fb .lf-match.hit { color: var(--ok); }
 .learn-fb .lf-match.drift { color: var(--warn); }
+.learn-fb .lf-hist { font-size: 0.82rem; color: var(--warn); margin: 0.35rem 0 0.55rem; }
 .learn-fb .lf-fy, .learn-fb .lf-c { font-size: 0.9rem; margin: 0.25rem 0; }
 .learn-fb .lf-c strong { color: var(--lime); }
 .lf-viz { margin-top: 0.7rem; }
@@ -1332,7 +1333,23 @@ footer {
 
 .toast-learn { bottom: calc(var(--export-bar-h, 148px) + 0.75rem); }
 @media (max-width: 640px) {
-  .wrap { padding-left: 0.75rem; padding-right: 0.75rem; }
+  html { scroll-padding-bottom: 1.25rem; }
+  .wrap { padding-left: 0.75rem; padding-right: 0.75rem; padding-bottom: 2.5rem; }
+  .export-float {
+    position: static;
+    box-shadow: none;
+  }
+  .tutor-fab {
+    position: static;
+    display: flex;
+    width: calc(100% - 1.5rem);
+    margin: 0.75rem auto 1rem;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    justify-content: center;
+  }
+  .toast-learn { bottom: 0.75rem; }
   .sec-comment textarea,
   .tutor-compose textarea,
   input, select, button { font-size: 16px; }
@@ -1386,6 +1403,18 @@ footer {
   color: var(--cyan);
   cursor: pointer;
   box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+@media (max-width: 640px) {
+  .tutor-fab {
+    position: static;
+    display: flex;
+    width: calc(100% - 1.5rem);
+    margin: 0.75rem auto 1rem;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    justify-content: center;
+  }
 }
 .tutor-fab:hover { border-color: var(--cyan); }
 .tutor-fab[aria-expanded="true"] {
@@ -3894,9 +3923,36 @@ footer {
       if (!chip) return;
       var state = matchesSnap(id, ta ? ta.value : "");
       chip.className = "lf-match" + (state === "hit" ? " hit" : state === "drift" ? " drift" : "");
-      chip.textContent = state === "hit" ? "对上 13:21 原文" : state === "drift" ? "你已改写；下面仍是对 13:21 那版" : "13:21 的反馈（这格目前是空的）";
+      chip.textContent = state === "hit"
+        ? "与 13:21 原文相同。下面仍是当时的记录，不是新的批改。"
+        : state === "drift"
+          ? "你现在的文字已经不同。下面仍是 13:21 原文的记录，不是对现在这段的批改。"
+          : "这格目前是空的。下面不是对你的批改。";
     });
   }
+  var HIST_ORIGINALS = {
+    contrast: "LLM和决策模型的对比",
+    flow: "state + 类型化问题 → 校准选项概率",
+    demo: "用 LLM 输出模糊，再交决策模型校准",
+    calib: "通过 RLCD 训练进行校准",
+    agent: "两层闸门：AutoThink 模型侧，App 执行侧",
+    products: "不同模型选型"
+  };
+  document.querySelectorAll(".learn-fb[data-fb]").forEach(function (box) {
+    var id = box.getAttribute("data-fb");
+    var heading = box.querySelector(".lf-h");
+    if (heading && heading.childNodes[0] && heading.childNodes[0].nodeType === 3) {
+      heading.childNodes[0].textContent = "历史样本 · 13:21 · " + id + " ";
+    }
+    if (!box.querySelector(".lf-hist")) {
+      var note = document.createElement("p");
+      note.className = "lf-hist";
+      note.textContent = "这是页面预先写好的样本，对应 13:21 的原文「" + (HIST_ORIGINALS[id] || "") + "」。它不是本次「送去批改」的返回。请求失败时这段保持不动，也不代表你现在输入的成绩。";
+      var fy = box.querySelector(".lf-fy");
+      if (fy) box.insertBefore(note, fy);
+      else box.appendChild(note);
+    }
+  });
   ["contrast", "flow", "demo", "calib", "agent", "products"].forEach(function (id) {
     var ta = document.getElementById("secFeynman-" + id);
     if (ta) ta.addEventListener("input", paintMatch);
@@ -4773,6 +4829,12 @@ footer {
   function formatTransportError(err) {
     var name = (err && err.name) ? String(err.name) : "Error";
     var message = (err && err.message) ? String(err.message) : "";
+    var host = "";
+    try { host = String(location.hostname || ""); } catch (eHost) {}
+    var localPreview = host === "localhost" || host === "127.0.0.1" || host === "[::1]" || host === "::1";
+    if (localPreview && name === "TypeError") {
+      return "本次批改没有返回。这个页面来源不在线上允许名单里，浏览器拦住了跨域。这是预期结果，不是候选学伴失败。本机题目仍然可以做。13:21 的历史样本保持原样，不要把它当成这次的成绩。候选要在单独的预览服务上配置 DEV_ALLOW_ORIGINS 后再测，不改线上允许名单。";
+    }
     var human = name === "TypeError" ? "学伴连不上（网络或跨域）。" : "学伴连不上。";
     if (name === "AbortError") human = "学伴请求已中止。";
     return human + " " + name + (message ? "：" + message : "");
@@ -5261,6 +5323,19 @@ footer {
     var t = e.target;
     if (!t || !t.matches) return;
     if (t.matches("textarea.feynman-ta, textarea[data-rw]")) lastFy = t;
+    if (!t.getBoundingClientRect) return;
+    var blockers = [document.getElementById("exportFloat"), document.getElementById("tutorFab")];
+    var covered = blockers.some(function (el) {
+      if (!el || el.hidden) return false;
+      var pos = window.getComputedStyle(el).position;
+      if (pos !== "fixed" && pos !== "sticky") return false;
+      var a = t.getBoundingClientRect();
+      var b = el.getBoundingClientRect();
+      return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+    });
+    if (covered) {
+      try { t.scrollIntoView({ block: "center" }); } catch (eFocus) {}
+    }
   });
 
   document.querySelectorAll("textarea.feynman-ta, textarea[data-rw]").forEach(function (ta) {
@@ -5278,7 +5353,7 @@ footer {
     panel.setAttribute("aria-live", "polite");
     var lab = document.createElement("div");
     lab.className = "fy-inline-lab";
-    lab.textContent = "费曼批改";
+    lab.textContent = "本次批改";
     var body = document.createElement("div");
     body.className = "fy-inline-body";
     panel.appendChild(lab);

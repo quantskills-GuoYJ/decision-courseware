@@ -7,6 +7,8 @@ import {
   classifyFeynmanKind,
   clampTutorOutput,
   buildTutorViz,
+  pickCorsOrigin,
+  capabilitiesPayload,
 } from "./index.js";
 
 const fittedOk =
@@ -95,6 +97,17 @@ test("generative contrast still uses the flow chart", () => {
   assert.equal(viz.compare, "gen-vs-decision");
   assert.equal(viz.focus, "choice");
   assert.equal(out.includes("选项钉死"), true);
+});
+
+test("localhost is not on the production allowlist", () => {
+  const local = { headers: { get: () => "http://127.0.0.1:8765" } };
+  const named = { headers: { get: () => "http://localhost:8765" } };
+  assert.equal(pickCorsOrigin(local, {}).includes("127.0.0.1"), false);
+  assert.equal(pickCorsOrigin(named, {}).includes("localhost"), false);
+  assert.equal(pickCorsOrigin(local, { DEV_ALLOW_ORIGINS: "http://127.0.0.1:8765" }), "http://127.0.0.1:8765");
+  assert.equal(capabilitiesPayload({}).devOriginConfigured, false);
+  assert.equal(capabilitiesPayload({ DEV_ALLOW_ORIGINS: "http://127.0.0.1:8765" }).devOriginConfigured, true);
+  assert.equal(JSON.stringify(capabilitiesPayload({ DEV_ALLOW_ORIGINS: "http://127.0.0.1:8765" })).includes("127.0.0.1"), false);
 });
 
 test("secret bindings and routes stay in the source", () => {
