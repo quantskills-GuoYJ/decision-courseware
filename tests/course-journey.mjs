@@ -110,6 +110,7 @@ const quizDespiteAi = await page.evaluate(() => document.querySelector("#quizFb-
 check("lesson0 quiz works while tutor 500", quizDespiteAi.indexOf("回答正确") >= 0);
 
 await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
+const lesson0NotesBefore = await page.evaluate(() => localStorage.getItem("dm_lesson0_section_notes"));
 await goto("第1课-校准深挖.html");
 const callsBefore = await page.evaluate(() => window.__tutorCalls.length);
 check("fit lab hidden first", await page.$eval("#fitLab", (el) => el.hidden));
@@ -180,8 +181,8 @@ check("refresh restores follow", restored.follow.indexOf("留出") >= 0);
 
 const keys = await page.evaluate(() => Object.keys(localStorage));
 check("lesson1 key isolated", keys.indexOf("dm_lesson1_state") >= 0);
-check("lesson1 did not write lesson0 notes", keys.indexOf("dm_lesson0_section_notes") < 0 || true);
 const l0 = await page.evaluate(() => localStorage.getItem("dm_lesson0_section_notes"));
+check("lesson1 did not write lesson0 notes", l0 === lesson0NotesBefore, String(l0));
 check("lesson0 notes untouched by lesson1", !l0 || l0.indexOf("笔记不发送") < 0);
 
 await page.setViewport({ width: 1280, height: 900 });

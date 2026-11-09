@@ -43,6 +43,7 @@ export function capabilitiesPayload(env) {
     tutorVersion: TUTOR_VERSION,
     lessons: lessonIds(),
     devOriginConfigured: devOrigins(env).length > 0,
+    pagesOriginConfigured: Boolean(env && env.PAGES_ORIGIN),
   };
 }
 
@@ -66,45 +67,97 @@ function isGenVsDecisionUtterance(um) {
   return mentionsGen && contrastsDecision;
 }
 
-/** Fitted temperature scaling stated as calibration. Not a confusion. */
+function clausesOf(text) {
+  return String(text || "")
+    .split(/[。！？；;\n.!?]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+/** Negation has to sit on this occurrence. A later clause does not cancel an earlier one. */
+function polarity(clause, re) {
+  const flags = re.flags.includes("g") ? re.flags : re.flags + "g";
+  const r = new RegExp(re.source, flags);
+  let matched = false;
+  let affirmed = false;
+  let denied = false;
+  let found;
+  while ((found = r.exec(clause))) {
+    matched = true;
+    const window = clause.slice(Math.max(0, found.index - 18), found.index + found[0].length);
+    const neg = /不是|不能|并非|不要|别把|不把|勿|没有|没把|\bnot\b|\bn't\b|\bnever\b/i.test(window);
+    if (neg && window.indexOf(found[0]) > 0) denied = true;
+    else affirmed = true;
+    if (found.index === r.lastIndex) r.lastIndex += 1;
+  }
+  return { matched, affirmed, denied };
+}
+
+function assessAccount(um) {
+  const text = String(um || "");
+  const tempWord = /温度|temperature/i;
+  const fitWord = /拟合|留出|校准集|验证集|独立数据|held-?out|calibration set/i;
+  const calibClaim = /是一种校准|属于校准|校准方法|后处理校准|是校准|is a calibration method|is calibration/i;
+  const hotClaim = /越准|更准|更准确|才准|就准|变准|温度越高|more accurate|hotter/i;
+  const equateClaim = /校准就是[^。；，]{0,16}温度|校准只是锋利|校准等于调温度|把校准说成调温度|calibration is (?:just )?temperature/i;
+  const arbWord = /随意|滑块|随便|arbitrary/i;
+  const arbNot = /不是校准|不是这个方法|not calibration|只是锋利|only sharpness/i;
+  const pYesClaim = /P\(\s*是\s*\)|P\(\s*yes\s*\)|是的概率|「是」的概率|probability of yes/i;
+  const refusalClaim = /拒答概率|就是拒答|等于拒答|refusal probability/i;
+  const refusalDeny = /不是拒答|不是这个头|拒答是门槛|拒答是下游|not a refusal|isn't a refusal/i;
+  const out = {
+    fittedOk: false,
+    hotter: false,
+    equates: false,
+    arbitraryNot: false,
+    pYes: false,
+    refusalAffirm: false,
+    refusalDeny: false,
+  };
+  for (const clause of clausesOf(text)) {
+    const calib = polarity(clause, calibClaim);
+    if (fitWord.test(clause) && tempWord.test(clause) && calib.affirmed && !calib.denied) out.fittedOk = true;
+    const hot = polarity(clause, hotClaim);
+    if (hot.affirmed && !hot.denied) out.hotter = true;
+    const equated = polarity(clause, equateClaim);
+    if (equated.affirmed && !equated.denied) out.equates = true;
+    if (arbWord.test(clause) && arbNot.test(clause)) out.arbitraryNot = true;
+    if (polarity(clause, pYesClaim).affirmed) out.pYes = true;
+    const refusal = polarity(clause, refusalClaim);
+    if (refusal.affirmed && !refusal.denied) out.refusalAffirm = true;
+    if (refusal.denied || refusalDeny.test(clause)) out.refusalDeny = true;
+  }
+  out.hasNoul = /noul/i.test(text);
+  out.mentionsTemp = tempWord.test(text);
+  out.mentionsCalib = /校准|calibration/i.test(text);
+  return out;
+}
+
+/** Wholly correct: fitted scaling is calibration, and no clause also says hotter or equates them. */
 function isCorrectFittedTempScaling(um) {
-  const s = String(um || "");
-  const mentionsTemp = /温度|temperature/i.test(s);
-  const fitted = /拟合|留出|校准集|验证集|独立数据|held-?out/i.test(s);
-  const saysIs = /是校准|属于校准|一种校准|校准方法|后处理校准/.test(s);
-  const denies = /不是校准|不算校准|互斥|禁止再/.test(s);
-  return mentionsTemp && fitted && saysIs && !denies;
+  const a = assessAccount(um);
+  return a.fittedOk && !a.hotter && !a.equates;
 }
 
 /**
- * Arbitrary temperature equated with calibration, or "hotter means more accurate".
- * Mentioning both words is not enough: a fitted T on a calibration set IS calibration.
+ * A clause that equates calibration with arbitrary temperature, or says hotter is more accurate,
+ * and does not also contain a correct fitted-scaling clause.
  */
 function isTempVsCalibConfusion(um) {
-  const s = String(um || "");
-  if (isCorrectFittedTempScaling(s)) return false;
-  const tempAsAccuracy =
-    /温度|temperature/i.test(s) && /越准|更准|更准确|才准|就准|变准/.test(s);
-  const equates =
-    /校准就是[^。\n]{0,12}温度|温度就是[^。\n]{0,12}校准|校准等于调温度|把校准说成调温度|只是调温度|只是锋利/.test(s);
-  const sliderIsCalib = /随意|滑块|随便/.test(s) && /温度/.test(s) && /就是校准|等于校准/.test(s);
-  return tempAsAccuracy || equates || sliderIsCalib;
+  const a = assessAccount(um);
+  return (a.hotter || a.equates) && !a.fittedOk;
 }
 
-/** noul described as P(yes), with refusal kept as a later policy. */
+/** noul is P(yes) and refusal is denied. An affirmative refusal clause keeps this false. */
 function isCorrectNoulAccount(um) {
-  const s = String(um || "");
-  if (!/noul/i.test(s)) return false;
-  const pYes = /P\(是\)|是的概率|「是」的概率|是否问题/.test(s);
-  const refusalNotHead = /不是拒答|不是这个头|拒答是/.test(s);
-  return pYes && refusalNotHead;
+  const a = assessAccount(um);
+  return a.hasNoul && a.pYes && a.refusalDeny && !a.refusalAffirm;
 }
 
-/** Learner equates the noul head itself with refusal probability. */
+/** Learner affirms that the noul head itself is a refusal probability. */
 function isNoulAsRefusal(um) {
-  const s = String(um || "");
-  if (isCorrectNoulAccount(s)) return false;
-  return /noul/i.test(s) && /拒答概率|就是拒答|等于拒答/.test(s);
+  const a = assessAccount(um);
+  return a.hasNoul && a.refusalAffirm && !a.pYes;
 }
 
 /**
@@ -114,18 +167,17 @@ function isNoulAsRefusal(um) {
 function classifyFeynmanKind(um, modelGap) {
   const s = String(um || "");
   const g = String(modelGap || "");
+  const a = assessAccount(s);
+  if (a.hasNoul && a.pYes && a.refusalAffirm) return "noul-partial";
   if (isNoulAsRefusal(s)) return "noul-mix";
+  if (isCorrectNoulAccount(s)) return "noul-ok";
   // Chart1 blind spot first — keep flow/choice even if 概率 appears
   if (isGenVsDecisionUtterance(s) || (/输出/.test(s) && /不同|区别/.test(s))) return "gen-output";
-  // Chart2 only when they equate arbitrary temperature with calibration.
-  // A correct "fitted temperature scaling is calibration" must not land here.
+  if (a.fittedOk && (a.hotter || a.equates)) return "calib-partial";
   if (isCorrectFittedTempScaling(s)) return "calib-ok";
-  if (isCorrectNoulAccount(s)) return "noul-ok";
-  if (
-    isTempVsCalibConfusion(s) ||
-    /把校准说成调温度|校准当成调温度|概念易混/.test(g)
-  )
-    return "calib-mix";
+  if (isTempVsCalibConfusion(s)) return "calib-mix";
+  if (a.mentionsTemp && a.mentionsCalib && !a.fittedOk && !a.hotter && !a.equates && !a.arbitraryNot) return "calib-ask";
+  if (/把校准说成调温度|校准当成调温度|概念易混/.test(g)) return "calib-mix";
   if (/标题复读/.test(g) || (/决策模型/.test(s) && s.length < 24 && !/选项|校准|打分|拒答|输出|温度/.test(s)))
     return "title-repeat";
   if (/分数|概率|把握|打分|依据/.test(s) || /缺因果|打分|依据/.test(g)) return "missing-score";
@@ -138,12 +190,12 @@ function classifyFeynmanKind(um, modelGap) {
 /** focus priority: 输出/选项/钉死→choice; 分数/概率/把握→score; 可靠/ECE/温度→calib; noul 词本身→noul. 拒答 alone is a policy, not the noul node. */
 function focusFromSignals(um, gapSentence, kind) {
   const s = String(um || "") + " " + String(gapSentence || "");
-  if (kind === "noul-mix" || kind === "noul-ok" || /noul/i.test(s)) return "noul";
+    if (kind === "noul-mix" || kind === "noul-ok" || kind === "noul-partial" || /noul/i.test(s)) return "noul";
   if (/输出|选项|钉死/.test(s)) return "choice";
   if (/分数|概率|把握|打分|依据/.test(s)) return "score";
   if (/可靠|ECE|温度|锋利|校准/.test(s)) return "calib";
   if (kind === "missing-score") return "score";
-  if (kind === "calib-mix" || kind === "calib-ok") return "calib";
+  if (kind === "calib-mix" || kind === "calib-ok" || kind === "calib-partial" || kind === "calib-ask") return "calib";
   return "choice"; // title-repeat / gen-output default
 }
 
@@ -157,12 +209,18 @@ function gapSentenceForKind(kind) {
       return "把随意调温度当成校准，没分开拟合的温度缩放和可靠性";
     case "calib-ok":
       return "已说明拟合的温度缩放是校准，未把它误当成随意拖的 T";
+    case "calib-partial":
+      return "拟合的温度缩放说对了，但温度越高越准并不成立";
+    case "calib-ask":
+      return "还不能确定这句里的温度是拟合出来的，还是随意指定的";
     case "missing-score":
       return "有选项但没点出打分/依据（score）";
     case "noul-mix":
       return "把 noul 说成拒答概率，noul 是 P(是)";
     case "noul-ok":
       return "已把 noul 说成 P(是)，拒答留在门槛策略";
+    case "noul-partial":
+      return "P(是) 说对了，但这句又把 noul 说成了拒答概率";
     default:
       return "只复读标题，没点出选项钉死这一环";
   }
@@ -178,12 +236,18 @@ function tipForKind(kind) {
       return "随意 T 只改锋利度；拟合的温度缩放才是校准";
     case "calib-ok":
       return "留出集上的 ECE 要和拟合集分开报";
+    case "calib-partial":
+      return "越准说的不是拟合出来的温度";
+    case "calib-ask":
+      return "你说的温度，是留出集上拟合的，还是随意指定的？";
     case "missing-score":
       return "补上 score：打分/依据";
     case "noul-mix":
       return "noul 记 P(是)，拒答看门槛";
     case "noul-ok":
       return "门槛策略和 P(是) 已经分开";
+    case "noul-partial":
+      return "noul 记 P(是)，拒答概率那半句要拿掉";
     default:
       return "补上选项钉死（choice）";
   }
@@ -241,7 +305,7 @@ function buildTutorViz(mode, clampedText, userMessage) {
   const gapSentence = isBareGapTag(gapLine) ? gapSentenceForKind(kind) : gapLine;
 
   // Chart2 when temperature and calibration are the topic, including a correct account.
-  if (mode === "feynman" && (kind === "calib-mix" || kind === "calib-ok" || isTempVsCalibConfusion(um))) {
+  if (mode === "feynman" && (kind === "calib-mix" || kind === "calib-ok" || kind === "calib-partial" || kind === "calib-ask" || isTempVsCalibConfusion(um))) {
     return {
       type: "calib-curve",
       nodes: CALIB_CURVE_NODES.slice(),
@@ -295,50 +359,25 @@ function clampTutorOutput(mode, text, userMessage, lessonId) {
     const tipRaw = (t.match(/提示[:：]\s*([^\n]+)/) || [, ""])[1].trim();
     const absRaw = (t.match(/本轮摘要[:：]\s*(.+)/) || [, ""])[1].trim();
     const kind = classifyFeynmanKind(um, gapRaw);
-    let gapSentence = gapRaw;
-    if (isBareGapTag(gapSentence) || (isGenVsDecisionUtterance(um) && /概念易混|标题复读|缺因果|把生成当决策/.test(gapSentence))) {
-      gapSentence = gapSentenceForKind(kind);
-    }
-    // Force gen-output sentence when utterance is clearly LLM-vs-decision / 输出不同
     const lessonKey = lessonId || "lesson-0";
     const calibLesson = lessonKey === "lesson-0" || lessonKey === "lesson-1";
     const noulLesson = lessonKey === "lesson-0" || lessonKey === "lesson-2" || lessonKey === "lesson-7";
-    if (calibLesson && isCorrectFittedTempScaling(um)) {
-      if (/把校准说成|校准≠调温度|不是调温度锋利度|校准看可靠性\/ECE，不是/.test(gapSentence)) {
-        gapSentence = gapSentenceForKind("calib-ok");
-      }
-    } else if (noulLesson && isCorrectNoulAccount(um)) {
-      if (/不会时要拒答|noul 拒答|不会则拒答/.test(gapSentence)) {
-        gapSentence = gapSentenceForKind("noul-ok");
-      }
-    } else if (isGenVsDecisionUtterance(um) || (/输出/.test(um) && /不同|区别/.test(um))) {
-      gapSentence = gapSentenceForKind("gen-output");
-    } else if (calibLesson && isTempVsCalibConfusion(um)) {
-      gapSentence = gapSentenceForKind("calib-mix");
-    } else if (noulLesson && isNoulAsRefusal(um)) {
-      gapSentence = gapSentenceForKind("noul-mix");
+    const owned =
+      (calibLesson && (kind === "calib-ok" || kind === "calib-partial" || kind === "calib-ask" || kind === "calib-mix")) ||
+      (noulLesson && (kind === "noul-ok" || kind === "noul-partial" || kind === "noul-mix")) ||
+      kind === "gen-output";
+    let gapSentence = gapRaw;
+    if (owned || isBareGapTag(gapSentence) || (isGenVsDecisionUtterance(um) && /概念易混|标题复读|缺因果|把生成当决策/.test(gapSentence))) {
+      gapSentence = gapSentenceForKind(kind);
     }
     gapSentence = gapSentence.replace(/[。！？.!?]+$/, "").slice(0, 48);
     let tipClean = tipRaw.replace(/[。！？.!?].*$/, "").trim().slice(0, 36);
-    if (isCorrectFittedTempScaling(um) && /不是调温度|校准≠|不是调温度锋利度/.test(tipClean)) tipClean = "";
-    if (isCorrectNoulAccount(um) && /noul 拒答|不会时走 noul/.test(tipClean)) tipClean = "";
     const tipBad =
+      owned ||
       !tipClean ||
       /大模型|llm|用于做出决策|用来做决策|做出决策|三件套|^概念易混$/i.test(tipClean) ||
       !hasLessonWords(tipClean);
-    const tipKind =
-      isGenVsDecisionUtterance(um) || kind === "gen-output"
-        ? "gen-output"
-        : isCorrectFittedTempScaling(um)
-          ? "calib-ok"
-          : isTempVsCalibConfusion(um)
-          ? "calib-mix"
-          : isNoulAsRefusal(um)
-            ? "noul-mix"
-            : isCorrectNoulAccount(um)
-              ? "noul-ok"
-              : kind;
-    if (tipBad) tipClean = tipForKind(tipKind);
+    if (tipBad) tipClean = tipForKind(kind);
     let absClean = absRaw.slice(0, 40);
     if (!absClean || isBareGapTag(absClean) || /概念易混|标题复读|缺因果|三件套/.test(absClean)) {
       absClean = gapSentence.slice(0, 40);
@@ -361,6 +400,38 @@ function clampTutorOutput(mode, text, userMessage, lessonId) {
 
 function sseEncode(event, data) {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+}
+
+function withTimeout(promise, ms) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error("ai_timeout")), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+/** Live lesson-0 consensus is optional. Old text must not replace the embedded correction. */
+export function liveConsensusAllowed(text) {
+  const s = String(text || "");
+  if (!s || /不会则拒答（noul）|校准\s*≠\s*调温度/.test(s)) return false;
+  if (!/拟合的温度缩放是校准/.test(s)) return false;
+  if (!/随意指定的 T 不是|随意指定的温度不是/.test(s)) return false;
+  try {
+    return String(JSON.parse(s).v) === "1";
+  } catch (e) {
+    return false;
+  }
+}
+
+function guardedContext(embedded, loaded) {
+  const base = String(embedded || "");
+  if (loaded && loaded.text && liveConsensusAllowed(loaded.text)) {
+    return {
+      version: "embedded+" + String(loaded.version || "1").slice(0, 24),
+      text: base + "\n【核对过的共识补充】\n" + loaded.text,
+    };
+  }
+  return { version: loaded ? "embedded-guard" : "embedded", text: base };
 }
 
 async function loadConsensus(preferredVersion) {
@@ -467,33 +538,24 @@ export function buildMessages(body, lessonPack) {
 export async function collectTutorEvents(body, deps) {
   const resolved = resolveLesson(body && body.lessonId);
   if (resolved.error) return { status: 400, json: { ok: false, error: "unknown_lesson" } };
-  let contextText = resolved.lesson.context;
-  let version = "embedded";
+  let guarded = { version: "embedded", text: resolved.lesson.context };
   if (resolved.id === "lesson-0" && deps && deps.loadConsensus) {
     try {
-      const loaded = await deps.loadConsensus(body.consensusVersion);
-      if (loaded && loaded.text) {
-        contextText = loaded.text;
-        version = loaded.version || version;
-      }
+      guarded = guardedContext(resolved.lesson.context, await deps.loadConsensus(body.consensusVersion));
     } catch {
-      contextText = resolved.lesson.context;
-      version = "embedded-fallback";
+      guarded = { version: "embedded-fallback", text: resolved.lesson.context };
     }
   }
   const built = buildMessages(body, {
     id: resolved.id,
     title: resolved.lesson.title,
-    contextText,
-    version,
+    contextText: guarded.text,
+    version: guarded.version,
   });
   let raw = "";
   try {
     const aiMs = (deps && deps.aiMs) || 20000;
-    raw = await Promise.race([
-      deps.aiRun(built.messages),
-      new Promise((_, reject) => setTimeout(() => reject(new Error("ai_timeout")), aiMs)),
-    ]);
+    raw = await withTimeout(Promise.resolve(deps.aiRun(built.messages)), aiMs);
   } catch (e) {
     return {
       status: 200,
@@ -507,7 +569,7 @@ export async function collectTutorEvents(body, deps) {
     messages: built.messages,
     events: [
       { event: "token", data: { t: full } },
-      { event: "done", data: { summary: extractSummary(full), mode: built.mode, consensusVersion: version, viz } },
+      { event: "done", data: { summary: extractSummary(full), mode: built.mode, consensusVersion: guarded.version, viz } },
     ],
   };
 }
@@ -553,7 +615,7 @@ async function handleTutor(request, env, cors) {
   let consensus = { version: "embedded", text: resolved.lesson.context };
   if (resolved.id === "lesson-0") {
     try {
-      consensus = await loadConsensus(body.consensusVersion);
+      consensus = guardedContext(resolved.lesson.context, await loadConsensus(body.consensusVersion));
     } catch {
       consensus = { version: "embedded-fallback", text: resolved.lesson.context };
     }
@@ -572,15 +634,12 @@ async function handleTutor(request, env, cors) {
     let full = "";
     try {
 
-      const aiStream = await Promise.race([
-        env.AI.run(MODEL, {
-          messages,
-          stream: true,
-          max_tokens: 256,
-          temperature: 0.2,
-        }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("ai_timeout")), 20000)),
-      ]);
+      const aiStream = await withTimeout(env.AI.run(MODEL, {
+        messages,
+        stream: true,
+        max_tokens: 256,
+        temperature: 0.2,
+      }), 20000);
 
       const dec = new TextDecoder();
       let buf = "";
@@ -777,6 +836,7 @@ export default {
             tutorVersion: TUTOR_VERSION,
             lessons: lessonIds(),
             devOriginConfigured: devOrigins(env).length > 0,
+            pagesOriginConfigured: Boolean(env.PAGES_ORIGIN),
           },
           { headers: cors }
         );
@@ -788,9 +848,18 @@ export default {
 
       // Same-origin front door: serve Pages HTML/assets so /api/tutor is same-host
       if (request.method === "GET" || request.method === "HEAD") {
-        const pagesBase =
-          env.PAGES_ORIGIN ||
-          "https://cdn.jsdelivr.net/gh/quantskills-GuoYJ/decision-courseware@7bfb41b76b92cba8a2ede66c41bac1097e7ec33a";
+        const pagesBase = env.PAGES_ORIGIN || "";
+        if (!pagesBase) {
+          return Response.json(
+            {
+              ok: false,
+              error: "PAGES_ORIGIN unset",
+              tutorVersion: TUTOR_VERSION,
+              hint: "Set PAGES_ORIGIN to the commit that was tested with this worker. There is no fallback pin.",
+            },
+            { status: 503, headers: cors }
+          );
+        }
         let path = u.pathname;
         if (path === "/" || path === "") path = "/index.html";
         const upstreamUrl = pagesBase.replace(/\/$/, "") + path + u.search;

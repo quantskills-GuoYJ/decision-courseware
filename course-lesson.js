@@ -33,6 +33,10 @@
   if (!state.follow || typeof state.follow !== "object") state.follow = {};
   if (!state.feynman || typeof state.feynman !== "object") state.feynman = {};
   if (!state.ask || typeof state.ask !== "object") state.ask = { step: 0, asked: false, draft: "" };
+  delete state.ask.busy;
+  delete state.ask.abort;
+  var askBusy = false;
+  var askAbort = null;
   if (!state.sectionNotes || typeof state.sectionNotes !== "object") state.sectionNotes = {};
   if (!state.lab || typeof state.lab !== "object" || Array.isArray(state.lab)) state.lab = {};
   if (cfg.id === "lesson-1" && state.lab.fitText == null) {
@@ -44,8 +48,16 @@
   if (typeof state.note !== "string") state.note = "";
 
   function persist() {
+    var busy = state.ask && state.ask.busy;
+    var abort = state.ask && state.ask.abort;
+    if (state.ask) {
+      delete state.ask.busy;
+      delete state.ask.abort;
+    }
     writeState(state);
     refreshProgress();
+    if (busy) state.ask.busy = busy;
+    if (abort) state.ask.abort = abort;
   }
 
   function groupEls(group) {
@@ -431,14 +443,18 @@
     }
     return pump();
   }
+  function finishAsk() {
+    askBusy = false;
+    askAbort = null;
+    if (askSend) askSend.textContent = "发送回答";
+  }
   function liveAsk(api, message, modeName) {
-    if (state.ask.busy) return;
-    state.ask.busy = true;
+    askBusy = true;
     if (askSend) askSend.textContent = "停止";
     var acc = "";
     var stopped = false;
     var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
-    state.ask.abort = function () { stopped = true; if (ctrl) ctrl.abort(); };
+    askAbort = function () { stopped = true; if (ctrl) ctrl.abort(); };
     if (askOut) { askOut.className = "status"; askOut.textContent = "正在问学伴…"; }
     var history = state.ask.turns.filter(function (turn) {
       return turn.role === "user" || turn.role === "assistant";
@@ -465,26 +481,36 @@
       if (stopped) return;
       pushTurn("assistant", acc || "（学伴没有返回文字）", "live");
       state.ask.mode = "live";
+      finishAsk();
       persist();
       renderThread();
     }).catch(function () {
       if (stopped) return;
+      finishAsk();
       localContinue("学伴暂时不可用，已改用本机引导提问。");
-    }).then(function () {
-      state.ask.busy = false;
-      if (askSend) askSend.textContent = "发送回答";
     });
   }
   function routeAsk(message) {
+    if (askBusy) return false;
     var api = tutorUrl();
+    askBusy = true;
+    if (askSend) askSend.textContent = "停止";
     fetch(capabilitiesUrl(api), { cache: "no-store" }).then(function (res) {
       if (!res.ok) throw new Error("cap");
       return res.json();
     }).then(function (cap) {
       var lessons = cap && Array.isArray(cap.lessons) ? cap.lessons : [];
-      if (lessons.indexOf(cfg.id) >= 0) liveAsk(api, message, "socratic");
-      else localContinue("");
-    }).catch(function () { localContinue(""); });
+      if (lessons.indexOf(cfg.id) >= 0) {
+        liveAsk(api, message, "socratic");
+      } else {
+        finishAsk();
+        localContinue("");
+      }
+    }).catch(function () {
+      finishAsk();
+      localContinue("");
+    });
+    return true;
   }
   function sendSectionComment(text) {
     var raw = String(text || "").trim();
@@ -493,6 +519,7 @@
       return;
     }
     pushTurn("user", raw, state.ask.mode || "local");
+    persist();
     routeAsk(raw);
   }
   document.querySelectorAll("[data-section-note]").forEach(function (area) {
@@ -507,7 +534,11 @@
   });
   if (askSend) {
     askSend.addEventListener("click", function () {
-      if (state.ask.busy && state.ask.abort) { state.ask.abort(); state.ask.busy = false; askSend.textContent = "发送回答"; return; }
+      if (askBusy) {
+        if (askAbort) { askAbort(); finishAsk(); return; }
+        if (askOut) { askOut.className = "status"; askOut.textContent = "上一条还在发送。这一句先留在输入框里。"; }
+        return;
+      }
       var replyText = askReply ? String(askReply.value || "").trim() : "";
       if (!state.ask.turns.length) {
         if (askOut) { askOut.className = "status bad"; askOut.textContent = "先在本节评论下点发送并追问。"; }
@@ -520,7 +551,8 @@
       pushTurn("user", replyText, state.ask.mode || "local");
       state.ask.draft = "";
       if (askReply) askReply.value = "";
-      routeAsk(replyText);
+      persist();
+      if (!routeAsk(replyText) && askReply) askReply.value = replyText;
     });
   }
   var retryAsk = document.getElementById("askRetry");

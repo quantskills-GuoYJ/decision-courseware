@@ -9,6 +9,7 @@ import {
   buildTutorViz,
   pickCorsOrigin,
   capabilitiesPayload,
+  collectTutorEvents,
 } from "./index.js";
 
 const fittedOk =
@@ -99,6 +100,70 @@ test("generative contrast still uses the flow chart", () => {
   assert.equal(out.includes("选项钉死"), true);
 });
 
+test("contrast and mixed temperature accounts are not stamped as one verdict", () => {
+  const falseGap = "缺口：把随意调温度当成校准，没分开拟合的温度缩放和可靠性\n提示：随意 T 只改锋利度；拟合的温度缩放才是校准\n本轮摘要：随意T不是校准";
+  const A = "在留出集上拟合的温度缩放是一种校准方法。随意指定的温度不是校准。";
+  const B = "随意的温度只是锋利度，不是校准。留出集拟合的温度缩放是校准方法。";
+  const C = "在校准集上拟合的温度缩放是一种校准方法，而且温度越高越准。";
+  const english = "Fitted temperature scaling on a held-out set is a calibration method. An arbitrary temperature is not calibration.";
+  const punct = "在留出集上拟合的温度缩放是一种校准方法；随意指定的温度不是校准";
+  for (const text of [A, B, english, punct]) {
+    const out = clampTutorOutput("feynman", falseGap, text, "lesson-0");
+    assert.equal(out.includes("把随意调温度当成校准"), false, text + "\n" + out);
+    assert.match(out, /拟合|held-out|calibration/i, out);
+  }
+  assert.equal(isCorrectFittedTempScaling(C), false);
+  const mixed = clampTutorOutput("feynman", "缺口：已说明拟合的温度缩放是校准\n提示：留出集上的 ECE 要和拟合集分开报\n本轮摘要：说对了", C, "lesson-1");
+  assert.match(mixed, /越准/);
+  assert.equal(mixed.includes("未把它误当成随意拖的 T"), false, mixed);
+});
+
+test("negated noul refusal is not rewritten into the accusation", () => {
+  const D = "noul 是 P(是)，不能把它当成拒答概率。";
+  const variants = [
+    D,
+    "noul是P(是)；不能把它当成拒答概率",
+    "noul is P(yes); it is not a refusal probability.",
+    "noul 是 P(yes)。不能把它当成拒答概率。",
+  ];
+  const badModel = "缺口：把 noul 说成拒答概率，noul 是 P(是)\n提示：随意 T 只改锋利度\n本轮摘要：温度";
+  for (const text of variants) {
+    const out = clampTutorOutput("feynman", badModel, text, "lesson-0");
+    assert.equal(out.includes("把 noul 说成拒答概率"), false, text + "\n" + out);
+    assert.equal(/锋利度|把随意调温度/.test(out), false, out);
+    assert.match(out, /P\(是\)|P\(yes\)/i, out);
+  }
+  const garbage = clampTutorOutput("feynman", "@@@\n不是三行", D, "lesson-2");
+  assert.equal(garbage.includes("把 noul 说成拒答概率"), false, garbage);
+});
+
+test("an unclear temperature sentence is a question, not an invented gap", () => {
+  const out = clampTutorOutput(
+    "feynman",
+    "缺口：标题复读\n提示：三件套\n本轮摘要：标题复读",
+    "温度和校准都要看。",
+    "lesson-0"
+  );
+  assert.equal(out.includes("把随意调温度当成校准"), false, out);
+  assert.match(out, /还是/);
+});
+
+test("old live consensus cannot replace the embedded correction", async () => {
+  const old = JSON.stringify({ v: 1, note: "校准 ≠ 调温度。不会则拒答（noul）。" });
+  const result = await collectTutorEvents(
+    { mode: "socratic", lessonId: "lesson-0", message: "我卡住了", history: [], answers: {} },
+    {
+      aiRun: async () => "追问：只问一个？\n本轮摘要：单点",
+      loadConsensus: async () => ({ version: "1", text: old })
+    }
+  );
+  const system = result.messages[0].content;
+  assert.match(system, /noul 是 P\(是\)/);
+  assert.match(system, /拟合的温度缩放是校准/);
+  assert.equal(system.includes("不会则拒答"), false);
+  assert.equal(system.includes("校准 ≠ 调温度"), false);
+});
+
 test("localhost is not on the production allowlist", () => {
   const local = { headers: { get: () => "http://127.0.0.1:8765" } };
   const named = { headers: { get: () => "http://localhost:8765" } };
@@ -120,5 +185,6 @@ test("secret bindings and routes stay in the source", () => {
     assert.match(src, /pathname === "\/submit"/);
     assert.match(src, /tutor_failed/);
     assert.equal(src.includes("Bearer sk-"), false);
+    assert.equal(src.includes("7bfb41b"), false);
   });
 });

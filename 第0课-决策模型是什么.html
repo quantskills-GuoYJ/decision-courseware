@@ -3933,7 +3933,7 @@ footer {
   var HIST_ORIGINALS = {
     contrast: "LLM和决策模型的对比",
     flow: "state + 类型化问题 → 校准选项概率",
-    demo: "用 LLM 输出模糊，再交决策模型校准",
+    demo: "LLM 输出模糊，再交 DM 校准",
     calib: "通过 RLCD 训练进行校准",
     agent: "两层闸门：AutoThink 模型侧，App 执行侧",
     products: "不同模型选型"
@@ -4829,13 +4829,10 @@ footer {
   function formatTransportError(err) {
     var name = (err && err.name) ? String(err.name) : "Error";
     var message = (err && err.message) ? String(err.message) : "";
-    var host = "";
-    try { host = String(location.hostname || ""); } catch (eHost) {}
-    var localPreview = host === "localhost" || host === "127.0.0.1" || host === "[::1]" || host === "::1";
-    if (localPreview && name === "TypeError") {
-      return "本次批改没有返回。这个页面来源不在线上允许名单里，浏览器拦住了跨域。这是预期结果，不是候选学伴失败。本机题目仍然可以做。13:21 的历史样本保持原样，不要把它当成这次的成绩。候选要在单独的预览服务上配置 DEV_ALLOW_ORIGINS 后再测，不改线上允许名单。";
+    if (name === "TypeError") {
+      return "本次批改没有返回。连接失败，可能是网络不通，也可能是来源不在允许名单里，单凭 TypeError 分不清是哪一种。本机题目仍然可以做。13:21 的历史样本保持原样，不要把它当成这次的成绩。";
     }
-    var human = name === "TypeError" ? "学伴连不上（网络或跨域）。" : "学伴连不上。";
+    var human = "学伴连不上。";
     if (name === "AbortError") human = "学伴请求已中止。";
     return human + " " + name + (message ? "：" + message : "");
   }
