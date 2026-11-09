@@ -1,6 +1,14 @@
 # 第0课学习日志 · 字段一页纸（dm-learnlog-v1 · 已锁定）
 
-第1–7课不使用这个结构。它们的本机导出是另一个信封 `dm-lesson-note-v1`：`v`、`lessonId`、`savedAt`、`note`、`questions`、`follow`、`feynman`、`sectionNotes`。不要把那些字段并进 `dm-learnlog-v1`。
+第1–7课不使用这个结构。它们的本机导出仍叫 `dm-lesson-note-v1`（不升版本号，以免把旧文件判废）。在原有 `v`、`lessonId`、`savedAt`、`note`、`questions`、`follow`、`feynman`、`sectionNotes` 之外，可以多出：
+
+| 字段 | 含义 |
+|------|------|
+| `lab` | 滑块、拟合结果等实验状态。旧导出没有这个字段时，页面按空对象读取。 |
+| `conversation` | 本节评论发出的追问记录，含学员回答和下一问。 |
+| `askMode` | `local` 或 `live`。刷新后标签与此一致。 |
+
+词面自检只看同义词和明显否定，不是语义批改。不要把这些字段并进 `dm-learnlog-v1`。
 
 目标：只给 @决策模型学习 诊盲点用的**最小充分信号**，不是按钮流水账。
 

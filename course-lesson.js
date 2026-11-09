@@ -34,6 +34,13 @@
   if (!state.feynman || typeof state.feynman !== "object") state.feynman = {};
   if (!state.ask || typeof state.ask !== "object") state.ask = { step: 0, asked: false, draft: "" };
   if (!state.sectionNotes || typeof state.sectionNotes !== "object") state.sectionNotes = {};
+  if (!state.lab || typeof state.lab !== "object" || Array.isArray(state.lab)) state.lab = {};
+  if (cfg.id === "lesson-1" && state.lab.fitText == null) {
+    try {
+      var oldFit = localStorage.getItem("dm_lesson1_fit");
+      if (oldFit) state.lab.fitText = oldFit;
+    } catch (eFit) {}
+  }
   if (typeof state.note !== "string") state.note = "";
 
   function persist() {
@@ -126,12 +133,15 @@
 
     function paint() {
       var rec = state[bagName][id];
+      var checks = rec.checks ? rec.checks.length : 0;
       if (status) {
         status.className = "status" + (rec.phase === "ok" ? " ok" : rec.phase === "hint" ? " bad" : "");
-        status.textContent = rec.phase === "ok" ? okText : rec.phase === "hint" ? ("还缺：" + (rec.missing || "") + "。提示只指出缺什么，不代写。") : "";
+        if (rec.phase === "ok") status.textContent = okText + (checks ? "已核对 " + checks + " 次，可以改完再核对。" : "");
+        else if (rec.phase === "hint") status.textContent = "词面自检还没通过：" + (rec.missing || "") + "。这不是语义批改，不代写。";
+        else status.textContent = "";
       }
-      if (retry) retry.hidden = rec.phase !== "hint";
-      if (area) area.disabled = rec.phase === "ok";
+      if (retry) retry.hidden = rec.phase === "open";
+      if (area) area.disabled = false;
     }
     function saveText() {
       var phase = state[bagName][id].phase;
@@ -142,14 +152,10 @@
     if (area) area.addEventListener("input", saveText);
     if (check) check.addEventListener("click", function () {
       var text = area ? String(area.value || "") : "";
-      var missing = need.filter(function (word) { return text.indexOf(word) < 0; });
-      if (!text.trim()) {
-        state[bagName][id] = { phase: "hint", text: text, missing: need.join("、") };
-      } else if (missing.length) {
-        state[bagName][id] = { phase: "hint", text: text, missing: missing.join("、") };
-      } else {
-        state[bagName][id] = { phase: "ok", text: text, missing: "" };
-      }
+      var verdict = phraseVerdict(text, need);
+      var prev = state[bagName][id] || {};
+      var checks = (prev.checks || []).concat([{ text: text, phase: verdict.phase }]).slice(-12);
+      state[bagName][id] = { phase: verdict.phase, text: text, missing: verdict.missing, checks: checks };
       persist();
       paint();
     });
@@ -166,8 +172,53 @@
     paint();
     });
   }
-  bindPhrase("[data-follow]", "follow", "这句里需要的词都在。");
-  bindPhrase("[data-feynman]", "feynman", "这句用自己的话碰到了要点。");
+  function conceptHit(text, word) {
+    var t = String(text || "");
+    if (word === "概率") return /概率|置信|(?:^|[^a-z])p(?:[^a-z]|$)/i.test(t);
+    if (word === "门槛") return /门槛|阈值|θ|theta/i.test(t);
+    if (word === "留出") return /留出|测试集|held-?out/i.test(t);
+    if (word === "拟合") return /拟合|选\s*T|估计/i.test(t);
+    if (word === "校准") return /校准|calibration/i.test(t);
+    if (word === "代价") return /代价|损失|成本|cost/i.test(t);
+    if (word === "可靠") return /可靠|ECE|校准/i.test(t);
+    if (word === "重新") return /重新|再算|重算/i.test(t);
+    if (word === "窗口") return /窗口|新的一批|新数据/i.test(t);
+    if (word === "标签") return /标签|标注/i.test(t);
+    if (word === "不自动") return /不自动|转人工|先不自动/i.test(t);
+    if (word === "0.75") return /0\.75|0\.750|3\s*\/\s*4|四分之三/.test(t);
+    return t.indexOf(word) >= 0;
+  }
+  function conceptNegated(text, word) {
+    var t = String(text || "");
+    if (word === "概率") {
+      if (/不是拒答概率|并非拒答概率/.test(t)) return false;
+      return /不是概率|没有概率|并非概率/.test(t);
+    }
+    if (word === "门槛") return /不是门槛|没有门槛|并非门槛/.test(t);
+    return new RegExp("不是" + word + "|没有" + word).test(t);
+  }
+  function keywordSalad(text, need) {
+    var t = String(text || "");
+    need.forEach(function (word) { t = t.split(word).join(" "); });
+    t = t.replace(/概率|门槛|留出|拟合|校准|代价|可靠|重新|窗口|标签|不自动/g, " ");
+    t = t.replace(/[pPθ0-9.\s，。、！？!?,.；;：:“”"'（）()\-]/g, "");
+    return t.length < 4;
+  }
+  function phraseVerdict(text, need) {
+    var raw = String(text || "");
+    if (!raw.trim()) return { phase: "hint", missing: "先写一句，再核对" };
+    if (keywordSalad(raw, need)) return { phase: "hint", missing: "只有关键词，不像一句解释" };
+    var missing = [];
+    need.forEach(function (word) {
+      if (conceptNegated(raw, word)) missing.push(word + "（这句在否定它）");
+      else if (!conceptHit(raw, word)) missing.push(word);
+    });
+    if (missing.length) return { phase: "hint", missing: "还缺 " + missing.join("、") };
+    return { phase: "ok", missing: "" };
+  }
+
+  bindPhrase("[data-follow]", "follow", "词面自检通过，不是语义批改。");
+  bindPhrase("[data-feynman]", "feynman", "词面自检通过，不是语义批改。");
 
   document.querySelectorAll("section[data-q-group]").forEach(function (sec) {
     var id = sec.getAttribute("data-q-group");
@@ -238,12 +289,28 @@
   var prompts = Array.isArray(cfg.offlinePrompts) && cfg.offlinePrompts.length
     ? cfg.offlinePrompts
     : ["你这句里，哪一个词是你最没把握的？只答那一个。"];
-  function paintAsk() {
-    if (!askOut || !state.ask.asked) return;
-    var step = Math.max(0, Math.min(prompts.length - 1, state.ask.step || 0));
-    askOut.className = "status";
-    askOut.textContent = "本课追问：" + prompts[step];
+  if (!Array.isArray(state.ask.turns)) state.ask.turns = [];
+  if (state.ask.asked && !state.ask.turns.length) {
+    state.ask.mode = state.ask.mode || "local";
+    state.ask.turns = [{ role: "assistant", source: "local", text: prompts[0] }];
+    state.ask.step = Math.max(1, state.ask.step || 1);
   }
+  var askLog = document.getElementById("askLog");
+  if (!askLog && askOut) {
+    askLog = document.createElement("div");
+    askLog.id = "askLog";
+    askLog.className = "out";
+    askOut.parentNode.insertBefore(askLog, askOut);
+  }
+  var askIntro = document.querySelector("#ask p");
+  if (askIntro) {
+    askIntro.textContent = "发送并追问使用上面「本节评论」里的原文，不使用费曼那一格。下面的框只用来回答刚出现的问题。本机问题是写好的有限几句，问完会说明结束。";
+  }
+  if (askReply) {
+    var replyLabel = document.querySelector("label[for='askReply']");
+    if (replyLabel) replyLabel.textContent = "回答这一问";
+  }
+  if (askSend) askSend.textContent = "发送回答";
   if (askReply && state.ask.draft && !askReply.value) askReply.value = state.ask.draft;
   if (askReply) {
     askReply.addEventListener("input", function () {
@@ -265,14 +332,45 @@
   function capabilitiesUrl(api) {
     return String(api || "").replace(/\/api\/tutor\/?$/, "/api/tutor/capabilities");
   }
-  function localAsk(label) {
+  function sourceName(source) {
+    return source === "live" ? "学伴" : "本机引导提问";
+  }
+  function renderThread() {
+    if (askLog) {
+      askLog.textContent = "";
+      state.ask.turns.forEach(function (turn) {
+        var line = document.createElement("p");
+        var who = turn.role === "user" ? "我" : sourceName(turn.source || state.ask.mode || "local");
+        line.textContent = who + "：" + turn.text;
+        askLog.appendChild(line);
+      });
+    }
+    if (!askOut) return;
+    askOut.className = "status";
+    if (!state.ask.turns.length) askOut.textContent = "";
+    else askOut.textContent = "来源：" + sourceName(state.ask.mode || "local");
+  }
+  function pushTurn(role, text, source) {
+    state.ask.turns.push({ role: role, text: String(text || "").slice(0, 2000), source: source });
+    if (state.ask.turns.length > 24) state.ask.turns = state.ask.turns.slice(-24);
+  }
+  function nextLocalQuestion() {
+    var step = state.ask.step || 0;
+    if (step >= prompts.length) {
+      pushTurn("assistant", "本机写好的问题已经问完。这不是自适应学伴。可以改本节评论后再发送，或在学伴接入后点重试。", "local");
+      state.ask.done = true;
+      return;
+    }
+    pushTurn("assistant", prompts[step], "local");
+    state.ask.step = step + 1;
+  }
+  function localContinue(preface) {
     state.ask.mode = "local";
     state.ask.asked = true;
+    if (preface) pushTurn("assistant", preface, "local");
+    if (!state.ask.done) nextLocalQuestion();
     persist();
-    if (!askOut) return;
-    var step = Math.max(0, Math.min(prompts.length - 1, state.ask.step || 0));
-    askOut.className = "status";
-    askOut.textContent = label + prompts[step];
+    renderThread();
   }
   function readSseText(res, onEvent) {
     var sse = { buf: "", event: "", data: [] };
@@ -315,7 +413,7 @@
     }
     return pump();
   }
-  function liveAsk(api) {
+  function liveAsk(api, message, modeName) {
     if (state.ask.busy) return;
     state.ask.busy = true;
     if (askSend) askSend.textContent = "停止";
@@ -324,11 +422,15 @@
     var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
     state.ask.abort = function () { stopped = true; if (ctrl) ctrl.abort(); };
     if (askOut) { askOut.className = "status"; askOut.textContent = "正在问学伴…"; }
-    var history = (state.ask.history || []).slice(-8);
+    var history = state.ask.turns.filter(function (turn) {
+      return turn.role === "user" || turn.role === "assistant";
+    }).slice(-8).map(function (turn) {
+      return { role: turn.role, content: turn.text };
+    });
     var body = {
-      mode: "socratic",
+      mode: modeName || "socratic",
       lessonId: cfg.id,
-      message: (note && note.value) || (askReply && askReply.value) || "",
+      message: message,
       answers: { note: state.note || "", sectionNotes: state.sectionNotes || {} },
       history: history,
       locale: "zh-Hans"
@@ -340,57 +442,78 @@
       return readSseText(res, function (name, payload) {
         if (name === "token") acc += payload && payload.t != null ? String(payload.t) : "";
         if (name === "error") throw new Error("sse");
-        if (askOut && acc) { askOut.className = "status"; askOut.textContent = "学伴：" + acc; }
       });
     }).then(function () {
       if (stopped) return;
-      state.ask.history = (state.ask.history || []).concat([
-        { role: "user", content: String(body.message || "").slice(0, 2000) },
-        { role: "assistant", content: acc.slice(0, 2000) }
-      ]).slice(-8);
+      pushTurn("assistant", acc || "（学伴没有返回文字）", "live");
       state.ask.mode = "live";
       persist();
+      renderThread();
     }).catch(function () {
       if (stopped) return;
-      localAsk("学伴暂时不可用，已改用本机引导提问：");
+      localContinue("学伴暂时不可用，已改用本机引导提问。");
     }).then(function () {
       state.ask.busy = false;
-      if (askSend) askSend.textContent = "发送并追问";
+      if (askSend) askSend.textContent = "发送回答";
     });
   }
+  function routeAsk(message) {
+    var api = tutorUrl();
+    fetch(capabilitiesUrl(api), { cache: "no-store" }).then(function (res) {
+      if (!res.ok) throw new Error("cap");
+      return res.json();
+    }).then(function (cap) {
+      var lessons = cap && Array.isArray(cap.lessons) ? cap.lessons : [];
+      if (lessons.indexOf(cfg.id) >= 0) liveAsk(api, message, "socratic");
+      else localContinue("");
+    }).catch(function () { localContinue(""); });
+  }
+  function sendSectionComment(text) {
+    var raw = String(text || "").trim();
+    if (!raw) {
+      if (askOut) { askOut.className = "status bad"; askOut.textContent = "先写本节评论，再发送并追问。"; }
+      return;
+    }
+    pushTurn("user", raw, state.ask.mode || "local");
+    state.ask.step = 0;
+    state.ask.done = false;
+    routeAsk(raw);
+  }
+  document.querySelectorAll("[data-section-note]").forEach(function (area) {
+    if (area.getAttribute("data-ask-wired")) return;
+    area.setAttribute("data-ask-wired", "1");
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "act";
+    btn.textContent = "发送并追问";
+    btn.addEventListener("click", function () { sendSectionComment(area.value); });
+    area.insertAdjacentElement("afterend", btn);
+  });
   if (askSend) {
     askSend.addEventListener("click", function () {
-      if (state.ask.busy && state.ask.abort) { state.ask.abort(); state.ask.busy = false; if (askSend) askSend.textContent = "发送并追问"; return; }
-      var noteText = note ? String(note.value || "").trim() : "";
+      if (state.ask.busy && state.ask.abort) { state.ask.abort(); state.ask.busy = false; askSend.textContent = "发送回答"; return; }
       var replyText = askReply ? String(askReply.value || "").trim() : "";
-      if (!noteText && !replyText && !state.ask.asked) {
-        if (askOut) {
-          askOut.className = "status bad";
-          askOut.textContent = "先写一句笔记，再发送并追问。";
-        }
+      if (!state.ask.turns.length) {
+        if (askOut) { askOut.className = "status bad"; askOut.textContent = "先在本节评论下点发送并追问。"; }
         return;
       }
-      if (state.ask.asked && replyText && state.ask.mode !== "live") {
-        state.ask.step = Math.min(prompts.length - 1, (state.ask.step || 0) + 1);
-        state.ask.draft = "";
-        if (askReply) askReply.value = "";
+      if (!replyText) {
+        if (askOut) { askOut.className = "status bad"; askOut.textContent = "先写下对这一问的回答，再发送。"; }
+        return;
       }
-      var api = tutorUrl();
-      fetch(capabilitiesUrl(api), { cache: "no-store" }).then(function (res) {
-        if (!res.ok) throw new Error("cap");
-        return res.json();
-      }).then(function (cap) {
-        var lessons = cap && Array.isArray(cap.lessons) ? cap.lessons : [];
-        if (lessons.indexOf(cfg.id) >= 0) liveAsk(api);
-        else localAsk("本机引导提问：");
-      }).catch(function () {
-        localAsk("本机引导提问：");
-      });
+      pushTurn("user", replyText, state.ask.mode || "local");
+      state.ask.draft = "";
+      if (askReply) askReply.value = "";
+      routeAsk(replyText);
     });
   }
   var retryAsk = document.getElementById("askRetry");
-  if (retryAsk) retryAsk.addEventListener("click", function () { if (askSend) askSend.click(); });
-  paintAsk();
+  if (retryAsk) retryAsk.addEventListener("click", function () {
+    var last = state.ask.turns[state.ask.turns.length - 1];
+    if (last && last.role === "user") routeAsk(last.text);
+    else if (askOut) { askOut.className = "status bad"; askOut.textContent = "先在本节评论下点发送并追问。"; }
+  });
+  renderThread();
 
   var exportBtn = document.getElementById("exportLesson");
   if (exportBtn) {
@@ -403,7 +526,10 @@
         questions: state.q,
         follow: state.follow,
         feynman: state.feynman,
-        sectionNotes: state.sectionNotes || {}
+        sectionNotes: state.sectionNotes || {},
+        lab: state.lab || {},
+        conversation: (state.ask && state.ask.turns) || [],
+        askMode: (state.ask && state.ask.mode) || ""
       };
       var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       var a = document.createElement("a");
@@ -437,5 +563,38 @@
     });
     writeProgress(questionsOk && followOk);
   }
+  document.querySelectorAll("[data-persist]").forEach(function (el) {
+    var key = el.getAttribute("data-persist");
+    if (!key) return;
+    if (state.lab[key] != null) {
+      if (el.type === "checkbox") el.checked = !!state.lab[key];
+      else el.value = String(state.lab[key]);
+    }
+    function saveLab() {
+      state.lab[key] = el.type === "checkbox" ? el.checked : el.value;
+      persist();
+    }
+    el.addEventListener("input", saveLab);
+    el.addEventListener("change", saveLab);
+  });
+  window.__dmLessonState = {
+    getLab: function (key, fallback) { return state.lab[key] == null ? fallback : state.lab[key]; },
+    setLab: function (key, value) { state.lab[key] = value; persist(); },
+    snapshot: function () {
+      return {
+        v: "dm-lesson-note-v1",
+        lessonId: cfg.id,
+        note: state.note || "",
+        questions: state.q,
+        follow: state.follow,
+        feynman: state.feynman,
+        sectionNotes: state.sectionNotes || {},
+        lab: state.lab || {},
+        conversation: (state.ask && state.ask.turns) || [],
+        askMode: (state.ask && state.ask.mode) || ""
+      };
+    }
+  };
+
   refreshProgress();
 })();

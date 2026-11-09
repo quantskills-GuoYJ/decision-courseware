@@ -31,6 +31,21 @@
   <p>图上最后一格写的是「noul · P(是)」。不要把它读成拒答。拒答要等你拿这个概率去和门槛比。</p>
 </section>
 
+<section>
+  <h2>动手：choice 怎么变成概率</h2>
+  <p>设定：已经有一笔多仓，下一步只能做一件事，选项钉死为平仓、持有、加仓。模型先给了未归一的分数 2、1、1。它们还不是概率。</p>
+  <button type="button" class="act" id="normBtn">除以总和，得到概率</button>
+  <p id="normOut" class="out" role="status">还没归一化。2+1+1=4。</p>
+</section>
+
+<section>
+  <h2>动手：score 的期望分</h2>
+  <p>设定：有序档 1 到 5。把中间档的概率质量拖高或拖低，期望分是 Σ 档位×概率。概率始终加总为 1。</p>
+  <label for="scoreMass">中间档（3 分）的质量 <output id="scoreOut">0.40</output></label>
+  <input id="scoreMass" data-persist="scoreMass" type="range" min="0" max="80" value="40" step="1" aria-valuemin="0" aria-valuemax="80" aria-valuenow="40">
+  <p id="scoreLine" class="out" role="status"></p>
+</section>
+
 <section data-q-group="q1">
   <h2 id="q1-title">先猜</h2>
   <p>模型对「这条新闻是否已经定价」给出 noul = 0.20。0.20 指什么？</p>
@@ -65,7 +80,7 @@
   <h2>实验：同一个 P(是)，两套门槛</h2>
   <p><span class="tag">课堂例子</span> P(是)=0.62。这不是频率统计。拖动门槛，只改变策略，不改变 noul。</p>
   <label for="theta">门槛 θ <output id="thetaOut">0.70</output></label>
-  <input id="theta" type="range" min="0" max="100" value="70" step="1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70">
+  <input id="theta" data-persist="theta" type="range" min="0" max="100" value="70" step="1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70">
   <p id="policyOut" class="out" role="status"></p>
 </section>
 
@@ -116,7 +131,10 @@
 window.COURSE_LESSON = {
   id: "lesson-2",
   storageKey: "dm_lesson2_state",
-  offlinePrompts: ["0.20 是 P(是) 还是拒答概率？只答一个。"]
+  offlinePrompts: [
+    "0.20 是 P(是) 还是拒答概率？只答一个。",
+    "平仓、持有、加仓要在什么前提下才互斥？"
+  ]
 };
 </script>
 <script src="course-lesson.js"></script>
@@ -136,6 +154,23 @@ window.COURSE_LESSON = {
   }
   input.addEventListener("input", paint);
   paint();
+  document.getElementById("normBtn").addEventListener("click", function () {
+    document.getElementById("normOut").textContent = "设定下三者互斥且必须做一件。2/4=0.50，1/4=0.25，1/4=0.25，加总为 1。若问题允许同时减仓又加仓，这组选项就不该再用一个 choice。";
+  });
+  var mass = document.getElementById("scoreMass");
+  var massOut = document.getElementById("scoreOut");
+  var scoreLine = document.getElementById("scoreLine");
+  function paintScore() {
+    var mid = Number(mass.value) / 100;
+    massOut.textContent = mid.toFixed(2);
+    mass.setAttribute("aria-valuenow", String(mass.value));
+    var rest = (1 - mid) / 4;
+    var probs = [rest, rest, mid, rest, rest];
+    var ev = probs.reduce(function (sum, p, i) { return sum + (i + 1) * p; }, 0);
+    scoreLine.textContent = "P = " + probs.map(function (p) { return p.toFixed(2); }).join("，") + "。期望分 = " + ev.toFixed(2) + "。这是有序档，不是三选一。";
+  }
+  mass.addEventListener("input", paintScore);
+  paintScore();
 })();
 </script>
 </body>

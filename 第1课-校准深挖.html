@@ -203,16 +203,19 @@ window.COURSE_LESSON = {
     ].join("\n");
     show(text);
     try { localStorage.setItem(LAB_KEY, text); } catch (e) {}
+    if (window.__dmLessonState) window.__dmLessonState.setLab("fitText", text);
   }
   document.getElementById("fitBtn").addEventListener("click", run);
   document.getElementById("resetFit").addEventListener("click", function () {
     try { localStorage.removeItem(LAB_KEY); } catch (e) {}
+    if (window.__dmLessonState) window.__dmLessonState.setLab("fitText", "");
     show("尚未拟合。随意 T 与拟合 T 的差别要等你按按钮之后才出现。");
   });
-  try {
-    var saved = localStorage.getItem(LAB_KEY);
-    if (saved) show(saved);
-  } catch (e2) {}
+  var savedFit = window.__dmLessonState ? window.__dmLessonState.getLab("fitText", "") : "";
+  if (!savedFit) {
+    try { savedFit = localStorage.getItem(LAB_KEY) || ""; } catch (e2) { savedFit = ""; }
+  }
+  if (savedFit) show(savedFit);
 })();
 </script>
 </body>

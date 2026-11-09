@@ -148,20 +148,22 @@ await page.keyboard.press("KeyA");
 await page.keyboard.up("Control");
 await page.keyboard.type("要在留出数据上拟合 T，再评估");
 await page.click("[data-follow-check]");
-await page.waitForFunction(() => document.querySelector("[data-follow-status]").textContent.indexOf("都在") >= 0);
+await page.waitForFunction(() => document.querySelector("[data-follow='f1'] [data-follow-status]").textContent.indexOf("词面自检通过") >= 0);
 await page.focus("#lessonNote");
 await page.keyboard.type("笔记不发送");
 await new Promise((r) => setTimeout(r, 500));
-await page.click("#askSend");
+await page.$eval("[data-section-note='q1']", (el) => { el.value = "留出集上拟合才是校准"; });
+await page.evaluate(() => document.querySelector("[data-section-note='q1']").nextElementSibling.click());
+await page.waitForFunction(() => document.getElementById("askLog").innerText.indexOf("本机引导提问") >= 0);
 const gated = await page.evaluate(() => ({
   calls: window.__tutorCalls.length,
-  ask: document.getElementById("askOut").textContent,
+  log: document.getElementById("askLog").innerText,
+  source: document.getElementById("askOut").textContent,
   note: document.getElementById("lessonNoteStatus").textContent
 }));
-check("local ask does not post this lesson", gated.calls === callsBefore || true);
 const postedLesson = await page.evaluate(() => window.__tutorCalls.filter(function (c) { return String(c).indexOf("lesson-1") >= 0; }).length);
 check("local ask does not post lesson-1", postedLesson === 0, String(postedLesson));
-check("local ask is labeled", gated.ask.indexOf("本机引导提问") >= 0 && (gated.ask.match(/？/g) || []).length === 1, gated.ask);
+check("local ask is labeled", gated.source.indexOf("本机引导提问") >= 0 && gated.log.indexOf("留出集上拟合才是校准") >= 0, gated.log);
 check("note saved locally", gated.note.indexOf("已保存本机") >= 0);
 await page.screenshot({ path: shots + "/lesson1-mobile.png", fullPage: false });
 

@@ -40,8 +40,15 @@
   <h2>揭晓之后再实验</h2>
   <p>现在可以改 θ。p 固定为 0.55（课堂例子）。</p>
   <label for="theta">θ <output id="thetaOut">0.70</output></label>
-  <input id="theta" type="range" min="0" max="100" value="70" step="1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70">
+  <input id="theta" data-persist="theta" type="range" min="0" max="100" value="70" step="1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70">
   <p id="gateOut" class="out" role="status"></p>
+  <h3>误自动和漏自动，代价可以不一样</h3>
+  <p>假设只比较两种错：不该自动时自动了（误自动），以及该自动时没有自动（漏自动）。这里不说这个门槛对所有市场都最优。同一套比值的推导在 <a href="第5课-期望与代价.html">第5课</a>：把「做对的收益」看成避免漏自动的好处。</p>
+  <label for="fpCost">误自动代价 <output id="fpOut">4</output></label>
+  <input id="fpCost" data-persist="fpCost" type="range" min="1" max="9" value="4" step="1" aria-valuemin="1" aria-valuemax="9" aria-valuenow="4">
+  <label for="fnCost">漏自动代价 <output id="fnOut">1</output></label>
+  <input id="fnCost" data-persist="fnCost" type="range" min="1" max="9" value="1" step="1" aria-valuemin="1" aria-valuemax="9" aria-valuenow="1">
+  <p id="costOut" class="out" role="status"></p>
 </section>
 
 <section data-q-group="q2">
@@ -56,7 +63,7 @@
   <button type="button" class="act" data-retry hidden>再试一次</button>
   <div class="explain" data-explain-body hidden>
     <p>同一概率，门槛下降以后可以由不自动变成自动。所以门槛是代价和覆盖之间的选择，不是模型头里写死的拒答。</p>
-    <p><span class="tag">假设</span> 若误自动的代价很高，就会把 θ 设高，让更多单子转人工。本课不给出真实资金损失数字。</p>
+    <p>若误自动比漏自动更贵，分界会高于 0.5。这是在「只比较这两种错」的假设下，不是对所有交易都最优。具体算法见第5课，本课不给真实资金损失。</p>
   </div>
 </section>
 
@@ -107,7 +114,10 @@
 window.COURSE_LESSON = {
   id: "lesson-3",
   storageKey: "dm_lesson3_state",
-  offlinePrompts: ["p 不变时，只把门槛调低，自动还是不自动会跟着变吗？"]
+  offlinePrompts: [
+    "p 不变时，只把门槛调低，自动还是不自动会跟着变吗？",
+    "误自动比漏自动更贵时，门槛通常高于还是低于 0.5？"
+  ]
 };
 </script>
 <script src="course-lesson.js"></script>
@@ -127,6 +137,24 @@ window.COURSE_LESSON = {
   }
   input.addEventListener("input", paint);
   paint();
+  var fp = document.getElementById("fpCost");
+  var fn = document.getElementById("fnCost");
+  var fpOut = document.getElementById("fpOut");
+  var fnOut = document.getElementById("fnOut");
+  var costOut = document.getElementById("costOut");
+  function paintCost() {
+    var cFp = Number(fp.value);
+    var cFn = Number(fn.value);
+    fpOut.textContent = String(cFp);
+    fnOut.textContent = String(cFn);
+    fp.setAttribute("aria-valuenow", String(cFp));
+    fn.setAttribute("aria-valuenow", String(cFn));
+    var star = cFp / (cFp + cFn);
+    costOut.textContent = "假设只比较误自动代价 " + cFp + " 和漏自动代价 " + cFn + "。分界 ≈ " + star.toFixed(2) + "。课堂 p=0.55 " + (0.55 >= star ? "不低于这个分界。" : "低于这个分界，先不自动。") + " 不是对所有情形都最优。";
+  }
+  fp.addEventListener("input", paintCost);
+  fn.addEventListener("input", paintCost);
+  paintCost();
 })();
 </script>
 </body>

@@ -40,7 +40,7 @@
   <h2>实验：改代价，看门槛跟着变</h2>
   <p>收益 B 固定为 1。拖动做错的代价 C。门槛 p* = C / (1+C)。P 固定为 0.55（课堂例子）。</p>
   <label for="cost">做错的代价 C <output id="costOut">3</output></label>
-  <input id="cost" type="range" min="1" max="9" value="3" step="1" aria-valuemin="1" aria-valuemax="9" aria-valuenow="3">
+  <input id="cost" data-persist="cost" type="range" min="1" max="9" value="3" step="1" aria-valuemin="1" aria-valuemax="9" aria-valuenow="3">
   <p id="euOut" class="out" role="status"></p>
 </section>
 
