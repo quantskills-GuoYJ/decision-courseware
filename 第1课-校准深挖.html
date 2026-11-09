@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第1课 · 校准深挖</title>
+<link rel="stylesheet" href="course-lesson.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到内容</a>
+<div class="wrap">
+<nav class="nav" aria-label="课程">
+  <a href="课程目录.html">课程目录</a>
+  <a href="第0课-决策模型是什么.html">上一课</a>
+  <a href="第2课-原语与拒答.html">下一课</a>
+</nav>
+<header>
+  <div class="badge">第1课</div>
+  <h1 id="main">校准深挖：ECE、Brier、温度缩放</h1>
+  <p class="lead">随意拖一个温度，不等于做了校准。在留出数据上拟合的温度缩放，是一种校准方法。下面的数字都是课堂示意，不是某篇论文里的实测表。</p>
+</header>
+
+<section data-q-group="q1" data-unlock="#fitLab">
+  <h2 id="q1-title">先猜，再看解释</h2>
+  <p>在一份没参与训练的数据上，选一个标量 T，把 logits 除以 T，使这份数据上的负对数似然变小；再到另一份数据上报告 ECE 或 NLL。这算不算校准？</p>
+  <div class="opts" role="group" aria-labelledby="q1-title">
+    <button type="button" class="opt" data-choice="exclusive" data-correct="false">不算。温度和校准是两件互斥的事。</button>
+    <button type="button" class="opt" data-choice="fitted" data-correct="true">算。这就是温度缩放，而且要在留出数据上评估。</button>
+  </div>
+  <p class="hint" data-hint hidden>提示：课堂上随便拖的 T 不是校准。Guo 等人把「在验证集上拟合一个 T」称作 temperature scaling，它是后处理校准。先别看标准答案，用这个差别再选一次。</p>
+  <p class="status" data-status role="status"></p>
+  <button type="button" class="act" data-retry hidden>再试一次</button>
+  <div class="explain" data-explain-body hidden>
+    <p>温度缩放是校准方法：在留出集上只学一个 T，推理时把 logits 除以 T（Guo, Pleiss, Sun, Weinberger, <cite>On Calibration of Modern Neural Networks</cite>, ICML 2017）。它不改 argmax。已经得到的概率仍可以再做一次温度缩放，做完必须重新在留出集上评估，并不是「校准过就永远不能再缩放」。</p>
+    <p>第0课里的滑块没有估计 T，只演示锋利度。那一段示意 ECE 也不是这篇论文的数字。</p>
+    <p class="src">来源：<a href="https://proceedings.mlr.press/v70/guo17a.html">proceedings.mlr.press/v70/guo17a.html</a>。ECE 的常用定义见 Naeini, Cooper, Hauskrecht, AAAI 2015。</p>
+  </div>
+</section>
+
+<section id="fitLab" hidden>
+  <h2>实验：拟合集选 T，留出集看 ECE</h2>
+  <p><span class="tag">示意样本</span> 不是实测，也不是 Guo et al. 表里的模型。logit 是未缩放的分数，y 是 0/1 标签。拟合只最小化拟合集的平均 NLL。ECE 用两个等宽桶，只在留出集上报。</p>
+  <table>
+    <caption>拟合集（用来选 T）</caption>
+    <thead><tr><th>logit</th><th>y</th></tr></thead>
+    <tbody id="fitRows"></tbody>
+  </table>
+  <table>
+    <caption>留出集（不参与选 T）</caption>
+    <thead><tr><th>logit</th><th>y</th></tr></thead>
+    <tbody id="evalRows"></tbody>
+  </table>
+  <div class="row">
+    <button type="button" class="act" id="fitBtn">在拟合集上选择 T</button>
+    <button type="button" class="act" id="resetFit">清除这次拟合</button>
+  </div>
+  <p id="fitOut" class="out" role="status">尚未拟合。随意 T 与拟合 T 的差别要等你按按钮之后才出现。</p>
+</section>
+
+<section data-q-group="q2">
+  <h2 id="q2-title">再猜一句</h2>
+  <p>一条已经校准过的概率曲线，还能不能再做温度缩放？</p>
+  <div class="opts" role="group" aria-labelledby="q2-title">
+    <button type="button" class="opt" data-choice="never" data-correct="false">不能。校准过的曲线禁止再乘任何温度。</button>
+    <button type="button" class="opt" data-choice="again" data-correct="true">能。它会变成另一组概率，必须重新做留出评估。</button>
+  </div>
+  <p class="hint" data-hint hidden>提示：温度缩放是后处理，不是「只能用在未校准模型上」的禁令。关键是做完要再评估，而不是先把整段答案背下来。</p>
+  <p class="status" data-status role="status"></p>
+  <button type="button" class="act" data-retry hidden>再试一次</button>
+  <div class="explain" data-explain-body hidden>
+    <p>可以再缩放。新的 T 会改变概率的锋利度，argmax 仍不变，但可靠程度可能变好或变坏。所以「已校准」不是永久标签，留出集上的 ECE、Brier 或 NLL 才是这次缩放的成绩。</p>
+    <p class="src">Brier 分数是概率预报的均方误差（Brier, Monthly Weather Review, 1950）。本课不引用任何未核对的业务 ECE。</p>
+  </div>
+</section>
+
+<section data-follow="f1" data-need="留出,拟合">
+  <h2>用自己的话补一句</h2>
+  <label for="follow1">写一句，里面要同时出现「留出」和「拟合」。不要交标准答案。</label>
+  <textarea id="follow1"></textarea>
+  <div class="row">
+    <button type="button" class="act" data-follow-check>核对这句</button>
+    <button type="button" class="act" data-follow-retry hidden>再试一次</button>
+  </div>
+  <p class="status" data-follow-status role="status"></p>
+</section>
+
+<section>
+  <h2>笔记</h2>
+  <label for="lessonNote">只存在这台机器上。输入不会发送。</label>
+  <textarea id="lessonNote"></textarea>
+  <p id="lessonNoteStatus" class="status" role="status"></p>
+</section>
+
+<section id="ai">
+  <h2>学伴</h2>
+  <p>这一课的对错由页面规则判断。现有学伴接口只加载第0课知识，这里不会自动调用它，也不会把第0课的共识当成第1课的分数。</p>
+  <button type="button" class="act" id="aiGateBtn">为什么按钮不到学伴</button>
+  <p id="aiGateText" hidden>Worker <code>dm-course.vibeniubi.com/api/tutor</code> 目前没有第1课知识。要让学伴按本课追问，需要后端另加该课材料。在那之前，请用上面的题目和留出集实验。</p>
+</section>
+
+<footer>
+  <p><a href="课程目录.html">回目录</a> · <a href="第2课-原语与拒答.html">第2课</a></p>
+</footer>
+</div>
+<script>
+window.COURSE_LESSON = { id: "lesson-1", storageKey: "dm_lesson1_state" };
+</script>
+<script src="course-lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  var FIT = [[2.2,1],[1.4,1],[0.6,0],[0.3,1],[-0.4,0],[-1.2,0],[-1.8,0],[0.9,1]];
+  var EVALS = [[1.8,1],[0.2,0],[-0.8,1],[-1.5,0],[1.1,1]];
+  function sigmoid(z) { return 1 / (1 + Math.exp(-z)); }
+  function nll(set, T) {
+    var s = 0;
+    set.forEach(function (row) {
+      var p = Math.min(1 - 1e-6, Math.max(1e-6, sigmoid(row[0] / T)));
+      s += -(row[1] * Math.log(p) + (1 - row[1]) * Math.log(1 - p));
+    });
+    return s / set.length;
+  }
+  function ece(set, T) {
+    var bins = [[], []];
+    set.forEach(function (row) {
+      var p = sigmoid(row[0] / T);
+      bins[p < 0.5 ? 0 : 1].push([p, row[1]]);
+    });
+    var e = 0;
+    bins.forEach(function (b) {
+      if (!b.length) return;
+      var conf = b.reduce(function (a, x) { return a + x[0]; }, 0) / b.length;
+      var acc = b.reduce(function (a, x) { return a + x[1]; }, 0) / b.length;
+      e += (b.length / set.length) * Math.abs(acc - conf);
+    });
+    return e;
+  }
+  function fill(id, rows) {
+    var body = document.getElementById(id);
+    rows.forEach(function (row) {
+      var tr = document.createElement("tr");
+      var a = document.createElement("td");
+      var b = document.createElement("td");
+      a.textContent = row[0].toFixed(1);
+      b.textContent = String(row[1]);
+      tr.appendChild(a);
+      tr.appendChild(b);
+      body.appendChild(tr);
+    });
+  }
+  fill("fitRows", FIT);
+  fill("evalRows", EVALS);
+  var out = document.getElementById("fitOut");
+  var LAB_KEY = "dm_lesson1_fit";
+  function show(text) { out.textContent = text; }
+  function run() {
+    var best = null;
+    var t;
+    for (t = 25; t <= 400; t += 5) {
+      var T = t / 100;
+      var loss = nll(FIT, T);
+      if (!best || loss < best.nll) best = { T: T, nll: loss };
+    }
+    var e1 = ece(EVALS, 1);
+    var eFit = ece(EVALS, best.T);
+    var line = eFit < e1 - 1e-6
+      ? "这次示意里，留出 ECE 比 T=1 更低。"
+      : "这次示意里，留出 ECE 没有比 T=1 更低。温度缩放仍是校准方法，但必须把留出集的结果报出来，不能用拟合集的损失代替。";
+    var text = [
+      "拟合目标：拟合集平均 NLL（示意）",
+      "选出的 T = " + best.T.toFixed(2),
+      "拟合集 NLL = " + best.nll.toFixed(3),
+      "留出集 2 桶 ECE，T=1 → " + e1.toFixed(3),
+      "留出集 2 桶 ECE，拟合 T → " + eFit.toFixed(3),
+      line,
+      "这些不是实测指标。"
+    ].join("\n");
+    show(text);
+    try { localStorage.setItem(LAB_KEY, text); } catch (e) {}
+  }
+  document.getElementById("fitBtn").addEventListener("click", run);
+  document.getElementById("resetFit").addEventListener("click", function () {
+    try { localStorage.removeItem(LAB_KEY); } catch (e) {}
+    show("尚未拟合。随意 T 与拟合 T 的差别要等你按按钮之后才出现。");
+  });
+  try {
+    var saved = localStorage.getItem(LAB_KEY);
+    if (saved) show(saved);
+  } catch (e2) {}
+})();
+</script>
+</body>
+</html>

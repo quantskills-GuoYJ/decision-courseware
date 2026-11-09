@@ -6,6 +6,22 @@
 
 部署后访问：`https://quantskills-GuoYJ.github.io/decision-courseware/`
 
+站点根路径 `index.html` 仍是第0课全文，和第0课文件保持同一份，避免改掉已经在用的入口。课程目录是 `课程目录.html`，机器可读清单是 `course-manifest.json`。页脚旧文案「≈8 课」不是大纲。
+
+本地预览：
+
+```bash
+python3 -m http.server 8765
+```
+
+打开 `http://127.0.0.1:8765/课程目录.html`。交互检查：
+
+```bash
+node tests/course-journey.mjs
+```
+
+需要本机的 Chrome，以及可用的 `puppeteer-core`（脚本会从 `/tmp/viztest` 或当前目录解析）。学伴与提交的默认地址仍是 `https://dm-course.vibeniubi.com/api/tutor` 和 `/submit`。第1–3课不调用学伴：现有 Worker 只有第0课知识。
+
 ## 学习日志提交
 
 页面主按钮：**一键提交给学习**。公开 Pages 把同一份学习日志 JSON POST 到 CORS 代理（密钥不在浏览器）：

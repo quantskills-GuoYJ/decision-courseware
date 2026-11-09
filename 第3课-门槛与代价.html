@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第3课 · 门槛与代价</title>
+<link rel="stylesheet" href="course-lesson.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到内容</a>
+<div class="wrap">
+<nav class="nav" aria-label="课程">
+  <a href="课程目录.html">课程目录</a>
+  <a href="第2课-原语与拒答.html">上一课</a>
+  <a href="第0课-决策模型是什么.html">回第0课的闸门演示</a>
+</nav>
+<header>
+  <div class="badge">第3课</div>
+  <h1 id="main">门槛与代价：先猜，再揭晓</h1>
+  <p class="lead">课堂例子沿用第0课的 0.55 和 0.70，方便对照。它们不是实测命中率。在你提交猜测之前，结果区保持关闭。</p>
+</header>
+
+<section data-q-group="q1" data-unlock="#experiment">
+  <h2 id="q1-title">先提交猜测</h2>
+  <p>课堂例子：平仓概率 p = 0.55，门槛 θ = 0.70。闸门会怎样？现在还不能拖动画。</p>
+  <div class="opts" role="group" aria-labelledby="q1-title">
+    <button type="button" class="opt" data-choice="pass" data-correct="false">通过，可以自动。因为 0.55 已经超过一半。</button>
+    <button type="button" class="opt" data-choice="block" data-correct="true">不自动，转人工。因为 0.55 &lt; 0.70。</button>
+  </div>
+  <p class="hint" data-hint hidden>提示：要比的是 p 和 θ，不是「像不像超过一半」。先不要去第0课看动画。</p>
+  <p class="status" data-status role="status"></p>
+  <button type="button" class="act" data-retry hidden>再试一次</button>
+  <div class="explain" data-explain-body hidden>
+    <p>0.55 &lt; 0.70，所以这条课堂规则不自动。口诀是 p &lt; θ → 不自动；p ≥ θ → 才可以自动。拒答在这里是门槛策略，不是 noul 的定义。</p>
+  </div>
+</section>
+
+<section id="experiment" hidden>
+  <h2>揭晓之后再实验</h2>
+  <p>现在可以改 θ。p 固定为 0.55（课堂例子）。</p>
+  <label for="theta">θ <output id="thetaOut">0.70</output></label>
+  <input id="theta" type="range" min="0" max="100" value="70" step="1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70">
+  <p id="gateOut" class="out" role="status"></p>
+</section>
+
+<section data-q-group="q2">
+  <h2 id="q2-title">实验之后再答</h2>
+  <p>若把 θ 降到 0.50，p 仍是 0.55，按同一条规则会怎样？</p>
+  <div class="opts" role="group" aria-labelledby="q2-title">
+    <button type="button" class="opt" data-choice="still" data-correct="false">仍然不自动。概率没变，门槛就无所谓。</button>
+    <button type="button" class="opt" data-choice="auto" data-correct="true">可以自动。因为 0.55 ≥ 0.50。</button>
+  </div>
+  <p class="hint" data-hint hidden>提示：概率没变，变的是策略。把 0.55 和 0.50 比一次大小。</p>
+  <p class="status" data-status role="status"></p>
+  <button type="button" class="act" data-retry hidden>再试一次</button>
+  <div class="explain" data-explain-body hidden>
+    <p>同一概率，门槛下降以后可以由不自动变成自动。所以门槛是代价和覆盖之间的选择，不是模型头里写死的拒答。</p>
+    <p><span class="tag">假设</span> 若误自动的代价很高，就会把 θ 设高，让更多单子转人工。本课不给出真实资金损失数字。</p>
+  </div>
+</section>
+
+<section data-follow="f1" data-need="门槛,概率">
+  <h2>跟进一句</h2>
+  <label for="follow1">写一句，同时包含「门槛」和「概率」，说明刚才为什么会变。</label>
+  <textarea id="follow1"></textarea>
+  <div class="row">
+    <button type="button" class="act" data-follow-check>核对这句</button>
+    <button type="button" class="act" data-follow-retry hidden>再试一次</button>
+  </div>
+  <p class="status" data-follow-status role="status"></p>
+</section>
+
+<section>
+  <h2>笔记</h2>
+  <label for="lessonNote">只存在这台机器上。输入不会发送，也不会写进第0课的 dm-learnlog-v1。</label>
+  <textarea id="lessonNote"></textarea>
+  <p id="lessonNoteStatus" class="status" role="status"></p>
+</section>
+
+<section>
+  <h2>学伴</h2>
+  <p>学伴请求失败或未接入时，上面的猜测、重试和笔记仍然可用。</p>
+  <button type="button" class="act" id="aiGateBtn">为什么按钮不到学伴</button>
+  <p id="aiGateText" hidden>dm-course.vibeniubi.com/api/tutor 只具备第0课知识。本课不发送请求。多课学伴要等后端按课加知识。</p>
+</section>
+<footer><p><a href="课程目录.html">回目录</a></p></footer>
+</div>
+<script>
+window.COURSE_LESSON = { id: "lesson-3", storageKey: "dm_lesson3_state" };
+</script>
+<script src="course-lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  var input = document.getElementById("theta");
+  var out = document.getElementById("thetaOut");
+  var box = document.getElementById("gateOut");
+  var p = 0.55;
+  function paint() {
+    var th = Number(input.value) / 100;
+    out.textContent = th.toFixed(2);
+    input.setAttribute("aria-valuenow", String(input.value));
+    var pass = p >= th;
+    box.textContent = "课堂例子 p=" + p.toFixed(2) + (pass ? " ≥ " : " < ") + "θ " + th.toFixed(2) + (pass ? " → 可以自动。" : " → 不自动，转人工。");
+  }
+  input.addEventListener("input", paint);
+  paint();
+})();
+</script>
+</body>
+</html>

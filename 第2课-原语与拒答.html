@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第2课 · 原语与拒答</title>
+<link rel="stylesheet" href="course-lesson.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到内容</a>
+<div class="wrap">
+<nav class="nav" aria-label="课程">
+  <a href="课程目录.html">课程目录</a>
+  <a href="第1课-校准深挖.html">上一课</a>
+  <a href="第3课-门槛与代价.html">下一课</a>
+</nav>
+<header>
+  <div class="badge">第2课</div>
+  <h1 id="main">原语：choice、score、noul，以及拒答</h1>
+  <p class="lead">noul 输出的是「是」的概率。拒答不是这个头的含义，而是拿某个概率去和门槛、代价比较之后的策略。</p>
+</header>
+
+<section>
+  <h2>三个原语，各问各的</h2>
+  <ul>
+    <li><strong>choice</strong>：互斥选项上的分布，概率加总为 1。例如平仓 / 持有 / 加仓。</li>
+    <li><strong>score</strong>：有序档上的分布，可以算期望分。</li>
+    <li><strong>noul</strong>：一个是否问题的 P(是)。0.2 表示 P(是)=0.2，也就是 P(否)=0.8。它不是 P(拒答)。</li>
+  </ul>
+  <p>第0课双轨图末格的机器 id 仍是 <code>noul</code>，画面文字已改成「noul · P(是)」，避免和拒答策略混成同一个词。</p>
+</section>
+
+<section data-q-group="q1">
+  <h2 id="q1-title">先猜</h2>
+  <p>模型对「这条新闻是否已经定价」给出 noul = 0.20。0.20 指什么？</p>
+  <div class="opts" role="group" aria-labelledby="q1-title">
+    <button type="button" class="opt" data-choice="refuse" data-correct="false">拒答概率是 0.20，系统会拒绝回答。</button>
+    <button type="button" class="opt" data-choice="yes" data-correct="true">P(是) = 0.20。还没有做拒答决定。</button>
+  </div>
+  <p class="hint" data-hint hidden>提示：noul 只回答被钉死的是否问题，0.20 是 P(是)。拒答是后面的策略。先别翻第0课的闸门动画。</p>
+  <p class="status" data-status role="status"></p>
+  <button type="button" class="act" data-retry hidden>再试一次</button>
+  <div class="explain" data-explain-body hidden>
+    <p>0.20 是「是」的概率。系统可以之后规定：只有 P(是) ≥ θ 才自动采纳；低于 θ 就转人工。那个规定才叫拒答或弃权，数值 0.20 本身不是弃权概率。</p>
+  </div>
+</section>
+
+<section data-q-group="q2" data-unlock="#policyLab">
+  <h2 id="q2-title">拒答发生在哪一层</h2>
+  <p>交易台最后没有自动下单。这个「不自动」来自哪里？</p>
+  <div class="opts" role="group" aria-labelledby="q2-title">
+    <button type="button" class="opt" data-choice="head" data-correct="false">来自 noul 头：它输出的就是拒答概率。</button>
+    <button type="button" class="opt" data-choice="policy" data-correct="true">来自下游策略：拿概率去和门槛、代价比。</button>
+  </div>
+  <p class="hint" data-hint hidden>提示：概率头只给数。比较大小、决定自动还是人工，是使用这个数的规则。</p>
+  <p class="status" data-status role="status"></p>
+  <button type="button" class="act" data-retry hidden>再试一次</button>
+  <div class="explain" data-explain-body hidden>
+    <p>拒答是策略。同一组概率，换一个 θ 或换一套误伤代价，可以自动，也可以不自动。所以不能把 noul 的语义写成 refusal probability。</p>
+  </div>
+</section>
+
+<section id="policyLab" hidden>
+  <h2>实验：同一个 P(是)，两套门槛</h2>
+  <p><span class="tag">课堂例子</span> P(是)=0.62。这不是频率统计。拖动门槛，只改变策略，不改变 noul。</p>
+  <label for="theta">门槛 θ <output id="thetaOut">0.70</output></label>
+  <input id="theta" type="range" min="0" max="100" value="70" step="1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70">
+  <p id="policyOut" class="out" role="status"></p>
+</section>
+
+<section data-follow="f1" data-need="概率,门槛">
+  <h2>用自己的话补一句</h2>
+  <label for="follow1">写一句，里面要同时出现「概率」和「门槛」。</label>
+  <textarea id="follow1"></textarea>
+  <div class="row">
+    <button type="button" class="act" data-follow-check>核对这句</button>
+    <button type="button" class="act" data-follow-retry hidden>再试一次</button>
+  </div>
+  <p class="status" data-follow-status role="status"></p>
+</section>
+
+<section>
+  <h2>笔记</h2>
+  <label for="lessonNote">只存在这台机器上。输入不会发送。</label>
+  <textarea id="lessonNote"></textarea>
+  <p id="lessonNoteStatus" class="status" role="status"></p>
+</section>
+
+<section>
+  <h2>学伴</h2>
+  <p>本课练习不调用学伴。Worker 只有第0课知识，不能把第0课答案当成这一课的批改。</p>
+  <button type="button" class="act" id="aiGateBtn">为什么按钮不到学伴</button>
+  <p id="aiGateText" hidden>需要后端为第2课单独提供知识以后，才能打开追问。现在请用页面上的两道题和门槛实验。</p>
+</section>
+<footer><p><a href="课程目录.html">回目录</a></p></footer>
+</div>
+<script>
+window.COURSE_LESSON = { id: "lesson-2", storageKey: "dm_lesson2_state" };
+</script>
+<script src="course-lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  var input = document.getElementById("theta");
+  var out = document.getElementById("thetaOut");
+  var box = document.getElementById("policyOut");
+  var p = 0.62;
+  function paint() {
+    var th = Number(input.value) / 100;
+    out.textContent = th.toFixed(2);
+    input.setAttribute("aria-valuenow", String(input.value));
+    var pass = p >= th;
+    box.textContent = "noul 仍是 P(是)=" + p.toFixed(2) + "。策略：" + p.toFixed(2) + (pass ? " ≥ " : " < ") + th.toFixed(2) + (pass ? " → 可以自动。" : " → 不自动，转人工。") + " 概率头没有变成拒答头。";
+  }
+  input.addEventListener("input", paint);
+  paint();
+})();
+</script>
+</body>
+</html>

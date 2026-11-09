@@ -1,0 +1,95 @@
+{
+  "title": "决策模型互动课件",
+  "note": "仓库中不存在独立的 8 课大纲。第0课页脚旧文案「≈8 课」只是占位，不是承诺清单。本文件只列出仓库里真实存在的路径。",
+  "home": "课程目录.html",
+  "schema": {
+    "id": "dm-learnlog-v1",
+    "file": "learning-log.schema.json",
+    "scope": "仅第0课。第1–3课的作答存在各自的 localStorage 键，不写入该 schema。"
+  },
+  "tutor": {
+    "stockUrl": "https://dm-course.vibeniubi.com/api/tutor",
+    "sameOrigin": "/api/tutor 仅当页面主机是 dm-course.vibeniubi.com",
+    "knowledge": "仅第0课。第1–3课页面不调用该接口。"
+  },
+  "submit": {
+    "stockUrl": "https://dm-course.vibeniubi.com/submit"
+  },
+  "lessons": [
+    {
+      "id": "lesson-0",
+      "title": "决策模型是什么",
+      "status": "implemented",
+      "path": "第0课-决策模型是什么.html",
+      "alias": "index.html",
+      "storage": ["dm_lesson0_section_notes", "dm_lesson0_feynman", "dm_lesson0_items", "dm_lesson0_section_tutor"],
+      "ai": "enabled-lesson0"
+    },
+    {
+      "id": "lesson-1",
+      "title": "校准深挖",
+      "status": "implemented",
+      "path": "第1课-校准深挖.html",
+      "storage": ["dm_lesson1_state", "dm_lesson1_fit"],
+      "ai": "gated-off"
+    },
+    {
+      "id": "lesson-2",
+      "title": "原语与拒答",
+      "status": "implemented",
+      "path": "第2课-原语与拒答.html",
+      "storage": ["dm_lesson2_state"],
+      "ai": "gated-off"
+    },
+    {
+      "id": "lesson-3",
+      "title": "门槛与代价",
+      "status": "implemented",
+      "path": "第3课-门槛与代价.html",
+      "storage": ["dm_lesson3_state"],
+      "ai": "gated-off"
+    }
+  ],
+  "notImplemented": [
+    {
+      "id": "rlcd-lab",
+      "reason": "第0课只有方向和外链，没有可核对的训练步骤或指标，因此不单开一课。"
+    },
+    {
+      "id": "lessons-4-to-7",
+      "reason": "没有书面大纲。不把占位的「≈8 课」编成空课。"
+    },
+    {
+      "id": "multi-lesson-tutor",
+      "reason": "需要 Worker 为每一课提供知识。本仓库不改 Worker。"
+    }
+  ],
+  "references": [
+    "README.md",
+    "learning-log.schema.json",
+    "learning-log.fields.md",
+    "learning-log.example.json",
+    "lesson0-consensus.json",
+    "webhook-config.js",
+    "第0课-诊结与深化可视化.html",
+    "course-manifest.json",
+    "课程目录.html"
+  ],
+  "sources": [
+    {
+      "id": "guo2017",
+      "title": "On Calibration of Modern Neural Networks",
+      "url": "https://proceedings.mlr.press/v70/guo17a.html"
+    },
+    {
+      "id": "brier1950",
+      "title": "Verification of forecasts expressed in terms of probability",
+      "note": "Monthly Weather Review, 1950. 本课只用其均方概率误差的定义，不引用业务数字。"
+    }
+  ],
+  "qa": {
+    "command": "python3 -m http.server 8765",
+    "then": "node tests/course-journey.mjs",
+    "status": "passed tests/course-journey.mjs on 2026-11-09 against local python http.server"
+  }
+}

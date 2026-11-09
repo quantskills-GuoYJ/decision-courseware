@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>决策模型课件 · 目录</title>
+<link rel="stylesheet" href="course-lesson.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到目录</a>
+<div class="wrap">
+<header>
+  <div class="badge">决策模型互动课件</div>
+  <h1 id="main">课程目录</h1>
+  <p class="lead">仓库里没有一份写好的 8 课大纲。第0课页脚曾经的「≈8 课」只是占位。下面每条链接都指向本仓库里的文件。机器可读清单见 <a href="course-manifest.json">course-manifest.json</a>。</p>
+</header>
+<section>
+  <h2>已写好的课</h2>
+  <ol id="lessonList">
+    <li><a href="第0课-决策模型是什么.html">第0课 · 决策模型是什么</a> <span id="st0"></span><br>同一份页面也放在 <a href="index.html">index.html</a>，供现有站点根路径使用。</li>
+    <li><a href="第1课-校准深挖.html">第1课 · 校准深挖</a> <span id="st1"></span><br>ECE、Brier、留出集上拟合的温度缩放。示意数字，不是论文表。</li>
+    <li><a href="第2课-原语与拒答.html">第2课 · 原语与拒答</a> <span id="st2"></span><br>choice / score / noul。noul 是 P(是)。拒答是门槛策略。</li>
+    <li><a href="第3课-门槛与代价.html">第3课 · 门槛与代价</a> <span id="st3"></span><br>先猜 0.55 与 0.70，再揭晓。课堂例子，不是实测频率。</li>
+  </ol>
+</section>
+<section>
+  <h2>这次没有另写的部分</h2>
+  <ul>
+    <li>RLCD 的训练步骤：第0课只保留方向和外链，没有可核对的配方或指标。</li>
+    <li>多课学伴：<code>dm-course.vibeniubi.com/api/tutor</code> 只有第0课知识。第1–3课不调用它。</li>
+    <li>第0课学习日志 schema <code>dm-learnlog-v1</code> 仍只描述第0课，不塞进新课的作答。</li>
+  </ul>
+</section>
+<section>
+  <h2>参考文件</h2>
+  <ul>
+    <li><a href="learning-log.schema.json">learning-log.schema.json</a></li>
+    <li><a href="learning-log.fields.md">learning-log.fields.md</a></li>
+    <li><a href="learning-log.example.json">learning-log.example.json</a></li>
+    <li><a href="lesson0-consensus.json">lesson0-consensus.json</a></li>
+    <li><a href="第0课-诊结与深化可视化.html">第0课-诊结与深化可视化.html</a>（转到第0课反馈）</li>
+    <li><a href="README.md">README.md</a></li>
+  </ul>
+</section>
+<footer>
+  <p>本地预览：在仓库根目录执行 <code>python3 -m http.server 8765</code>，打开 <code>http://127.0.0.1:8765/课程目录.html</code>。</p>
+</footer>
+</div>
+<script>
+(function () {
+  "use strict";
+  var map = [
+    ["st0", "lesson-0"],
+    ["st1", "lesson-1"],
+    ["st2", "lesson-2"],
+    ["st3", "lesson-3"]
+  ];
+  var progress = {};
+  try { progress = JSON.parse(localStorage.getItem("dm_course_progress_v1") || "{}") || {}; } catch (e) {}
+  var notes = "";
+  try { notes = localStorage.getItem("dm_lesson0_section_notes") || ""; } catch (e2) {}
+  map.forEach(function (pair) {
+    var el = document.getElementById(pair[0]);
+    if (!el) return;
+    if (pair[1] === "lesson-0") {
+      el.textContent = notes && notes !== "{}" ? "· 本机有第0课评论" : "· 第0课进度仍看该页自己的记录";
+      return;
+    }
+    el.textContent = progress[pair[1]] ? "· 本机已完成页面题目" : "· 本机尚未完成";
+  });
+})();
+</script>
+</body>
+</html>
