@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>决策模型课件</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="course-lesson.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到课程</a>
+<div class="wrap">
+<header>
+  <div class="badge">决策模型互动课件</div>
+  <h1 id="main">先猜，再看结果</h1>
+  <p class="lead">八节课，每节大约 25–40 分钟。每一节都先做题，错了会给针对这一错法的提示，对了才打开解释和实验。笔记留在这台电脑上。</p>
+</header>
+<section>
+  <h2>从哪一课开始</h2>
+  <ol class="lesson-list">
+    <li>
+      <a href="第0课-决策模型是什么.html">第0课 · 决策模型是什么</a>
+      <p>先修：无。分清开放生成和钉死选项上的概率，并看到含糊的 0.55 如何被门槛挡住。</p>
+      <p class="status" id="st0"></p>
+    </li>
+    <li>
+      <a href="第1课-校准深挖.html">第1课 · 校准深挖</a>
+      <p>先修：第0课。约 30 分钟。分清随意拖动的温度，和在留出数据上拟合的温度缩放。</p>
+      <p class="status" id="st1"></p>
+    </li>
+    <li>
+      <a href="第2课-原语与拒答.html">第2课 · 原语与拒答</a>
+      <p>先修：第0课。约 25 分钟。noul 是「是」的概率。拒答是后面的门槛。</p>
+      <p class="status" id="st2"></p>
+    </li>
+    <li>
+      <a href="第3课-门槛与代价.html">第3课 · 门槛与代价</a>
+      <p>先修：第2课。约 25 分钟。先猜 0.55 和 0.70 谁更大，再打开滑块。</p>
+      <p class="status" id="st3"></p>
+    </li>
+    <li>
+      <a href="第4课-证据与泄漏.html">第4课 · 证据与泄漏</a>
+      <p>先修：第1课。约 30 分钟。选温度的数据和报可靠性的数据要分开。</p>
+      <p class="status" id="st4"></p>
+    </li>
+    <li>
+      <a href="第5课-期望与代价.html">第5课 · 期望与代价</a>
+      <p>先修：第3课。约 30 分钟。代价不对称时，一半不再是门槛。</p>
+      <p class="status" id="st5"></p>
+    </li>
+    <li>
+      <a href="第6课-分布变化.html">第6课 · 分布变化</a>
+      <p>先修：第4课。约 30 分钟。旧的可靠性不能自动套到新的一批数据上。</p>
+      <p class="status" id="st6"></p>
+    </li>
+    <li>
+      <a href="第7课-离线决策.html">第7课 · 离线决策</a>
+      <p>先修：第2、5、6课。约 40 分钟。把概率、代价和分布变化合成一个不自动或自动的决定。没有下单。</p>
+      <p class="status" id="st7"></p>
+    </li>
+  </ol>
+</section>
+<footer>
+  <p>建议从 <a href="第0课-决策模型是什么.html">第0课</a> 开始。做完一课再打开下一课。</p>
+</footer>
+</div>
+<script>
+(function () {
+  "use strict";
+  var rows = [
+    ["st0", "lesson-0", "dm_lesson0_section_notes"],
+    ["st1", "lesson-1", "dm_lesson1_state"],
+    ["st2", "lesson-2", "dm_lesson2_state"],
+    ["st3", "lesson-3", "dm_lesson3_state"],
+    ["st4", "lesson-4", "dm_lesson4_state"],
+    ["st5", "lesson-5", "dm_lesson5_state"],
+    ["st6", "lesson-6", "dm_lesson6_state"],
+    ["st7", "lesson-7", "dm_lesson7_state"]
+  ];
+  var progress = {};
+  try { progress = JSON.parse(localStorage.getItem("dm_course_progress_v1") || "{}") || {}; } catch (e) {}
+  rows.forEach(function (row) {
+    var el = document.getElementById(row[0]);
+    if (!el) return;
+    var raw = "";
+    try { raw = localStorage.getItem(row[2]) || ""; } catch (e2) {}
+    var started = raw && raw !== "{}" && raw !== "null";
+    if (row[1] !== "lesson-0" && progress[row[1]]) el.textContent = "题目已完成。可以复习，或打开下一课。";
+    else if (started) el.textContent = "正在学。从上次停下的地方继续。";
+    else el.textContent = "从这里开始。";
+  });
+})();
+</script>
+</body>
+</html>

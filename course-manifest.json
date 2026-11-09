@@ -1,0 +1,128 @@
+{
+  "title": "决策模型互动课件",
+  "note": "这是新设计的 8 课顺序，不是从旧大纲恢复的。学习者目录不写维护说明。",
+  "home": "index.html",
+  "directoryAlso": "课程目录.html",
+  "lesson0Url": "第0课-决策模型是什么.html",
+  "schema": {
+    "id": "dm-learnlog-v1",
+    "file": "learning-log.schema.json",
+    "scope": "仅第0课。第1–7课用各自的 localStorage，并另存 dm-lesson-note-v1，不写入该 schema。"
+  },
+  "tutor": {
+    "stockUrl": "https://dm-course.vibeniubi.com/api/tutor",
+    "capabilitiesUrl": "/api/tutor/capabilities",
+    "sameOrigin": "/api/tutor 仅当页面主机是 dm-course.vibeniubi.com",
+    "candidate": "worker/index.js + worker/lesson-context.js",
+    "candidateVersion": "course-tutor-8-2026-11-09",
+    "knowledge": "候选后端允许 lesson-0 至 lesson-7。线上旧服务在部署前不会广告这些课。页面只有在 capabilities 列出该课编号时才发送；否则用标明的本机引导提问。",
+    "liveIntegration": "pending-until-worker-deploy"
+  },
+  "submit": {
+    "stockUrl": "https://dm-course.vibeniubi.com/submit"
+  },
+  "lessons": [
+    {
+      "id": "lesson-0",
+      "title": "决策模型是什么",
+      "status": "implemented",
+      "path": "第0课-决策模型是什么.html",
+      "storage": ["dm_lesson0_section_notes", "dm_lesson0_feynman", "dm_lesson0_items", "dm_lesson0_section_tutor"],
+      "ai": "live-when-capabilities-list-lesson-0-else-existing-lesson0-endpoint"
+    },
+    {
+      "id": "lesson-1",
+      "title": "校准深挖",
+      "status": "implemented",
+      "path": "第1课-校准深挖.html",
+      "storage": ["dm_lesson1_state", "dm_lesson1_fit"],
+      "ai": "gated-off"
+    },
+    {
+      "id": "lesson-2",
+      "title": "原语与拒答",
+      "status": "implemented",
+      "path": "第2课-原语与拒答.html",
+      "storage": ["dm_lesson2_state"],
+      "ai": "gated-off"
+    },
+    {
+      "id": "lesson-3",
+      "title": "门槛与代价",
+      "status": "implemented",
+      "path": "第3课-门槛与代价.html",
+      "storage": ["dm_lesson3_state"],
+      "ai": "offline-prompts-only"
+    },
+    {
+      "id": "lesson-4",
+      "title": "证据与泄漏",
+      "status": "implemented",
+      "path": "第4课-证据与泄漏.html",
+      "storage": ["dm_lesson4_state"],
+      "ai": "offline-prompts-only"
+    },
+    {
+      "id": "lesson-5",
+      "title": "期望与代价",
+      "status": "implemented",
+      "path": "第5课-期望与代价.html",
+      "storage": ["dm_lesson5_state"],
+      "ai": "offline-prompts-only"
+    },
+    {
+      "id": "lesson-6",
+      "title": "分布变化",
+      "status": "implemented",
+      "path": "第6课-分布变化.html",
+      "storage": ["dm_lesson6_state"],
+      "ai": "offline-prompts-only"
+    },
+    {
+      "id": "lesson-7",
+      "title": "离线决策",
+      "status": "implemented",
+      "path": "第7课-离线决策.html",
+      "storage": ["dm_lesson7_state"],
+      "ai": "offline-prompts-only"
+    }
+  ],
+  "notImplemented": [
+    {
+      "id": "rlcd-lab",
+      "reason": "没有可核对的训练步骤，不单开课。"
+    },
+    {
+      "id": "live-multi-lesson-tutor",
+      "reason": "修正稿在 worker/，未部署。页面不向线上接口发送 lesson-1 至 lesson-7。"
+    }
+  ],
+  "references": [
+    "README.md",
+    "learning-log.schema.json",
+    "learning-log.fields.md",
+    "learning-log.example.json",
+    "lesson0-consensus.json",
+    "webhook-config.js",
+    "第0课-诊结与深化可视化.html",
+    "course-manifest.json",
+    "课程目录.html"
+  ],
+  "sources": [
+    {
+      "id": "guo2017",
+      "title": "On Calibration of Modern Neural Networks",
+      "url": "https://proceedings.mlr.press/v70/guo17a.html"
+    },
+    {
+      "id": "brier1950",
+      "title": "Verification of forecasts expressed in terms of probability",
+      "note": "Monthly Weather Review, 1950. 本课只用其均方概率误差的定义，不引用业务数字。"
+    }
+  ],
+  "qa": {
+    "command": "python3 -m http.server 8765",
+    "then": "node tests/course-journey.mjs",
+    "status": "automated journey includes 390px layout; independent manual 390px, Feynman submit, and log submit are still open. See docs/acceptance-matrix.md"
+  }
+}

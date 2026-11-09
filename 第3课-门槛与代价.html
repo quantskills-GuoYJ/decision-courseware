@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第3课 · 门槛与代价</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="course-lesson.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到内容</a>
+<div class="wrap">
+<nav class="nav" aria-label="课程">
+  <a href="课程目录.html">课程目录</a>
+  <a href="第2课-原语与拒答.html">上一课</a>
+  <a href="第4课-证据与泄漏.html">下一课</a>
+</nav>
+<header>
+  <div class="badge">第3课</div>
+  <h1 id="main">门槛与代价：先猜，再揭晓</h1>
+  <p class="lead">课堂例子沿用第0课的 0.55 和 0.70，方便对照。它们不是实测命中率。在你提交猜测之前，结果区保持关闭。</p>
+</header>
+
+<section data-q-group="q1" data-unlock="#experiment">
+  <h2 id="q1-title">先提交猜测</h2>
+  <p>课堂例子：平仓概率 p = 0.55，门槛 θ = 0.70。闸门会怎样？现在还不能拖动画。</p>
+  <div class="opts" role="group" aria-labelledby="q1-title">
+    <button type="button" class="opt" data-choice="pass" data-correct="false">通过，可以自动。因为 0.55 已经超过一半。</button>
+    <button type="button" class="opt" data-choice="block" data-correct="true">不自动，转人工。因为 0.55 &lt; 0.70。</button>
+  </div>
+  <p class="hint" data-hint hidden>提示：要比的是 p 和 θ，不是「像不像超过一半」。先不要去第0课看动画。</p>
+  <p class="status" data-status role="status"></p>
+  <button type="button" class="act" data-retry hidden>再试一次</button>
+  <div class="explain" data-explain-body hidden>
+    <p>0.55 &lt; 0.70，所以这条课堂规则不自动。口诀是 p &lt; θ → 不自动；p ≥ θ → 才可以自动。拒答在这里是门槛策略，不是 noul 的定义。</p>
+  </div>
+</section>
+
+<section id="experiment" hidden>
+  <h2>揭晓之后再实验</h2>
+  <p>下面有两套互不自动跟随的规则。手选门槛是你拨的 θ，不是从代价算出来的。代价分界只在「误自动、漏自动」这两种错的假设下算出一个数。两套可以同时给出不同结论，那是规则不同，不是算错。</p>
+  <h3>手选门槛</h3>
+  <p>p 固定为 0.55（课堂例子）。这一条只比较 p 和你拨的 θ。</p>
+  <label for="theta">手选 θ <output id="thetaOut">0.70</output></label>
+  <input id="theta" data-persist="theta" type="range" min="0" max="100" value="70" step="1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70">
+  <p id="gateOut" class="out" role="status"></p>
+  <h3>代价分界</h3>
+  <p>假设只比较两种错：不该自动时自动了（误自动），以及该自动时没有自动（漏自动）。分界不改写上面的手选 θ。同一套比值的推导在 <a href="第5课-期望与代价.html">第5课</a>。这里不说这个分界对所有市场都最优。</p>
+  <label for="fpCost">误自动代价 <output id="fpOut">4</output></label>
+  <input id="fpCost" data-persist="fpCost" type="range" min="1" max="9" value="4" step="1" aria-valuemin="1" aria-valuemax="9" aria-valuenow="4">
+  <label for="fnCost">漏自动代价 <output id="fnOut">1</output></label>
+  <input id="fnCost" data-persist="fnCost" type="range" min="1" max="9" value="1" step="1" aria-valuemin="1" aria-valuemax="9" aria-valuenow="1">
+  <p id="costOut" class="out" role="status"></p>
+  <p id="policyCompare" class="out" role="status"></p>
+  <button type="button" class="act" id="syncTheta">把手选 θ 调到代价分界</button>
+</section>
+
+<section data-q-group="q2">
+  <h2 id="q2-title">实验之后再答</h2>
+  <p>若把手选 θ 降到 0.50，p 仍是 0.55。这一问只看手选门槛，不看代价分界。会怎样？</p>
+  <div class="opts" role="group" aria-labelledby="q2-title">
+    <button type="button" class="opt" data-choice="still" data-correct="false">仍然不自动。概率没变，门槛就无所谓。</button>
+    <button type="button" class="opt" data-choice="auto" data-correct="true">可以自动。因为 0.55 ≥ 0.50。</button>
+  </div>
+  <p class="hint" data-hint hidden>提示：这一问只比 0.55 和手选 θ 0.50。代价分界是旁边的另一套假设。</p>
+  <p class="status" data-status role="status"></p>
+  <button type="button" class="act" data-retry hidden>再试一次</button>
+  <div class="explain" data-explain-body hidden>
+    <p>这一问只看手选门槛。θ 降到 0.50 以后，0.55 ≥ 0.50，按手选规则可以自动。代价分界是另一套假设，不会跟着这只滑块改写。默认误自动更贵时，分界高于 0.55，按那套会先不自动。两句可以同时成立，因为它们不是同一个决定。</p>
+    <p>若误自动比漏自动更贵，代价分界会高于 0.5。这只比较这两种错，不是对所有交易都最优。具体算法见第5课，本课不给真实资金损失。</p>
+  </div>
+</section>
+
+<section data-follow="f1" data-need="门槛,概率">
+  <h2>跟进一句</h2>
+  <label for="follow1">写一句，同时包含「门槛」和「概率」，说明刚才为什么会变。</label>
+  <textarea id="follow1"></textarea>
+  <div class="row">
+    <button type="button" class="act" data-follow-check>核对这句</button>
+    <button type="button" class="act" data-follow-retry hidden>再试一次</button>
+  </div>
+  <p class="status" data-follow-status role="status"></p>
+</section>
+
+<section>
+  <h2>笔记</h2>
+  <label for="lessonNote">只存在这台机器上。输入不会发送，也不会写进第0课的 dm-learnlog-v1。</label>
+  <textarea id="lessonNote"></textarea>
+  <p id="lessonNoteStatus" class="status" role="status"></p>
+</section>
+
+<section data-feynman="fy" data-need="门槛,概率">
+  <h2>费曼自检</h2>
+  <label for="fy1">用自己的话写 1 句，同时出现「门槛」和「概率」。</label>
+  <textarea id="fy1"></textarea>
+  <div class="row">
+    <button type="button" class="act" data-follow-check>核对这句</button>
+    <button type="button" class="act" data-follow-retry hidden>再试一次</button>
+  </div>
+  <p class="status" data-follow-status role="status"></p>
+</section>
+<section id="ask">
+  <h2>接着追问一句</h2>
+  <p>每次只问一个问题。这一问由本课页面提出。题目判分不依赖网络。</p>
+  <div class="row">
+    <button type="button" class="act" id="askSend">发送并追问</button>
+    <button type="button" class="act" id="askRetry">重试</button>
+    <button type="button" class="act" id="exportLesson">导出本课记录</button>
+  </div>
+  <p id="askOut" class="status" role="status"></p>
+  <label for="askReply">你的回答</label>
+  <textarea id="askReply"></textarea>
+  <p id="exportStatus" class="status" role="status"></p>
+</section>
+<footer><p><a href="课程目录.html">回目录</a></p></footer>
+</div>
+<script>
+window.COURSE_LESSON = {
+  id: "lesson-3",
+  storageKey: "dm_lesson3_state",
+  offlinePrompts: [
+    "p 不变时，只把门槛调低，自动还是不自动会跟着变吗？",
+    "误自动比漏自动更贵时，门槛通常高于还是低于 0.5？"
+  ]
+};
+</script>
+<script src="course-lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  var input = document.getElementById("theta");
+  var out = document.getElementById("thetaOut");
+  var box = document.getElementById("gateOut");
+  var p = 0.55;
+  function paint() {
+    var th = Number(input.value) / 100;
+    out.textContent = th.toFixed(2);
+    input.setAttribute("aria-valuenow", String(input.value));
+    var pass = p >= th;
+    var gateText = "手选门槛：θ 是你拨的策略，不是代价算出来的。课堂 p=" + p.toFixed(2) + (pass ? " ≥ " : " < ") + "θ " + th.toFixed(2) + (pass ? "。按手选门槛，可以自动。" : "。按手选门槛，不自动，转人工。");
+    box.textContent = gateText;
+    if (window.__dmLessonState) window.__dmLessonState.setLab("gateText", gateText);
+    return { th: th, pass: pass };
+  }
+  input.addEventListener("input", function () { paintAll(); });
+  var fp = document.getElementById("fpCost");
+  var fn = document.getElementById("fnCost");
+  var fpOut = document.getElementById("fpOut");
+  var fnOut = document.getElementById("fnOut");
+  var costOut = document.getElementById("costOut");
+  function paintCost() {
+    var cFp = Number(fp.value);
+    var cFn = Number(fn.value);
+    fpOut.textContent = String(cFp);
+    fnOut.textContent = String(cFn);
+    fp.setAttribute("aria-valuenow", String(cFp));
+    fn.setAttribute("aria-valuenow", String(cFn));
+    var star = cFp / (cFp + cFn);
+    var costPass = 0.55 >= star;
+    var costText = "代价分界：只比较误自动代价 " + cFp + " 和漏自动代价 " + cFn + "。分界 = " + star.toFixed(2) + "。这不是手选 θ。打平才与中性备选相同，严格更好要高于分界。平局沿用 p ≥ 分界。课堂 p=0.55 " + (costPass ? "不低于这个分界。按代价分界，可以自动。" : "低于这个分界。按代价分界，先不自动。") + " 不是对所有情形都最优。";
+    costOut.textContent = costText;
+    if (window.__dmLessonState) window.__dmLessonState.setLab("costText", costText);
+    return { star: star, costPass: costPass };
+  }
+  var compare = document.getElementById("policyCompare");
+  function paintAll() {
+    var gate = paint();
+    var cost = paintCost();
+    var same = gate.pass === cost.costPass;
+    var text = same
+      ? "两套规则现在一致：都" + (gate.pass ? "允许自动。" : "先不自动。") + " 手选 θ 恰好落在代价分界的同一侧。"
+      : "两套规则现在不一致。手选门槛" + (gate.pass ? "允许自动" : "先不自动") + "，代价分界" + (cost.costPass ? "允许自动" : "先不自动") + "。这不是算错。手选 θ 没有跟着代价走。";
+    if (compare) compare.textContent = text;
+    if (window.__dmLessonState) window.__dmLessonState.setLab("policyCompare", text);
+  }
+  fp.addEventListener("input", paintAll);
+  fn.addEventListener("input", paintAll);
+  var sync = document.getElementById("syncTheta");
+  if (sync) sync.addEventListener("click", function () {
+    var star = Number(fp.value) / (Number(fp.value) + Number(fn.value));
+    input.value = String(Math.round(star * 100));
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  paintAll();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第2课 · 原语与拒答</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="course-lesson.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到内容</a>
+<div class="wrap">
+<nav class="nav" aria-label="课程">
+  <a href="课程目录.html">课程目录</a>
+  <a href="第1课-校准深挖.html">上一课</a>
+  <a href="第3课-门槛与代价.html">下一课</a>
+</nav>
+<header>
+  <div class="badge">第2课</div>
+  <h1 id="main">原语：choice、score、noul，以及拒答</h1>
+  <p class="lead">noul 输出的是「是」的概率。拒答不是这个头的含义，而是拿某个概率去和门槛、代价比较之后的策略。</p>
+</header>
+
+<section>
+  <h2>三个原语，各问各的</h2>
+  <ul>
+    <li><strong>choice</strong>：调用方钉死的一组互斥选项，概率加总为 1。平仓 / 持有 / 加仓只在「已经有一笔仓位，下一步只能选一个动作」时互斥，而且它们不是所有决策的全部选项。换一个问题，选项要重新钉死。</li>
+    <li><strong>score</strong>：有序档上的分布，可以算期望分。</li>
+    <li><strong>noul</strong>：一个是否问题的 P(是)。0.2 表示 P(是)=0.2，也就是 P(否)=0.8。它不是 P(拒答)。</li>
+  </ul>
+  <p>图上最后一格写的是「noul · P(是)」。不要把它读成拒答。拒答要等你拿这个概率去和门槛比。</p>
+</section>
+
+<section>
+  <h2>动手：choice 怎么变成概率</h2>
+  <p>设定：已经有一笔多仓，下一步只能做一件事，选项钉死为平仓、持有、加仓。模型先给了未归一的分数 2、1、1。它们还不是概率。</p>
+  <button type="button" class="act" id="normBtn">除以总和，得到概率</button>
+  <p id="normOut" class="out" role="status">还没归一化。2+1+1=4。</p>
+</section>
+
+<section>
+  <h2>动手：score 的期望分</h2>
+  <p>设定：有序档 1 到 5。滑块是最高档（5 分）的概率，剩下的质量平均分到 1–4 分。期望分 = Σ 档位×概率，所以质量移到 5 分时期望分上升。若把剩下的质量对称地分在中间档两侧，期望分会停在 3，滑块看起来没有反应。</p>
+  <label for="scoreMass">最高档（5 分）的概率 <output id="scoreOut">0.20</output></label>
+  <input id="scoreMass" data-persist="scoreHigh" type="range" min="0" max="80" value="20" step="1" aria-valuemin="0" aria-valuemax="80" aria-valuenow="20">
+  <div id="scoreBars" class="score-bars" aria-hidden="true"></div>
+  <p id="scoreLine" class="out" role="status"></p>
+</section>
+
+<section data-q-group="q1">
+  <h2 id="q1-title">先猜</h2>
+  <p>模型对「这条新闻是否已经定价」给出 noul = 0.20。0.20 指什么？</p>
+  <div class="opts" role="group" aria-labelledby="q1-title">
+    <button type="button" class="opt" data-choice="refuse" data-correct="false">拒答概率是 0.20，系统会拒绝回答。</button>
+    <button type="button" class="opt" data-choice="yes" data-correct="true">P(是) = 0.20。还没有做拒答决定。</button>
+  </div>
+  <p class="hint" data-hint hidden>提示：noul 只回答被钉死的是否问题，0.20 是 P(是)。拒答是后面的策略。先别翻第0课的闸门动画。</p>
+  <p class="status" data-status role="status"></p>
+  <button type="button" class="act" data-retry hidden>再试一次</button>
+  <div class="explain" data-explain-body hidden>
+    <p>0.20 是「是」的概率。系统可以之后规定：只有 P(是) ≥ θ 才自动采纳；低于 θ 就转人工。那个规定才叫拒答或弃权，数值 0.20 本身不是弃权概率。</p>
+  </div>
+</section>
+
+<section data-q-group="q2" data-unlock="#policyLab">
+  <h2 id="q2-title">拒答发生在哪一层</h2>
+  <p>交易台最后没有自动下单。这个「不自动」来自哪里？</p>
+  <div class="opts" role="group" aria-labelledby="q2-title">
+    <button type="button" class="opt" data-choice="head" data-correct="false">来自 noul 头：它输出的就是拒答概率。</button>
+    <button type="button" class="opt" data-choice="policy" data-correct="true">来自下游策略：拿概率去和门槛、代价比。</button>
+  </div>
+  <p class="hint" data-hint hidden>提示：概率头只给数。比较大小、决定自动还是人工，是使用这个数的规则。</p>
+  <p class="status" data-status role="status"></p>
+  <button type="button" class="act" data-retry hidden>再试一次</button>
+  <div class="explain" data-explain-body hidden>
+    <p>拒答是策略。同一组概率，换一个 θ 或换一套误伤代价，可以自动，也可以不自动。所以不能把 noul 的语义写成 refusal probability。</p>
+  </div>
+</section>
+
+<section id="policyLab" hidden>
+  <h2>实验：同一个 P(是)，两套门槛</h2>
+  <p><span class="tag">课堂例子</span> P(是)=0.62。这不是频率统计。拖动门槛，只改变策略，不改变 noul。</p>
+  <label for="theta">门槛 θ <output id="thetaOut">0.70</output></label>
+  <input id="theta" data-persist="theta" type="range" min="0" max="100" value="70" step="1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70">
+  <p id="policyOut" class="out" role="status"></p>
+</section>
+
+<section data-follow="f1" data-need="概率,门槛">
+  <h2>用自己的话补一句</h2>
+  <label for="follow1">写一句，里面要同时出现「概率」和「门槛」。</label>
+  <textarea id="follow1"></textarea>
+  <div class="row">
+    <button type="button" class="act" data-follow-check>核对这句</button>
+    <button type="button" class="act" data-follow-retry hidden>再试一次</button>
+  </div>
+  <p class="status" data-follow-status role="status"></p>
+</section>
+
+<section>
+  <h2>笔记</h2>
+  <label for="lessonNote">只存在这台机器上。输入不会发送。</label>
+  <textarea id="lessonNote"></textarea>
+  <p id="lessonNoteStatus" class="status" role="status"></p>
+</section>
+
+<section data-feynman="fy" data-need="概率,门槛">
+  <h2>费曼自检</h2>
+  <label for="fy1">用自己的话写 1 句，同时出现「概率」和「门槛」。</label>
+  <textarea id="fy1"></textarea>
+  <div class="row">
+    <button type="button" class="act" data-follow-check>核对这句</button>
+    <button type="button" class="act" data-follow-retry hidden>再试一次</button>
+  </div>
+  <p class="status" data-follow-status role="status"></p>
+</section>
+<section id="ask">
+  <h2>接着追问一句</h2>
+  <p>每次只问一个问题。这一问由本课页面提出。</p>
+  <div class="row">
+    <button type="button" class="act" id="askSend">发送并追问</button>
+    <button type="button" class="act" id="askRetry">重试</button>
+    <button type="button" class="act" id="exportLesson">导出本课记录</button>
+  </div>
+  <p id="askOut" class="status" role="status"></p>
+  <label for="askReply">你的回答</label>
+  <textarea id="askReply"></textarea>
+  <p id="exportStatus" class="status" role="status"></p>
+</section>
+<footer><p><a href="课程目录.html">回目录</a></p></footer>
+</div>
+<script>
+window.COURSE_LESSON = {
+  id: "lesson-2",
+  storageKey: "dm_lesson2_state",
+  offlinePrompts: [
+    "0.20 是 P(是) 还是拒答概率？只答一个。",
+    "平仓、持有、加仓要在什么前提下才互斥？"
+  ]
+};
+</script>
+<script src="course-lesson.js"></script>
+<script>
+(function () {
+  "use strict";
+  var input = document.getElementById("theta");
+  var out = document.getElementById("thetaOut");
+  var box = document.getElementById("policyOut");
+  var p = 0.62;
+  function paint() {
+    var th = Number(input.value) / 100;
+    out.textContent = th.toFixed(2);
+    input.setAttribute("aria-valuenow", String(input.value));
+    var pass = p >= th;
+    var text = "noul 仍是 P(是)=" + p.toFixed(2) + "。策略：" + p.toFixed(2) + (pass ? " ≥ " : " < ") + th.toFixed(2) + (pass ? " → 可以自动。" : " → 不自动，转人工。") + " 概率头没有变成拒答头。";
+    box.textContent = text;
+    if (window.__dmLessonState) window.__dmLessonState.setLab("policyText", text);
+  }
+  input.addEventListener("input", paint);
+  paint();
+  function showNorm(text) {
+    document.getElementById("normOut").textContent = text;
+    if (window.__dmLessonState) window.__dmLessonState.setLab("normText", text);
+  }
+  document.getElementById("normBtn").addEventListener("click", function () {
+    showNorm("设定下三者互斥且必须做一件。2/4=0.50，1/4=0.25，1/4=0.25，加总为 1。若问题允许同时减仓又加仓，这组选项就不该再用一个 choice。");
+  });
+  if (window.__dmLessonState) {
+    var savedNorm = window.__dmLessonState.getLab("normText", "");
+    if (savedNorm) document.getElementById("normOut").textContent = savedNorm;
+  }
+  var mass = document.getElementById("scoreMass");
+  var massOut = document.getElementById("scoreOut");
+  var scoreLine = document.getElementById("scoreLine");
+  var scoreBars = document.getElementById("scoreBars");
+  function paintScore() {
+    var highPct = Number(mass.value);
+    var high = highPct / 100;
+    var rest = (100 - highPct) / 400;
+    massOut.textContent = high.toFixed(2);
+    mass.setAttribute("aria-valuenow", String(highPct));
+    var probs = [rest, rest, rest, rest, high];
+    var ev = probs.reduce(function (sum, p, i) { return sum + (i + 1) * p; }, 0);
+    function dec(p, digits) {
+      var scale = Math.pow(10, digits);
+      var n = Math.round(p * scale);
+      var neg = n < 0;
+      var s = String(Math.abs(n)).padStart(digits + 1, "0");
+      return (neg ? "-" : "") + s.slice(0, s.length - digits) + "." + s.slice(-digits);
+    }
+    var exact = probs.map(function (p) { return dec(p, 4); });
+    var shown = probs.map(function (p) { return Math.round(p * 100) / 100; });
+    var shownSum = shown.reduce(function (a, b) { return a + b; }, 0);
+    if (scoreBars) {
+      scoreBars.textContent = "";
+      probs.forEach(function (p, i) {
+        var row = document.createElement("div");
+        var name = document.createElement("span");
+        name.textContent = String(i + 1) + " 分";
+        var meter = document.createElement("span");
+        var fill = document.createElement("i");
+        fill.style.width = (Math.round(p * 1000) / 10) + "%";
+        meter.appendChild(fill);
+        var num = document.createElement("b");
+        num.textContent = exact[i];
+        row.appendChild(name);
+        row.appendChild(meter);
+        row.appendChild(num);
+        scoreBars.appendChild(row);
+      });
+    }
+    var scoreText = [
+      "精确概率：" + exact.join("，") + "。和 = " + dec(probs.reduce(function (a, b) { return a + b; }, 0), 4) + "。",
+      "只保留两位会显示 " + shown.map(function (p) { return p.toFixed(2); }).join("，") + "，加起来是 " + shownSum.toFixed(2) + "。差出来的是四舍五入，概率本身仍然加总为 1。条形用的是精确值。",
+      "期望分 = " + probs.map(function (p, i) { return (i + 1) + "×" + exact[i]; }).join(" + ") + " = " + dec(ev, 3) + "。",
+      "最高档越重，期望分越高。这是有序档，不是三选一。"
+    ].join("\n");
+    scoreLine.textContent = scoreText;
+    if (window.__dmLessonState) window.__dmLessonState.setLab("scoreText", scoreText);
+  }
+  mass.addEventListener("input", paintScore);
+  paintScore();
+})();
+</script>
+</body>
+</html>

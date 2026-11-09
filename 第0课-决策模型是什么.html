@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>第0课 · 决策模型是什么</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <style>
 :root {
   --bg: #0d1117;
@@ -21,11 +22,12 @@
   --danger: #f87171;
   --ok: #34d399;
   --radius: 12px;
+  --export-bar-h: 148px;
   --font: "Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --mono: "JetBrains Mono", "SF Mono", "Fira Code", ui-monospace, monospace;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scroll-padding-bottom: calc(var(--export-bar-h, 148px) + 4.5rem); }
 body {
   font-family: var(--font);
   background: var(--bg);
@@ -33,11 +35,12 @@ body {
   line-height: 1.65;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  padding-bottom: 4.5rem;
+  overflow-wrap: break-word;
+  padding-bottom: 0;
 }
 a { color: var(--cyan); text-decoration: none; }
 a:hover { text-decoration: underline; }
-.wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem 9.5rem; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem calc(var(--export-bar-h, 148px) + 5.5rem); }
 
 /* —— Hero —— */
 .hero {
@@ -67,6 +70,7 @@ a:hover { text-decoration: underline; }
   border-radius: 999px;
   margin-bottom: 1rem;
 }
+.badge a { color: inherit; font-weight: 700; }
 .hero h1 {
   font-size: clamp(1.75rem, 5vw, 2.4rem);
   font-weight: 700;
@@ -914,6 +918,7 @@ footer {
 .learn-fb .lf-match { color: var(--muted); font-weight: 600; letter-spacing: 0; }
 .learn-fb .lf-match.hit { color: var(--ok); }
 .learn-fb .lf-match.drift { color: var(--warn); }
+.learn-fb .lf-hist { font-size: 0.82rem; color: var(--warn); margin: 0.35rem 0 0.55rem; }
 .learn-fb .lf-fy, .learn-fb .lf-c { font-size: 0.9rem; margin: 0.25rem 0; }
 .learn-fb .lf-c strong { color: var(--lime); }
 .lf-viz { margin-top: 0.7rem; }
@@ -977,7 +982,7 @@ footer {
   gap: 1rem;
   align-items: start;
 }
-@media (max-width: 860px) {
+@media (max-width: 1100px) {
   .sec-layout { grid-template-columns: 1fr; }
 }
 .sec-main { min-width: 0; }
@@ -990,8 +995,8 @@ footer {
   padding: 0.75rem 0.85rem;
   border-left: 3px solid var(--cyan);
 }
-@media (max-width: 860px) {
-  .sec-comment { position: static; }
+@media (max-width: 1100px) {
+  .sec-comment { position: static; max-width: 100%; }
 }
 .sec-comment .sc-lab {
   display: block;
@@ -1326,7 +1331,60 @@ footer {
   background: var(--bg2);
 }
 
-.toast-learn { bottom: 4.25rem; }
+.toast-learn { bottom: calc(var(--export-bar-h, 148px) + 0.75rem); }
+@media (max-width: 640px) {
+  html { scroll-padding-bottom: 1.25rem; }
+  .wrap { padding-left: 0.75rem; padding-right: 0.75rem; padding-bottom: 2.5rem; }
+  .export-float {
+    position: static;
+    box-shadow: none;
+  }
+  .tutor-fab {
+    position: static;
+    display: flex;
+    width: calc(100% - 1.5rem);
+    margin: 0.75rem auto 1rem;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    justify-content: center;
+  }
+  .toast-learn { bottom: 0.75rem; }
+  .sec-comment textarea,
+  .tutor-compose textarea,
+  input, select, button { font-size: 16px; }
+  .export-float {
+    justify-content: stretch;
+    padding: 0.45rem 0.65rem calc(0.45rem + env(safe-area-inset-bottom));
+    gap: 0.4rem;
+  }
+  .export-float .ef-lab,
+  .export-float .ef-meta { flex: 1 1 auto; }
+  .export-float .btn-export-submit,
+  .export-float .btn-export-now,
+  .export-float .btn-export-copy,
+  .export-float a.ef-link {
+    flex: 1 1 calc(50% - 0.4rem);
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .tutor-fab {
+    left: 0.65rem;
+    right: 0.65rem;
+    width: auto;
+    text-align: center;
+    background: #0d1117;
+  }
+  .learn-quiz button.lq-opt,
+  .predict-box button.pb-opt,
+  .sc-ask-send,
+  .fy-tutor-send {
+    min-height: 44px;
+  }
+}
 
 /* —— Page-in tutor drawer —— */
 .tutor-fab {
@@ -1345,6 +1403,18 @@ footer {
   color: var(--cyan);
   cursor: pointer;
   box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+@media (max-width: 640px) {
+  .tutor-fab {
+    position: static;
+    display: flex;
+    width: calc(100% - 1.5rem);
+    margin: 0.75rem auto 1rem;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    justify-content: center;
+  }
 }
 .tutor-fab:hover { border-color: var(--cyan); }
 .tutor-fab[aria-expanded="true"] {
@@ -1807,7 +1877,7 @@ footer {
 
   <!-- 1. Hero -->
   <header class="hero">
-    <div class="badge">Lesson 0 · Decision Models</div>
+    <div class="badge">Lesson 0 · Decision Models · <a href="课程目录.html">课程目录</a></div>
     <h1>第0课：<span>决策模型</span>是什么</h1>
     <p class="takeaway">
       一句话：决策模型把<strong>非结构化状态</strong> + <strong>调用方钉死的选项问题</strong>，一次前向映射成<strong>已校准的选项概率</strong>——不是让 LLM「吐一段像概率的话」。
@@ -1837,7 +1907,7 @@ footer {
       <div class="gdf-track gdf-gen">
         <span class="gdf-k">上轨</span>
         <span class="gdf-node" data-viz-node="gen">自由生成</span>
-        <span class="gdf-side">不经过选项钉死 / 打分 / 校准 / 拒答</span>
+        <span class="gdf-side">不经过选项钉死 / 打分 / 校准 / noul</span>
       </div>
       <div class="gdf-track gdf-dec">
         <span class="gdf-k">下轨</span>
@@ -1847,10 +1917,11 @@ footer {
         <span class="gdf-arr" aria-hidden="true">→</span>
         <span class="gdf-node" data-viz-node="calib">校准</span>
         <span class="gdf-arr" aria-hidden="true">→</span>
-        <span class="gdf-node" data-viz-node="noul">拒答</span>
+        <span class="gdf-node" data-viz-node="noul">noul · P(是)</span>
       </div>
       <p class="gdf-cap" hidden></p>
     </div>
+    <p class="hint-row">下轨末格 <code>noul</code> 是「是」的概率，不是拒答概率。拒答是下游拿概率去和门槛、代价比较的策略。</p>
 
     <div class="toggle-bar" role="tablist">
       <button type="button" class="active" data-view="both" aria-selected="true">并排对比</button>
@@ -1909,7 +1980,7 @@ footer {
   <div class="learn-fb" id="fb-contrast" data-fb="contrast">
     <div class="lf-h">学习反馈 · contrast <span class="lf-match" id="lfm-contrast"></span></div>
     <p class="lf-fy">你写「LLM和决策模型的对比」=标题复读。请改成：决策模型必须同时满足「选项钉死 + 校准概率 + 可设门槛」。</p>
-    <p class="lf-c"><strong>评论·原语</strong>：<code>choice</code> 三选一；<code>score</code> 有序档；<code>noul</code> 是否成立（0–1）。同一 state 可混问。</p>
+    <p class="lf-c"><strong>评论·原语</strong>：<code>choice</code> 只在「已有仓位、下一步只能做一个动作」时才是平仓 / 持有 / 加仓三选一，而且这组不是所有决策的全集；<code>score</code> 有序档；<code>noul</code> 是 P(是)，不是拒答概率。同一 state 可混问。</p>
     <div class="lf-viz">
       <div class="lf-seg" id="lfPrimSeg">
         <button type="button" class="active" data-prim="choice">choice</button>
@@ -2164,16 +2235,16 @@ footer {
     <h2>校准长什么样</h2>
     <p class="lead">可靠性图（reliability）与 ECE / Brier：概率说 80%，真实命中也该接近 80%。</p>
 
-    <div class="gdf calib-viz" id="tutorCalibViz" data-compare="temp-vs-calib" aria-label="校准不等于调温度">
-      <div class="gdf-h">校准 ≠ 调温度</div>
+    <div class="gdf calib-viz" id="tutorCalibViz" data-compare="temp-vs-calib" aria-label="随意温度与拟合的温度缩放">
+      <div class="gdf-h">随意 T 只改锋利度；拟合的温度缩放是校准</div>
       <div class="cv-split">
         <div class="cv-node" data-viz-node="sharpness">
           <div class="cv-k">锋利度</div>
           <label class="cv-lab" for="tutorCalibTemp">温度 T <output id="tutorCalibTempOut">0.50</output></label>
           <input class="lf-range" id="tutorCalibTemp" type="range" min="25" max="400" value="50" step="5" aria-valuemin="25" aria-valuemax="400" aria-valuenow="50" aria-label="温度">
           <div id="tutorCalibBars"></div>
-          <p class="cv-note">固定 logits。拖温度只改有多尖，argmax 不变。</p>
-          <p class="cv-metric">调温度 ECE <b id="tutorCalibEceTemp" class="ece-temp">0.18</b></p>
+          <p class="cv-note">这条滑块没有在数据上估计 T，只演示锐度。argmax 不变。它不是拟合后的温度缩放。</p>
+          <p class="cv-metric">随意 T 的示意 ECE <b id="tutorCalibEceTemp" class="ece-temp">0.18</b></p>
         </div>
         <div class="cv-node" data-viz-node="reliability">
           <div class="cv-k">可靠性</div>
@@ -2181,10 +2252,11 @@ footer {
           <ul class="cv-legend">
             <li><i class="dash"></i>完美校准</li>
             <li><i style="background:#f87171"></i>未校准</li>
-            <li><i style="background:#fbbf24"></i>调温度</li>
+            <li><i style="background:#fbbf24"></i>随意 T（示意）</li>
             <li><i style="background:#22d3ee"></i>已校准</li>
           </ul>
-          <p class="cv-metric">未校准 ECE <b id="tutorCalibEceRaw">0.12</b> · 已校准 ECE <b id="tutorCalibEceCal">0.04</b></p>
+          <p class="cv-metric">未校准示意 ECE <b id="tutorCalibEceRaw">0.12</b> · 已校准示意 ECE <b id="tutorCalibEceCal">0.04</b>（课堂点，不是实测）</p>
+          <p class="cv-note">在留出集上拟合一个 T，再在另一份数据上看 ECE / NLL，这是温度缩放，属于校准（Guo et al., ICML 2017）。已经校准的概率仍可以再做温度缩放，做完要重新评估。第1课把拟合和留出评估分开做一遍。</p>
         </div>
       </div>
       <p class="gdf-cap" hidden></p>
@@ -2274,12 +2346,12 @@ footer {
   </div>
   <div class="learn-fb" id="fb-calib" data-fb="calib">
     <div class="lf-h">学习反馈 · calib <span class="lf-match" id="lfm-calib"></span></div>
-    <p class="lf-fy">仅写 RLCD 不完整：独立校准集拟合温度 → 测试集看 ECE/Brier；<strong>禁用训练集</strong>拟合温度；温度只改锐度不改 argmax。</p>
+    <p class="lf-fy">仅写 RLCD 不完整：独立校准集拟合温度 → 测试集看 ECE/Brier；<strong>禁用训练集</strong>拟合温度；温度只改锐度不改 argmax。在留出集上<strong>拟合出来的</strong>温度缩放是校准方法；上面滑块里随意指定的 T 不是。拟合过的概率仍可以再缩放，然后重新评估。</p>
     <div class="lf-viz">
       <label class="lf-note" for="lfTemp">温度 T <output id="lfTempOut">1.00</output></label>
       <input class="lf-range" type="range" id="lfTemp" min="25" max="400" value="100" step="5">
       <div id="lfTempBars"></div>
-      <p class="lf-note">固定 logits。argmax 始终是 <strong style="color:var(--lime)" id="lfArgmax">平仓</strong>。T 只改尖或平。</p>
+      <p class="lf-note">固定 logits。argmax 始终是 <strong style="color:var(--lime)" id="lfArgmax">平仓</strong>。这里的 T 是随意拖的，只改尖或平，没有在样本上拟合。</p>
     </div>
     <div class="lf-rewrite">
       <label class="lf-note" for="rw-calib">你的改写
@@ -2545,12 +2617,12 @@ footer {
   <footer>
     <div class="progress">
       <div class="progress-bar-wrap">
-        <div class="lab"><span>学习进度</span><span>第 0 / ≈8 课</span></div>
+        <div class="lab"><span>学习进度</span><span><a href="课程目录.html">目录 · 8 课</a></span></div>
         <div class="pbar"><div class="pbar-fill"></div></div>
       </div>
       <div class="next-note">
         <strong>盲点已标</strong>：「像概率」≠ 决策模型。<br>
-        下一课：校准深挖（ECE / Brier / temperature / RLCD）。
+        下一课：<a href="第1课-校准深挖.html">校准深挖（ECE / Brier / 拟合的温度缩放）</a>。
       </div>
     </div>
     <div class="refs">
@@ -2558,6 +2630,7 @@ footer {
       <a href="https://decisioneval.dev/decision-models/vs-llms/" target="_blank" rel="noopener">vs-llms</a>
       <a href="https://decision.startlux.com/" target="_blank" rel="noopener">startlux</a>
       <a href="https://github.com/StartLuxLabs/Startlux-Decision" target="_blank" rel="noopener">github</a>
+      <a href="https://proceedings.mlr.press/v70/guo17a.html" target="_blank" rel="noopener">Guo et al. 2017 温度缩放</a>
       <a href="https://laya.studio/learn/calibrated-probabilities" target="_blank" rel="noopener">calib</a>
       <a href="https://laya.studio/learn/rlcd-reinforcement-learning-calibrated-decisions" target="_blank" rel="noopener">rlcd</a>
       <a href="https://wilsonwu.me/zh/blog/2026/jev-vs-laya/" target="_blank" rel="noopener">jev-laya</a>
@@ -3850,9 +3923,36 @@ footer {
       if (!chip) return;
       var state = matchesSnap(id, ta ? ta.value : "");
       chip.className = "lf-match" + (state === "hit" ? " hit" : state === "drift" ? " drift" : "");
-      chip.textContent = state === "hit" ? "对上 13:21 原文" : state === "drift" ? "你已改写；下面仍是对 13:21 那版" : "13:21 的反馈（这格目前是空的）";
+      chip.textContent = state === "hit"
+        ? "与 13:21 原文相同。下面仍是当时的记录，不是新的批改。"
+        : state === "drift"
+          ? "你现在的文字已经不同。下面仍是 13:21 原文的记录，不是对现在这段的批改。"
+          : "这格目前是空的。下面不是对你的批改。";
     });
   }
+  var HIST_ORIGINALS = {
+    contrast: "LLM和决策模型的对比",
+    flow: "state + 类型化问题 → 校准选项概率",
+    demo: "LLM 输出模糊，再交 DM 校准",
+    calib: "通过 RLCD 训练进行校准",
+    agent: "两层闸门：AutoThink 模型侧，App 执行侧",
+    products: "不同模型选型"
+  };
+  document.querySelectorAll(".learn-fb[data-fb]").forEach(function (box) {
+    var id = box.getAttribute("data-fb");
+    var heading = box.querySelector(".lf-h");
+    if (heading && heading.childNodes[0] && heading.childNodes[0].nodeType === 3) {
+      heading.childNodes[0].textContent = "历史样本 · 13:21 · " + id + " ";
+    }
+    if (!box.querySelector(".lf-hist")) {
+      var note = document.createElement("p");
+      note.className = "lf-hist";
+      note.textContent = "这是页面预先写好的样本，对应 13:21 的原文「" + (HIST_ORIGINALS[id] || "") + "」。它不是本次「送去批改」的返回。请求失败时这段保持不动，也不代表你现在输入的成绩。";
+      var fy = box.querySelector(".lf-fy");
+      if (fy) box.insertBefore(note, fy);
+      else box.appendChild(note);
+    }
+  });
   ["contrast", "flow", "demo", "calib", "agent", "products"].forEach(function (id) {
     var ta = document.getElementById("secFeynman-" + id);
     if (ta) ta.addEventListener("input", paintMatch);
@@ -3891,7 +3991,7 @@ footer {
     }
     if (which === "noul") {
       bars(host, ["是", "否"], [0.62, 0.38], "var(--lime)");
-      if (out) out.textContent = "noul：一个 0–1「是」概率。靠近 0.5 最不确定。不是三路 choice。";
+      if (out) out.textContent = "noul：P(是)。0.62 表示「是」的概率，不是拒答概率。靠近 0.5 最不确定。拒答要另拿这个数去和门槛比。不是三路 choice。";
       return;
     }
     bars(host, ["平仓", "持有", "加仓"], [0.62, 0.28, 0.10], "var(--cyan)");
@@ -4362,7 +4462,7 @@ footer {
     choice: "选项钉死",
     score: "打分",
     calib: "校准",
-    noul: "拒答"
+    noul: "noul · P(是)"
   };
   // calib-curve whitelist: focus sharpness|reliability (legacy "calib" → reliability);
   // compare temp-vs-calib or omitted; nodes, if present, only those two names.
@@ -4729,7 +4829,10 @@ footer {
   function formatTransportError(err) {
     var name = (err && err.name) ? String(err.name) : "Error";
     var message = (err && err.message) ? String(err.message) : "";
-    var human = name === "TypeError" ? "学伴连不上（网络或跨域）。" : "学伴连不上。";
+    if (name === "TypeError") {
+      return "本次批改没有返回。连接失败，可能是网络不通，也可能是来源不在允许名单里，单凭 TypeError 分不清是哪一种。本机题目仍然可以做。13:21 的历史样本保持原样，不要把它当成这次的成绩。";
+    }
+    var human = "学伴连不上。";
     if (name === "AbortError") human = "学伴请求已中止。";
     return human + " " + name + (message ? "：" + message : "");
   }
@@ -5217,6 +5320,19 @@ footer {
     var t = e.target;
     if (!t || !t.matches) return;
     if (t.matches("textarea.feynman-ta, textarea[data-rw]")) lastFy = t;
+    if (!t.getBoundingClientRect) return;
+    var blockers = [document.getElementById("exportFloat"), document.getElementById("tutorFab")];
+    var covered = blockers.some(function (el) {
+      if (!el || el.hidden) return false;
+      var pos = window.getComputedStyle(el).position;
+      if (pos !== "fixed" && pos !== "sticky") return false;
+      var a = t.getBoundingClientRect();
+      var b = el.getBoundingClientRect();
+      return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+    });
+    if (covered) {
+      try { t.scrollIntoView({ block: "center" }); } catch (eFocus) {}
+    }
   });
 
   document.querySelectorAll("textarea.feynman-ta, textarea[data-rw]").forEach(function (ta) {
@@ -5234,7 +5350,7 @@ footer {
     panel.setAttribute("aria-live", "polite");
     var lab = document.createElement("div");
     lab.className = "fy-inline-lab";
-    lab.textContent = "费曼批改";
+    lab.textContent = "本次批改";
     var body = document.createElement("div");
     body.className = "fy-inline-body";
     panel.appendChild(lab);
